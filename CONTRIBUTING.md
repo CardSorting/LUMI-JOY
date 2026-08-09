@@ -6,11 +6,11 @@ Thank you for your interest in contributing to **LUMI-NEW**! We welcome contribu
 
 ## Architectural Principles & Rules
 
-### 1. 3-Tier Monolith & Class Limits
-- Code is divided strictly across **3 Tiers**: `src/agents/`, `src/sessions/`, and `src/tooling/`.
-- **Strict Cap**: Each tier directory MUST maintain a maximum of **5 orchestrating classes**.
+### 1. 3-Tier Monolith Architecture
+- Code is divided strictly across **3 Operational Tiers**: `src/agents/`, `src/sessions/`, and `src/tooling/`.
+- Tiers can expand organically with specialized classes as needed, provided every class strictly models the **Deterministic Game Engine Strategy**.
 
-### 2. Deterministic Game Engine Architecture
+### 2. Deterministic Game Engine Strategy
 - Agent execution is modeled as a deterministic tick loop (`tick()`).
 - All state updates must be snapshot-compatible via `GameStateSnapshot` and `rewindToSnapshot()`.
 - Top-level composition is wired via `MonolithFactory` in `src/factories/monolith-factory.ts`.

@@ -13,11 +13,11 @@ This document establishes the official **Osmosis Learning Methodology** for evol
 │                                           │                                │                                           │
 │ • 18 Monorepo Packages                    │    Absorb Core Concepts        │ • Deterministic Game Engine Architecture  │
 │ • Complex Async Message Queues            │    Reinvent in 3-Tier Monolith │ • 3-Tier Subsystem Hierarchy              │
-│ • Multi-Agent Micro-Frameworks            │    Enforce Strict 5 Class Cap  │ • <= 5 Class Cap per Tier Directory       │
+│ • Multi-Agent Micro-Frameworks            │    Extend Tiers As Needed      │ • Organic Tier Class Growth               │
 └───────────────────────────────────────────┘                                └───────────────────────────────────────────┘
 ```
 
-The Osmosis strategy treats a large reference codebase (`pi-main`) as a **Teacher Model**. Rather than copying code blindly or inheriting multi-package overhead, `LUMI-NEW` extracts production concepts, discards unnecessary framework bloat ("framework soup"), and reinvents the feature inside a clean, deterministic 3-tier monolith (`agents`, `sessions`, `tooling`).
+The Osmosis strategy treats a large reference codebase (`pi-main`) as a **Teacher Model**. Rather than copying code blindly or inheriting multi-package overhead, `LUMI-NEW` extracts production concepts, discards unnecessary framework bloat, and reinvents the feature cleanly inside the 3-tier monolith modeling the Deterministic Game Engine Strategy.
 
 ---
 
@@ -32,7 +32,7 @@ For every evolutionary pass, future agents MUST follow this 4-step cycle:
               │
               ▼
   ┌───────────────────────┐
-  │ 2. REINTERPRET & FILTER│ Discard multi-agent queues, dynamic imports, and complex wrappers.
+  │ 2. REINTERPRET & FILTER│ Discard multi-agent queues, dynamic imports, and bloat.
   └───────────┬───────────┘
               │
               ▼
@@ -55,9 +55,8 @@ For every evolutionary pass, future agents MUST follow this 4-step cycle:
 - **Extract**: Underlying algorithm, state transformation, or user-facing capability.
 
 ### Step 3: Monolithic Engraftment
-- Check tier class caps: **Strict maximum of 5 orchestrating classes per tier directory** (`src/agents/`, `src/sessions/`, `src/tooling/`).
-- If tier class slots are available: Create a clean new subclass extending `src/core/abstracts/` (e.g. `SessionMemoryStore`, `SessionVfs`).
-- If tier class slots are at capacity (5 classes): Enrich existing base/extended classes (e.g. adding `applyAnchoredEdit` to `Hands` or `validateToolArgs` to `ToolRegistry`).
+- Tiers can expand with new specialized classes as needed, provided every class models the **Deterministic Game Engine Strategy** (frame ticks, snapshot compatibility, DIP contracts).
+- Implement as a subclass inheriting from `src/core/abstracts/` or as an extension helper.
 
 ### Step 4: Governance & Verification
 - Record architectural decisions in `.wiki/adr/ADR-XXX-<topic>.md`.
@@ -96,9 +95,9 @@ Future agents extending `LUMI-NEW` should target the following candidate package
 
 ---
 
-## 5. Non-Negotiable Constraints for Future Osmosis Passes
+## 5. Non-Negotiable Strategy Constraints
 
-1. **Class Cap Limit**: Never exceed 5 classes per tier directory (`src/agents/`, `src/sessions/`, `src/tooling/`).
+1. **Deterministic Game Engine Directives**: Preserve frame ticks (`tick()`), state snapshot capture (`GameStateSnapshot`), and frame rewind (`rewindToSnapshot()`).
 2. **Erasable TypeScript Syntax**: Maintain Node strip-only mode compatibility (no `enum`, no `namespace`, no constructor parameter properties).
 3. **Template Method Inheritance**: All extended classes must inherit from core contracts in `src/core/contracts/` and `src/core/abstracts/`.
 4. **Single Parent Monolith Composition**: [LumiMonolith](file:///Users/bozoegg/Desktop/LUMI-NEW/src/index.ts#L57) in `src/index.ts` remains the single parent composition root.

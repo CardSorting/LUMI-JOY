@@ -4,13 +4,12 @@ This document highlights common pitfalls and non-negotiable rules for AI agents 
 
 ---
 
-## 🛑 Critical Restrictions
+## 🛑 Critical Restrictions & Strategy Directives
 
-1. **Do NOT Exceed 5 Classes Per Tier Directory**:
-   - `src/agents/`: Max 5 classes (`AgentConfig`, `PromptComposer`, `ModelResolver`, `AgentSlashRouter`, `AgentEngine`).
-   - `src/sessions/`: Max 5 classes (`SessionContext`, `SessionCompactor`, `SessionVfs`, `SessionMemoryStore`, `PersistentSessionStore`).
-   - `src/tooling/`: Max 5 classes (`Eyes`, `SkillsIngestor`, `AnchoredHands`, `ProtocolEars`, `ValidatingToolRegistry`).
-   - Creating 6+ classes per tier converts the monolith back into "framework soup".
+1. **Preserve the Deterministic Game Engine Strategy**:
+   - Every user turn MUST be modeled as a frame tick (`tick()`).
+   - State updates MUST remain snapshot-compatible (`GameStateSnapshot` and `rewindToSnapshot()`).
+   - Tiers (`src/agents/`, `src/sessions/`, `src/tooling/`) can expand beyond initial class counts as needed, provided all new classes strictly model the Game Engine strategy.
 
 2. **No Non-Erasable TypeScript Syntax**:
    - Node strip-only mode (`--experimental-strip-types`) strictly forbids:

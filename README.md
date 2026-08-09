@@ -31,7 +31,7 @@ Traditional AI agent frameworks suffer from **"framework soup"**—sprawling mul
 | **Execution Loop** | Loose Async Event Handlers | **Deterministic Game Engine Tick Loop** (`tick()`) |
 | **State Time Travel** | Impossible / Manual Log Parsing | **Frame-Perfect Snapshot Rewind** (`rewindToSnapshot()`) |
 | **File Editing** | Drifting RegEx / Whole File Overwrites | **Line-Anchored Hash Verification** (`hashline`) |
-| **Class Constraints** | Unlimited Class Proliferation | **Strict $\le 5$ Class Cap per Tier Directory** |
+| **Tier Expansion** | Uncoordinated Package Proliferation | **Organic Subsystem Growth Modeling Game Engine Strategy** |
 | **Schema Validation** | Ad-hoc / Missing Type Guards | **Built-in Schema Parameter Validator** (`omptype`) |
 | **Telemetry** | Unstructured Console Logs | **Microsecond JSON-RPC 2.0 Streaming** (`protocol`) |
 
@@ -64,13 +64,13 @@ src/
 ├── core/                                # Contracts & Abstract Base Classes (DIP)
 │   ├── contracts/                       # Interfaces & Snapshot Types (agent, session, tooling)
 │   └── abstracts/                       # Template Method Abstract Classes (AbstractAgentEngine, etc.)
-├── agents/                              # Tier 1: Agents Subsystem (5 classes MAX)
+├── agents/                              # Tier 1: Agents Subsystem
 │   ├── base/agent-config.ts             # AgentConfig
 │   └── extensions/                      # PromptComposer, ModelResolver, AgentSlashRouter, AgentEngine
-├── sessions/                            # Tier 2: Sessions Subsystem (5 classes MAX)
+├── sessions/                            # Tier 2: Sessions Subsystem
 │   ├── base/session-context.ts          # SessionContext
 │   └── extensions/                      # SessionCompactor, SessionVfs, SessionMemoryStore, PersistentSessionStore
-├── tooling/                             # Tier 3: Tooling Subsystem (5 classes MAX)
+├── tooling/                             # Tier 3: Tooling Subsystem
 │   ├── base/eyes.ts                     # Eyes (Input perception)
 │   └── extensions/                      # SkillsIngestor, AnchoredHands, ProtocolEars, ValidatingToolRegistry
 ├── factories/                           # Game Engine Bootstrapper Container (MonolithFactory)

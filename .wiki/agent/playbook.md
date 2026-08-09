@@ -6,20 +6,20 @@ This playbook serves as the primary orientation document for AI agents working i
 
 LUMI-NEW is a greenfield 3-tier monolithic agent framework built in TypeScript for Node.js (ESM). It is structured around the architectural design of a **Deterministic Game Engine**, where turns execute as frame ticks (`tick()`), state transitions are captured in immutable snapshots (`GameStateSnapshot`), and the runtime supports frame-perfect state rewind and replay.
 
-The framework evolves continuously through **The Osmosis Learning Methodology**, absorbing core features from the teacher model (`/Users/bozoegg/Downloads/pi-main`) and reinferring them cleanly into the 3-tier monolith.
+Tiers expand organically as needed to support specialized subsystem features, with the primary constraint being strict alignment with the Deterministic Game Engine Strategy.
 
 ### Deterministic Game Engine Subsystems
 
 - **Core Contracts & Abstracts (`src/core/`)**
   - Contracts: `agent.contracts.ts`, `session.contracts.ts`, `tooling.contracts.ts`
   - Abstracts: `AbstractAgentEngine`, `AbstractSessionStore`, `AbstractHands`, `AbstractEars`, `AbstractToolRegistry`
-- **Tier 1: Agents (`src/agents/`)** [5 classes - MAX CAP]
+- **Tier 1: Agents (`src/agents/`)**
   - `base/agent-config.ts`: AgentConfig
   - `extensions/`: PromptComposer, ModelResolver, AgentSlashRouter, AgentEngine (`extends AbstractAgentEngine`)
-- **Tier 2: Sessions (`src/sessions/`)** [5 classes - MAX CAP]
+- **Tier 2: Sessions (`src/sessions/`)**
   - `base/session-context.ts`: SessionContext
   - `extensions/`: SessionCompactor, SessionVfs, SessionMemoryStore, PersistentSessionStore (`extends AbstractSessionStore`)
-- **Tier 3: Tooling (`src/tooling/`)** [5 classes - MAX CAP]
+- **Tier 3: Tooling (`src/tooling/`)**
   - `base/eyes.ts`: Eyes
   - `extensions/`: SkillsIngestor, AnchoredHands (`extends AbstractHands`), ProtocolEars (`extends AbstractEars`), ValidatingToolRegistry (`extends AbstractToolRegistry`)
 - **Container Factory & Composition Root**:
