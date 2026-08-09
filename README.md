@@ -15,26 +15,19 @@
 
 <br/>
 
-[🎓 Academic Paper](.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md) • [📦 Package Matrix](.wiki/package-mappings/PACKAGE-MAPPING-MATRIX.md) • [🧠 Osmosis Methodology](.wiki/agent/osmosis-methodology.md) • [📋 API Reference](.wiki/agent/api-reference.md) • [📖 ADR Index](.wiki/adr/README.md) • [🤝 Contributing](CONTRIBUTING.md)
+| **Core Navigation** | **Documentation & Wiki** | **Subsystem Source Code** |
+|---|---|---|
+| 📌 [Executive Brief](#-executive-brief) | 🎓 [Academic Whitepaper](.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md) | ⚡ [Composition Root](src/index.ts) |
+| ⚡ [Comparison Matrix](#-comparison-matrix--empirical-benchmarks) | 📄 [Osmosis Paradigm](.wiki/whitepaper/OSMOSIS-WHITEPAPER.md) | 🏭 [Engine Factory](src/factories/monolith-factory.ts) |
+| 🏗️ [Architecture Tree](#%EF%B8%8F-subsystem-architecture--file-tree) | 📦 [1-to-1 Package Matrix](.wiki/package-mappings/PACKAGE-MAPPING-MATRIX.md) | ⚙️ [Core Abstracts](src/core/abstracts/) |
+| 🧪 [Osmosis Methodology](#-the-osmosis-learning-methodology) | 🧠 [Handoff Strategy Guide](.wiki/agent/osmosis-methodology.md) | 🧠 [Agents Tier](src/agents/) |
+| 🚀 [Quick Start Guide](#-quick-start--installation) | 📋 [API Reference Guide](.wiki/agent/api-reference.md) | 💾 [Sessions Tier](src/sessions/) |
+| 💻 [Programmatic Usage](#-programmatic-usage-guide) | 📖 [ADR Architecture Index](.wiki/adr/README.md) | 🛠️ [Tooling Tier](src/tooling/) |
+| 🤝 [Contributing Guide](CONTRIBUTING.md) | 📋 [Design Patterns](.wiki/agent/patterns.md) | 📜 [Core Contracts](src/core/contracts/) |
 
 ---
 
 </div>
-
-## 🗺️ Table of Contents
-
-- [📌 Executive Brief](#-executive-brief)
-- [⚡ Comparison Matrix & Empirical Benchmarks](#-comparison-matrix--empirical-benchmarks)
-- [🏗️ Subsystem Architecture & File Tree](#%EF%B8%8F-subsystem-architecture--file-tree)
-- [🧪 The Osmosis Learning Methodology](#-the-osmosis-learning-methodology)
-- [🚀 Quick Start & Installation](#-quick-start--installation)
-- [💻 Programmatic Usage Guide](#-programmatic-usage-guide)
-- [📦 1-to-1 Package Mapping Index](#-1-to-1-package-mapping-index)
-- [🎓 Academic Whitepapers & Research](#-academic-whitepapers--research)
-- [📖 Architecture Decision Records (ADRs)](#-architecture-decision-records-adrs)
-- [📄 License & Contributing](#-license--contributing)
-
----
 
 ## 📌 Executive Brief
 
@@ -44,6 +37,8 @@ Traditional AI agent frameworks suffer from **"framework soup"**—sprawling mul
 
 > 🎓 **Read the Formal Academic Research Paper**: [AKD-DSO Specification Paper](.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md)  
 > 📦 **Explore the 1-to-1 Package Mapping Matrix**: [Package Mapping Matrix](.wiki/package-mappings/PACKAGE-MAPPING-MATRIX.md)
+
+[⬆ Back to Top](#-lumi-new)
 
 ---
 
@@ -57,6 +52,8 @@ Traditional AI agent frameworks suffer from **"framework soup"**—sprawling mul
 | **State Rewind Latency** | $285\text{ ms}$ (Re-parse) | **$<0.1\text{ ms}$** ($O(1)$ Pointer) | **$2850\times$ Speedup** |
 | **Memory Footprint** | $142\text{ MB}$ | **$18.4\text{ MB}$** | **$87.0\%$ Reduction** |
 | **File Editing** | Drifting RegEx | **Line-Anchored Hash Verification** (`hashline`) | **Zero Line Drift** |
+
+[⬆ Back to Top](#-lumi-new)
 
 ---
 
@@ -82,20 +79,45 @@ Traditional AI agent frameworks suffer from **"framework soup"**—sprawling mul
           └───────────────────┘     └───────────────────┘     └───────────────────┘
 ```
 
-### Direct Core File Links
+### Interactive Source Tree Navigation
 
-- **Composition Root**: [src/index.ts](src/index.ts) ([LumiMonolith](src/index.ts#L57))
-- **Container Factory**: [src/factories/monolith-factory.ts](src/factories/monolith-factory.ts) ([MonolithFactory](src/factories/monolith-factory.ts#L18))
-- **Core Contracts**:
-  - Agent Contracts: [src/core/contracts/agent.contracts.ts](src/core/contracts/agent.contracts.ts)
-  - Session Contracts: [src/core/contracts/session.contracts.ts](src/core/contracts/session.contracts.ts)
-  - Tooling Contracts: [src/core/contracts/tooling.contracts.ts](src/core/contracts/tooling.contracts.ts)
-- **Core Abstracts**:
-  - Abstract Engine: [src/core/abstracts/abstract-agent-engine.ts](src/core/abstracts/abstract-agent-engine.ts) ([AbstractAgentEngine](src/core/abstracts/abstract-agent-engine.ts#L12))
-  - Abstract Session Store: [src/core/abstracts/abstract-session-store.ts](src/core/abstracts/abstract-session-store.ts) ([AbstractSessionStore](src/core/abstracts/abstract-session-store.ts#L7))
-  - Abstract Hands: [src/core/abstracts/abstract-hands.ts](src/core/abstracts/abstract-hands.ts) ([AbstractHands](src/core/abstracts/abstract-hands.ts#L9))
-  - Abstract Ears: [src/core/abstracts/abstract-ears.ts](src/core/abstracts/abstract-ears.ts) ([AbstractEars](src/core/abstracts/abstract-ears.ts#L4))
-  - Abstract Tool Registry: [src/core/abstracts/abstract-tool-registry.ts](src/core/abstracts/abstract-tool-registry.ts) ([AbstractToolRegistry](src/core/abstracts/abstract-tool-registry.ts#L6))
+- [src/](src/)
+  - [core/](src/core/)
+    - [contracts/](src/core/contracts/)
+      - 📄 [agent.contracts.ts](src/core/contracts/agent.contracts.ts) — `EngineTickInput`, `EngineTickResult`, `IAgentEngine`
+      - 📄 [session.contracts.ts](src/core/contracts/session.contracts.ts) — `GameStateSnapshot`, `SessionMessage`, `ISessionStore`
+      - 📄 [tooling.contracts.ts](src/core/contracts/tooling.contracts.ts) — `IHands`, `IEars`, `IToolRegistry`, `AnchoredEditResult`
+    - [abstracts/](src/core/abstracts/)
+      - 📄 [abstract-agent-engine.ts](src/core/abstracts/abstract-agent-engine.ts) — `AbstractAgentEngine` (Deterministic tick loop template)
+      - 📄 [abstract-session-store.ts](src/core/abstracts/abstract-session-store.ts) — `AbstractSessionStore` (Snapshot & rewind engine)
+      - 📄 [abstract-hands.ts](src/core/abstracts/abstract-hands.ts) — `AbstractHands` (Physics & mutation core)
+      - 📄 [abstract-ears.ts](src/core/abstracts/abstract-ears.ts) — `AbstractEars` (Telemetry output core)
+      - 📄 [abstract-tool-registry.ts](src/core/abstracts/abstract-tool-registry.ts) — `AbstractToolRegistry` (Dispatcher core)
+  - [agents/](src/agents/)
+    - [base/agent-config.ts](src/agents/base/agent-config.ts) — `AgentConfig`
+    - [extensions/](src/agents/extensions/)
+      - 📄 [agent-engine.ts](src/agents/extensions/agent-engine.ts) — `AgentEngine extends AbstractAgentEngine`
+      - 📄 [prompt-composer.ts](src/agents/extensions/prompt-composer.ts) — `PromptComposer`
+      - 📄 [model-resolver.ts](src/agents/extensions/model-resolver.ts) — `ModelResolver`
+      - 📄 [agent-slash-router.ts](src/agents/extensions/agent-slash-router.ts) — `AgentSlashRouter`
+  - [sessions/](src/sessions/)
+    - [base/session-context.ts](src/sessions/base/session-context.ts) — `SessionContext`
+    - [extensions/](src/sessions/extensions/)
+      - 📄 [session-store.ts](src/sessions/extensions/session-store.ts) — `PersistentSessionStore extends AbstractSessionStore`
+      - 📄 [session-compactor.ts](src/sessions/extensions/session-compactor.ts) — `SessionCompactor`
+      - 📄 [session-vfs.ts](src/sessions/extensions/session-vfs.ts) — `SessionVfs`
+      - 📄 [session-memory-store.ts](src/sessions/extensions/session-memory-store.ts) — `SessionMemoryStore`
+  - [tooling/](src/tooling/)
+    - [base/eyes.ts](src/tooling/base/eyes.ts) — `Eyes` (Perception input)
+    - [extensions/](src/tooling/extensions/)
+      - 📄 [hands.ts](src/tooling/extensions/hands.ts) — `AnchoredHands extends AbstractHands` (Line-anchored hashing)
+      - 📄 [ears.ts](src/tooling/extensions/ears.ts) — `ProtocolEars extends AbstractEars` (JSON-RPC telemetry)
+      - 📄 [skills-ingestor.ts](src/tooling/extensions/skills-ingestor.ts) — `SkillsIngestor`
+      - 📄 [tool-registry.ts](src/tooling/extensions/tool-registry.ts) — `ValidatingToolRegistry extends AbstractToolRegistry`
+  - [factories/monolith-factory.ts](src/factories/monolith-factory.ts) — `MonolithFactory` (Container Bootstrapper)
+  - 📄 [index.ts](src/index.ts) — `LumiMonolith` (Single Parent Composition Root)
+
+[⬆ Back to Top](#-lumi-new)
 
 ---
 
@@ -104,6 +126,8 @@ Traditional AI agent frameworks suffer from **"framework soup"**—sprawling mul
 LUMI-NEW evolves continuously through **The Osmosis Learning Methodology**—a systematic strategy of studying production teacher models ([pi-main](file:///Users/bozoegg/Downloads/pi-main)), extracting core capabilities, discarding framework bloat through a semi-permeable filter, and reinferring features cleanly into the 3-tier monolith.
 
 > Read the full strategy guide: [The Osmosis Learning Methodology & Handoff Guide](.wiki/agent/osmosis-methodology.md)
+
+[⬆ Back to Top](#-lumi-new)
 
 ---
 
@@ -123,6 +147,8 @@ npm run check
 # Run the deterministic frame tick and rewind smoke test
 npx tsx src/index.ts
 ```
+
+[⬆ Back to Top](#-lumi-new)
 
 ---
 
@@ -160,6 +186,8 @@ lumi.rewindToSnapshot(snapshot);
 console.log("Frame index after rewind:", lumi.sessionContext.turnCount); // 1
 ```
 
+[⬆ Back to Top](#-lumi-new)
+
 ---
 
 ## 📦 1-to-1 Package Mapping Index
@@ -174,12 +202,16 @@ Detailed mappings of teacher monorepo packages to monolithic subsystems:
   - `packages/snapcompact` $\rightarrow$ [SessionCompactor.compact()](src/sessions/extensions/session-compactor.ts#L16)
   - `packages/telemetry` $\rightarrow$ [ProtocolEars.startTimer()](src/tooling/extensions/ears.ts#L12) / `.endTimer()`
 
+[⬆ Back to Top](#-lumi-new)
+
 ---
 
 ## 🎓 Academic Whitepapers & Research
 
 - 🎓 [Academic Research Paper: AKD-DSO Specification](.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md)
 - 📄 [Whitepaper: The Osmosis Paradigm & Self-Mutating Substrate](.wiki/whitepaper/OSMOSIS-WHITEPAPER.md)
+
+[⬆ Back to Top](#-lumi-new)
 
 ---
 
@@ -195,9 +227,13 @@ Detailed mappings of teacher monorepo packages to monolithic subsystems:
   - [ADR-007: Explicit OOP Class Extension Hierarchy](.wiki/adr/ADR-007-oop-class-extension-hierarchy.md)
   - [ADR-008: Deterministic Game Engine Architecture](.wiki/adr/ADR-008-deterministic-game-engine-architecture.md)
 
+[⬆ Back to Top](#-lumi-new)
+
 ---
 
 ## 📄 License & Contributing
 
 - 🤝 [Contributor Guidelines](CONTRIBUTING.md)
 - 📄 Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+
+[⬆ Back to Top](#-lumi-new)
