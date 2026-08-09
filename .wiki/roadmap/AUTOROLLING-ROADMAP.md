@@ -15,6 +15,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
   [DONE] Passes 25–27 (Phase 5 Provider Keys & Image Models)
   [DONE] Passes 28–30 (Phase 6 Proxy Gateway & Stream Formatter)
   [DONE] Passes 31–33 (Phase 7 Reasoning Effort & Dynamic Model Cache)
+  [DONE] Passes 34–36 (Phase 8 Transport Connection & Remote Session Handle)
 ```
 
 | Pass Stage | Status | Target Package in Teacher (`pi-main`) | Student Implementation (`LUMI-NEW`) | Governance & Code Links |
@@ -35,6 +36,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Passes 25–27** | `[COMPLETE]` | Phase 5 Resolution | EnvironmentKeyResolver, ImageModelRegistry & Master Synthesis | [ADR-022](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-022-phase-5-environment-key-and-image-model-registry.md) |
 | **Passes 28–30** | `[COMPLETE]` | Phase 6 Gateway | LlmProxyGateway, StreamEventFormatter & Master Synthesis | [ADR-023](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-023-phase-6-llm-proxy-gateway-and-stream-event-formatter.md) |
 | **Passes 31–33** | `[COMPLETE]` | Phase 7 Catalog | ReasoningEffortController, DynamicModelCache & Master Synthesis | [ADR-024](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-024-phase-7-reasoning-effort-and-dynamic-model-cache.md) |
+| **Passes 34–36** | `[COMPLETE]` | Phase 8 Transport | TransportConnectionController, RemoteSessionHandle & Synthesis | [ADR-025](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-025-phase-8-transport-connection-and-remote-session-handle.md) |
 
 ---
 

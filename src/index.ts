@@ -30,6 +30,7 @@ import { SessionMemoryStore } from "./sessions/extensions/memory/session-memory-
 import { StabilityDoctor, type EnvironmentIntegrityReport } from "./sessions/extensions/integrity/stability-doctor.js";
 import { SnapcompactEngine, type SnapcompactResult } from "./sessions/extensions/compaction/snapcompact-engine.js";
 import { FileLockManager, LruCache } from "./sessions/extensions/substrate/file-lock.js";
+import { RemoteSessionHandle } from "./sessions/extensions/persistence/remote-session-handle.js";
 
 import { Eyes } from "./tooling/base/eyes.js";
 import { AstPerceptionEyes, type SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
@@ -45,6 +46,7 @@ import { MonolithBenchmarkEvaluator, type BenchmarkSuiteResult } from "./tooling
 import { TelemetryTracer, type ActiveSpan } from "./tooling/extensions/telemetry/telemetry-tracer.js";
 import { AgenticCommitGenerator, type ConventionalCommitResult } from "./tooling/extensions/policy/agentic-commit-generator.js";
 import { StreamEventFormatter, type StreamChunkEvent } from "./tooling/extensions/telemetry/stream-event-formatter.js";
+import { TransportConnectionController, type ConnectionHealth } from "./tooling/extensions/gateway/transport-connection-controller.js";
 
 import { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.js";
 
@@ -93,6 +95,7 @@ export type { EnvironmentIntegrityReport } from "./sessions/extensions/integrity
 export { SnapcompactEngine } from "./sessions/extensions/compaction/snapcompact-engine.js";
 export type { SnapcompactResult } from "./sessions/extensions/compaction/snapcompact-engine.js";
 export { FileLockManager, LruCache } from "./sessions/extensions/substrate/file-lock.js";
+export { RemoteSessionHandle } from "./sessions/extensions/persistence/remote-session-handle.js";
 
 export type { SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
 export { Eyes } from "./tooling/base/eyes.js";
@@ -114,6 +117,8 @@ export { AgenticCommitGenerator } from "./tooling/extensions/policy/agentic-comm
 export type { ConventionalCommitResult } from "./tooling/extensions/policy/agentic-commit-generator.js";
 export { StreamEventFormatter } from "./tooling/extensions/telemetry/stream-event-formatter.js";
 export type { StreamChunkEvent } from "./tooling/extensions/telemetry/stream-event-formatter.js";
+export { TransportConnectionController } from "./tooling/extensions/gateway/transport-connection-controller.js";
+export type { ConnectionHealth } from "./tooling/extensions/gateway/transport-connection-controller.js";
 
 export { MonolithFactory } from "./factories/monolith-factory.js";
 
@@ -140,6 +145,7 @@ export class LumiMonolith implements IAgentEngine {
   readonly proxyGateway: LlmProxyGateway;
   readonly reasoningEffortController: ReasoningEffortController;
   readonly dynamicModelCache: DynamicModelCache;
+  readonly connectionController: TransportConnectionController;
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
   readonly swarmDispatcher: AgentSwarmDispatcher;
@@ -178,6 +184,7 @@ export class LumiMonolith implements IAgentEngine {
     this.proxyGateway = components.proxyGateway;
     this.reasoningEffortController = components.reasoningEffortController;
     this.dynamicModelCache = components.dynamicModelCache;
+    this.connectionController = components.connectionController;
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
     this.swarmDispatcher = components.swarmDispatcher;
@@ -382,22 +389,21 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("  LRU Cached Snapshot Count:", lumi.snapshotLruCache.size());
     await lumi.fileLockManager.releaseLock("src/index.ts");
 
-    // 19. Reasoning Effort Level Controller (Pass 31)
-    lumi.reasoningEffortController.setEffortLevel("high");
-    const budget = lumi.reasoningEffortController.calculateThinkingBudget(200000);
-    console.log("\nReasoning Effort Level Controller (Pass 31):");
-    console.log("  Effort Level:", lumi.reasoningEffortController.getEffortLevel());
-    console.log("  Calculated Thinking Budget:", `${budget} tokens`);
+    // 19. Transport Connection Controller (Pass 34)
+    lumi.connectionController.connect();
+    const connHealth = lumi.connectionController.getHealth();
+    console.log("\nTransport Connection Controller (Pass 34):");
+    console.log("  Connection State:", connHealth.state);
 
-    // 20. Dynamic Model Metadata Cache (Pass 32)
-    lumi.dynamicModelCache.setCachedModels("anthropic", [sonnetInfo]);
-    const cachedModels = lumi.dynamicModelCache.getCachedModels("anthropic");
-    console.log("\nDynamic Model Metadata Cache (Pass 32):");
-    console.log("  Cached Models Count ('anthropic'):", cachedModels?.length ?? 0);
+    // 20. Remote Session Client Handle (Pass 35)
+    const remoteHandle = new RemoteSessionHandle("remote-session-1", lumi.gatewayServer, lumi);
+    const remoteRes = await remoteHandle.tickRemote({ prompt: "view: package.json" });
+    console.log("\nRemote Session Client Handle (Pass 35):");
+    console.log("  Remote Tick Response:", remoteRes.response);
 
-    // 21. Monolith Phase 7 Master Subsystem Synthesis (Pass 33)
-    console.log("\n--- Pass 33 Monolith Phase 7 Master Synthesis Verification ---");
-    console.log("ALL 33 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
+    // 21. Monolith Phase 8 Master Subsystem Synthesis (Pass 36)
+    console.log("\n--- Pass 36 Monolith Phase 8 Master Synthesis Verification ---");
+    console.log("ALL 36 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });

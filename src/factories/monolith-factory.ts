@@ -22,6 +22,7 @@ import { SessionMemoryStore } from "../sessions/extensions/memory/session-memory
 import { StabilityDoctor } from "../sessions/extensions/integrity/stability-doctor.js";
 import { SnapcompactEngine } from "../sessions/extensions/compaction/snapcompact-engine.js";
 import { FileLockManager, LruCache } from "../sessions/extensions/substrate/file-lock.js";
+import { TransportConnectionController } from "../tooling/extensions/gateway/transport-connection-controller.js";
 
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
@@ -66,6 +67,7 @@ export class MonolithFactory {
     proxyGateway: LlmProxyGateway;
     reasoningEffortController: ReasoningEffortController;
     dynamicModelCache: DynamicModelCache;
+    connectionController: TransportConnectionController;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -111,6 +113,7 @@ export class MonolithFactory {
     const proxyGateway = new LlmProxyGateway();
     const reasoningEffortController = new ReasoningEffortController();
     const dynamicModelCache = new DynamicModelCache();
+    const connectionController = new TransportConnectionController();
     const slashRouter = new AgentSlashRouter();
     const mentionResolver = new MentionResolver();
     const swarmDispatcher = new AgentSwarmDispatcher();
@@ -170,6 +173,7 @@ export class MonolithFactory {
       proxyGateway,
       reasoningEffortController,
       dynamicModelCache,
+      connectionController,
       slashRouter,
       mentionResolver,
       swarmDispatcher,

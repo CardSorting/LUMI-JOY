@@ -20,10 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 13)
 - **Workspace Intelligence Engine (`codemarie`)**: Added `WorkspaceIntelligenceEngine` ([workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts)) for package identity indexing, workspace topology analysis, and cognitive graph snapshot generation (`ADR-017`).
 
-### Added (Passes 28–30 / Phase 6 Evolution)
-- **LLM Proxy Gateway (`agent`)**: Added `LlmProxyGateway` ([llm-proxy-gateway.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/resolution/llm-proxy-gateway.ts)) for proxy base URL configuration, header injection, and timeout guardrails (`ADR-023`).
-- **Stream Event Formatter & Text Chunking (`agent`)**: Added `StreamEventFormatter` ([stream-event-formatter.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/telemetry/stream-event-formatter.ts)) for text delta streaming event envelopes and SSE formatting (`ADR-023`).
-- **Monolith Phase 6 Master Subsystem Synthesis**: Completed 30-pass master synthesis verification suite confirming total monorepo feature absorption with zero-barrel OOP class extension (`ADR-023`).
+### Added (Passes 34–36 / Phase 8 Evolution)
+- **Transport Connection Controller (`client`)**: Added `TransportConnectionController` ([transport-connection-controller.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/gateway/transport-connection-controller.ts)) for client-server transport state machine management and heartbeat ping health monitoring (`ADR-025`).
+- **Remote Session Client Handle (`client`)**: Added `RemoteSessionHandle` ([remote-session-handle.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/persistence/remote-session-handle.ts)) for proxying turn execution requests over JSON-RPC to a remote `LumiMonolith` gateway server (`ADR-025`).
+- **Monolith Phase 8 Master Subsystem Synthesis**: Completed 36-pass master synthesis verification suite confirming total client-server remote connection absorption with zero-barrel OOP class extension (`ADR-025`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).

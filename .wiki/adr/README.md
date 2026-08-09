@@ -30,6 +30,7 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-022](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-022-phase-5-environment-key-and-image-model-registry.md) | Phase 5 Environment Key & Image Model Registry (Passes 25–27) | Accepted | 2026-08-09 | Phase 5 Evolution |
 | [ADR-023](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-023-phase-6-llm-proxy-gateway-and-stream-event-formatter.md) | Phase 6 LLM Proxy Gateway & Stream Event Formatter (Passes 28–30) | Accepted | 2026-08-09 | Phase 6 Evolution |
 | [ADR-024](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-024-phase-7-reasoning-effort-and-dynamic-model-cache.md) | Phase 7 Reasoning Effort & Dynamic Model Cache (Passes 31–33) | Accepted | 2026-08-09 | Phase 7 Evolution |
+| [ADR-025](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-025-phase-8-transport-connection-and-remote-session-handle.md) | Phase 8 Transport Connection & Remote Session Handle (Passes 34–36) | Accepted | 2026-08-09 | Phase 8 Evolution |
 
 ## Domain Grouping
 
