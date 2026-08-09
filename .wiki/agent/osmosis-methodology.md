@@ -1,103 +1,89 @@
-# The Osmosis Learning Methodology & Strategy Guide
+# The Osmosis Learning Methodology & Developer Handoff Guide
 
-This document establishes the official **Osmosis Learning Methodology** for evolving `/Users/bozoegg/Desktop/LUMI-NEW` by studying the production teacher model (`/Users/bozoegg/Downloads/pi-main`).
-
----
-
-## 1. Core Philosophy: Teacher vs. Evolving Monolith
-
-```
-┌───────────────────────────────────────────┐         Osmosis Filter         ┌───────────────────────────────────────────┐
-│              TEACHER MODEL                │    (Discard Over-Engineering)  │              EVOLVING MODEL               │
-│     (/Users/bozoegg/Downloads/pi-main)    │ ─────────────────────────────► │      (/Users/bozoegg/Desktop/LUMI-NEW)   │
-│                                           │                                │                                           │
-│ • 18 Monorepo Packages                    │    Absorb Core Concepts        │ • Deterministic Game Engine Architecture  │
-│ • Complex Async Message Queues            │    Reinvent in 3-Tier Monolith │ • 3-Tier Subsystem Hierarchy              │
-│ • Multi-Agent Micro-Frameworks            │    Extend Tiers As Needed      │ • Organic Tier Class Growth               │
-└───────────────────────────────────────────┘                                └───────────────────────────────────────────┘
-```
-
-The Osmosis strategy treats a large reference codebase (`pi-main`) as a **Teacher Model**. Rather than copying code blindly or inheriting multi-package overhead, `LUMI-NEW` extracts production concepts, discards unnecessary framework bloat, and reinvents the feature cleanly inside the 3-tier monolith modeling the Deterministic Game Engine Strategy.
+This document is the authoritative guide for human developers and AI agents adopting **The Osmosis Learning Methodology** in `/Users/bozoegg/Desktop/LUMI-NEW`. It details the Teacher-Student framework, the exact history of evolution passes completed, and a step-by-step playbook for continuing the evolutionary chain.
 
 ---
 
-## 2. The 4-Step Osmosis Execution Cycle
+## 1. Workspace Configuration & Roles
 
-For every evolutionary pass, future agents MUST follow this 4-step cycle:
-
-```
-  ┌───────────────────────┐
-  │  1. DEEP INSPECTION   │ Examine teacher packages, contracts, and execution paths in pi-main.
-  └───────────┬───────────┘
-              │
-              ▼
-  ┌───────────────────────┐
-  │ 2. REINTERPRET & FILTER│ Discard multi-agent queues, dynamic imports, and bloat.
-  └───────────┬───────────┘
-              │
-              ▼
-  ┌───────────────────────┐
-  │ 3. MONOLITHIC ENGRAFT │ Implement in src/core/, src/agents/, src/sessions/, or src/tooling/.
-  └───────────┬───────────┘
-              │
-              ▼
-  ┌───────────────────────┐
-  │ 4. ADR & WIKI GOVERN  │ Record decisions in .wiki/adr/ and verify type check (npm run check).
-  └───────────────────────┘
-```
-
-### Step 1: Deep Inspection
-- Scan `pi-main/packages/` or `pi-main/packages/coding-agent/src/core/` for capabilities (e.g. compactor, VFS, line hashing, schema validation).
-- Trace inputs, outputs, and edge-case handling.
-
-### Step 2: Reinterpretation & Filtering
-- **Discard**: Multi-agent inter-process channels, complex AST compilers, dynamic `await import()` calls, and parameter properties.
-- **Extract**: Underlying algorithm, state transformation, or user-facing capability.
-
-### Step 3: Monolithic Engraftment
-- Tiers can expand with new specialized classes as needed, provided every class models the **Deterministic Game Engine Strategy** (frame ticks, snapshot compatibility, DIP contracts).
-- Implement as a subclass inheriting from `src/core/abstracts/` or as an extension helper.
-
-### Step 4: Governance & Verification
-- Record architectural decisions in `.wiki/adr/ADR-XXX-<topic>.md`.
-- Update `.wiki/adr/README.md` and `.wiki/agent/playbook.md`.
-- Run `npm run check` (`tsc --noEmit`) and verify runtime execution via `npx tsx src/index.ts`.
+| Role | Repository CWD Path | Purpose & Responsibilities |
+|---|---|---|
+| **Teacher Model** | `/Users/bozoegg/Downloads/pi-main` | Reference codebase containing production feature packages (`packages/*`). Audited for algorithms, patterns, and contracts. Never modified directly. |
+| **Student Model (Evolving Engine)** | `/Users/bozoegg/Desktop/LUMI-NEW` | Greenfield 3-tier monolithic agent framework (`agents`, `sessions`, `tooling`). Reinvents absorbed concepts under the **Deterministic Game Engine Strategy**. |
 
 ---
 
-## 3. History of Osmosis Passes (Passes 1 - 5)
+## 2. Completed Evolution Ledger (Where We Left Off)
 
-| Pass | Target Concept Absorbed from `pi-main` | Reinterpreted Implementation in `LUMI-NEW` | Governance Record |
-|---|---|---|---|
-| **Pass 1** | `compaction/`, `skills.ts`, `system-prompt.ts` | [SessionCompactor](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/session-compactor.ts#L8), [SkillsIngestor](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/skills-ingestor.ts#L11), [PromptComposer](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/prompt-composer.ts#L14) | [ADR-002](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-002-osmosis-evolution-compaction-skills-composition.md) |
-| **Pass 2** | `model-resolver.ts`, `session-manager.ts`, `output-guard.ts` | [ModelResolver](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/model-resolver.ts#L13), `SessionStore.fork()`, Stream Guardrails in [Hands](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/hands.ts#L10) | [ADR-003](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-003-osmosis-evolution-model-resolution-session-forking-guardrails.md) |
-| **Pass 3** | `vfs-router.ts`, `slash-commands.ts`, `telemetry.ts` | [SessionVfs](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/session-vfs.ts#L10), [AgentSlashRouter](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/agent-slash-router.ts#L24), Microsecond Timers in [ProtocolEars](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/ears.ts#L4) | [ADR-004](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-004-osmosis-evolution-vfs-slash-routing-telemetry.md) |
-| **Pass 4** | `memory/`, Knowledge Items (KIs), Autonomous Tooling | [SessionMemoryStore](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/session-memory-store.ts#L8), `search_memory` & `save_memory` tools | [ADR-005](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-005-osmosis-evolution-memory-store-tool-chaining-knowledge-persistence.md) |
-| **Pass 5** | `packages/hashline`, `omptype`, `session-backends`, `protocol` | `applyAnchoredEdit()`, `validateToolArgs()`, `saveToFile()`, `formatJsonRpcEvent()` | [ADR-006](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-006-osmosis-evolution-monorepo-package-absorption.md) |
+The following ledger tracks every Osmosis Pass completed in `LUMI-NEW`. Future agents can inspect this table to understand the exact lineage of absorbed features:
 
----
+| Pass # | Feature Absorbed from Teacher (`pi-main`) | Student Implementation in `LUMI-NEW` | Files Created / Modified | ADR Governance |
+|---|---|---|---|---|
+| **Pass 1** | `compaction/`, `skills.ts`, `system-prompt.ts` | Dynamic turn history compactor, workspace skill ingestor, system prompt composer | [session-compactor.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/session-compactor.ts#L8), [skills-ingestor.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/skills-ingestor.ts#L11), [prompt-composer.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/prompt-composer.ts#L14) | [ADR-002](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-002-osmosis-evolution-compaction-skills-composition.md) |
+| **Pass 2** | `model-resolver.ts`, `session-manager.ts`, `output-guard.ts` | Primary/fallback model resolution, isolated session forking, execution stream guardrails | [model-resolver.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/model-resolver.ts#L13), `SessionStore.fork()`, [hands.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/hands.ts#L10) | [ADR-003](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-003-osmosis-evolution-model-resolution-session-forking-guardrails.md) |
+| **Pass 3** | `vfs-router.ts`, `slash-commands.ts`, `telemetry.ts` | In-memory VFS diff overlay, sub-millisecond slash command router, microsecond telemetry | [session-vfs.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/session-vfs.ts#L10), [agent-slash-router.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/agent-slash-router.ts#L24), [ears.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/ears.ts#L4) | [ADR-004](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-004-osmosis-evolution-vfs-slash-routing-telemetry.md) |
+| **Pass 5** | `packages/hashline`, `omptype`, `session-backends`, `protocol` | Line-anchored hash edits (`applyAnchoredEdit`), tool schema validation (`validateToolArgs`), JSON-RPC telemetry (`formatJsonRpcEvent`) | [hands.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/hands.ts#L10), [tool-registry.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/tool-registry.ts#L9), [ears.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/ears.ts#L4) | [ADR-006](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-006-osmosis-evolution-monorepo-package-absorption.md) |
+| **Refactor** | Enterprise OOP Hierarchy & Game Engine Architecture | Abstract base classes (`src/core/abstracts/`), `tick()`, `GameStateSnapshot`, frame-perfect rewind/replay | [src/core/abstracts/](file:///Users/bozoegg/Desktop/LUMI-NEW/src/core/abstracts/), [MonolithFactory](file:///Users/bozoegg/Desktop/LUMI-NEW/src/factories/monolith-factory.ts#L18), [LumiMonolith](file:///Users/bozoegg/Desktop/LUMI-NEW/src/index.ts#L57) | [ADR-007](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-007-oop-class-extension-hierarchy.md), [ADR-008](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-008-deterministic-game-engine-architecture.md) |
 
-## 4. Strategy Roadmap for Subsequent Osmosis Passes
-
-Future agents extending `LUMI-NEW` should target the following candidate packages in `/Users/bozoegg/Downloads/pi-main/packages/`:
-
-### Candidate 1: `packages/broccolidb` (Zero-GC Substrate State Storage)
-- **Concept**: Pre-allocated slab memory allocation for zero garbage-collection overhead during large session turns.
-- **LUMI Integration Plan**: Enhance [SessionStore](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/session-store.ts#L14) to pre-allocate message turn buffers using fixed typed arrays for zero-GC turn processing.
-
-### Candidate 2: `packages/codemarie` (Ast-Aware File Indexing & Symbol Search)
-- **Concept**: Fast structural code search without heavy LSP servers.
-- **LUMI Integration Plan**: Enhance [Eyes](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/base/eyes.ts#L14) with a lightweight regex-based symbol scanner (`searchSymbols`).
-
-### Candidate 3: `packages/tui` & `packages/client` (Interactive Terminal Component Framework)
-- **Concept**: Structured TUI rendering for agent turns.
-- **LUMI Integration Plan**: Connect `ProtocolEars.formatJsonRpcEvent()` to a lightweight terminal progress renderer in `src/index.ts`.
+> 📌 **Current Handoff Status**: **Pass 5 Complete & Architecture Hardened**. The next planned evolutionary pass is **Pass 6: Zero-GC Substrate Memory Allocation**.
 
 ---
 
-## 5. Non-Negotiable Strategy Constraints
+## 3. Playbook: How to Execute Next Evolution Pass (e.g., Pass 6)
 
-1. **Deterministic Game Engine Directives**: Preserve frame ticks (`tick()`), state snapshot capture (`GameStateSnapshot`), and frame rewind (`rewindToSnapshot()`).
-2. **Erasable TypeScript Syntax**: Maintain Node strip-only mode compatibility (no `enum`, no `namespace`, no constructor parameter properties).
-3. **Template Method Inheritance**: All extended classes must inherit from core contracts in `src/core/contracts/` and `src/core/abstracts/`.
-4. **Single Parent Monolith Composition**: [LumiMonolith](file:///Users/bozoegg/Desktop/LUMI-NEW/src/index.ts#L57) in `src/index.ts` remains the single parent composition root.
+When picking up development, follow this step-by-step playbook to execute a new Osmosis pass cleanly:
+
+### Phase 1: Teacher Source Audit
+1. Navigate to the Teacher Model directory: `/Users/bozoegg/Downloads/pi-main/packages/<target-package>`.
+2. Inspect core exports, types, and logic flow (e.g. studying `packages/broccolidb` for pre-allocated typed array buffers).
+
+### Phase 2: Filtering & Reinterpretation
+1. **Discard**:
+   - Multi-package dependencies, IPC message wrappers, AST compilers.
+   - Non-erasable TS constructs (`enum`, `namespace`, parameter properties).
+2. **Re-interpret**:
+   - Define a pure interface contract in `src/core/contracts/`.
+   - Implement an abstract base class hook in `src/core/abstracts/` or extend an existing tier subsystem in `src/*/extensions/`.
+
+### Phase 3: Engrafting into Game Engine Subsystem
+1. Ensure new logic hooks directly into the **Deterministic Game Engine Tick Loop** (`AbstractAgentEngine.tick()`) or **State Snapshot Engine** (`createSnapshot()` / `rewindToSnapshot()`).
+2. Add corresponding tool definitions to [ValidatingToolRegistry](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/tool-registry.ts#L9) or slash commands to [AgentSlashRouter](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/agent-slash-router.ts#L24).
+
+### Phase 4: Verification & Governance
+1. Run TypeScript type check:
+   ```bash
+   npm run check
+   ```
+2. Run runtime smoke test:
+   ```bash
+   npx tsx src/index.ts
+   ```
+3. Record a new Architecture Decision Record in `.wiki/adr/ADR-009-<name>.md`.
+4. Update `.wiki/adr/README.md`, `.wiki/agent/playbook.md`, and this Osmosis ledger.
+5. Commit with conventional commit message format: `feat(agent): ...`.
+
+---
+
+## 4. Next Evolutionary Pass Blueprints (Pass 6 & Beyond)
+
+### Blueprint: Pass 6 — Zero-GC Substrate Memory Allocation (`broccolidb`)
+- **Teacher Reference**: `/Users/bozoegg/Downloads/pi-main/packages/broccolidb`
+- **Goal**: Eliminate V8 garbage-collection pauses during long turn loops by pre-allocating slab buffers.
+- **Target Files**:
+  - `src/core/contracts/session.contracts.ts`: Add `SlabBufferSnapshot` interface.
+  - `src/sessions/extensions/session-store.ts`: Add `ArenaAllocator` pre-allocated array buffer for message turn caching.
+
+### Blueprint: Pass 7 — AST Symbol Perception (`codemarie`)
+- **Teacher Reference**: `/Users/bozoegg/Downloads/pi-main/packages/codemarie`
+- **Goal**: Enable instant regex symbol indexing without heavy LSP servers.
+- **Target Files**:
+  - `src/tooling/base/eyes.ts`: Add `searchSymbols(dirPath, query)` method to [Eyes](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/base/eyes.ts#L14).
+  - `src/tooling/extensions/tool-registry.ts`: Register `search_symbols` tool.
+
+---
+
+## 5. Non-Negotiable Rules for All Future Passes
+
+1. **Model the Game Engine Strategy**: Every turn interaction remains a frame tick (`tick()`), and state updates remain snapshot-compatible (`GameStateSnapshot`).
+2. **Erasable TypeScript Syntax**: Strict Node strip-only mode (no `enum`, no `namespace`, no parameter properties).
+3. **Single Composition Root**: [LumiMonolith](file:///Users/bozoegg/Desktop/LUMI-NEW/src/index.ts#L57) in `src/index.ts` remains the single parent composition root.
