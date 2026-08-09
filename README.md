@@ -2,6 +2,8 @@
 
 A high-performance, enterprise-grade TypeScript agent framework designed around a **Deterministic Game Engine Architecture**. LUMI-NEW models agent interactions as deterministic frame ticks (`tick()`), state transitions as immutable snapshots (`GameStateSnapshot`), and provides frame-perfect state rewind, replay, and session forking.
 
+LUMI-NEW is evolved through [The Osmosis Learning Methodology](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/osmosis-methodology.md), systematically studying the teacher model ([pi-main](file:///Users/bozoegg/Downloads/pi-main)) to absorb production capabilities while discarding framework bloat.
+
 ```
                                   ┌────────────────────────┐
                                   │      LumiMonolith      │ (src/index.ts)
@@ -117,86 +119,11 @@ npx tsx src/index.ts
 
 ---
 
-## Programmatic Usage Guide
+## Strategy & Architecture Documentation
 
-### Deterministic Frame Tick & Telemetry
+All core design decisions and evolution methodologies are documented in the workspace wiki:
 
-```typescript
-import { LumiMonolith } from "./src/index.js";
-
-// Initialize the game engine monolith
-const lumi = new LumiMonolith({
-  cwd: process.cwd(),
-});
-
-// Subscribe to JSON-RPC 2.0 telemetry stream
-lumi.ears.listen("turn_complete", (evt) => {
-  const rpcEvent = lumi.ears.formatJsonRpcEvent(evt);
-  console.log("[JSON-RPC Telemetry]", JSON.stringify(rpcEvent));
-});
-
-// Execute frame tick #1
-const frame1 = await lumi.tick({ prompt: "remember: architecture = deterministic" });
-console.log(`Frame #${frame1.frameIndex} (${frame1.durationMs}ms):`, frame1.response);
-```
-
-### Frame-Perfect Snapshot Capture & Rewind
-
-```typescript
-// 1. Create an immutable snapshot at Frame #1
-const snapshot = lumi.createSnapshot();
-console.log(`Captured Snapshot ID: ${snapshot.snapshotId}`);
-
-// 2. Advance to Frame #2
-await lumi.tick({ prompt: "view: package.json" });
-console.log("Turns before rewind:", lumi.sessionStore.getMessages().length); // 4 messages
-
-// 3. Rewind state to Snapshot #1
-lumi.rewindToSnapshot(snapshot);
-console.log("Frame after rewind:", lumi.sessionContext.turnCount); // 1
-console.log("Turns after rewind:", lumi.sessionStore.getMessages().length); // 2 messages
-```
-
-### Line-Anchored Delta Edits (`hashline`)
-
-```typescript
-// Calculate expected hash for target line
-const targetContent = "Line 2: Beta";
-const lineHash = AnchoredHands.computeLineHash(targetContent);
-
-// Apply edit with hash verification
-const result = await lumi.hands.applyAnchoredEdit(
-  "/path/to/file.txt",
-  2,          // line number (1-indexed)
-  lineHash,   // expected hash (e.g. 'h78ee7324')
-  "Line 2: Beta (Evolved)"
-);
-
-if (result.success) {
-  console.log("Anchored edit applied cleanly without line drift!");
-}
-```
-
-### Sub-Millisecond Interactive Slash Commands
-
-```typescript
-// Intercept operational commands without calling model APIs
-const statsRes = await lumi.runTurn("/stats");
-console.log(statsRes.response); // Displays active model, turn metrics, token usage
-
-const memoryRes = await lumi.runTurn("/memory");
-console.log(memoryRes.response); // Displays persistent memory facts & KIs
-
-const vfsRes = await lumi.runTurn("/vfs");
-console.log(vfsRes.response); // Displays staged VFS file buffer diffs
-```
-
----
-
-## Architecture Decision Records (ADRs)
-
-All core design decisions and evolution milestones are documented in the workspace wiki:
-
+- [The Osmosis Learning Methodology & Strategy Guide](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/osmosis-methodology.md)
 - [ADR-001: 3-Tier Monolithic Agent Architecture](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-001-3-tier-monolithic-agent-architecture.md)
 - [ADR-002: Osmosis Evolution 1 - Context Compaction, Skill Ingestion & Prompt Composition](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-002-osmosis-evolution-compaction-skills-composition.md)
 - [ADR-003: Osmosis Evolution 2 - Model Resolution, Session Branching & Execution Guardrails](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-003-osmosis-evolution-model-resolution-session-forking-guardrails.md)

@@ -1,18 +1,25 @@
-# LUMI-NEW Workspace Wiki
+# LUMI-NEW Architecture & Methodology Wiki
 
-Welcome to the workspace wiki for LUMI-NEW, an agentic framework designed around a 3-tier monolithic architecture.
+Welcome to the central documentation wiki for **LUMI-NEW** (`/Users/bozoegg/Desktop/LUMI-NEW`), an enterprise-grade agent framework built using the **Deterministic Game Engine Architecture** and evolved via the **Osmosis Learning Methodology**.
 
-## Quick Navigation
+---
 
-- [Project README](file:///Users/bozoegg/Desktop/LUMI-NEW/README.md) - Project overview, features, and quick start guide.
-- [Agent Playbook](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/playbook.md) - Primary orientation loop, system architecture, and verification commands.
-- [API Reference](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/api-reference.md) - Complete class, interface, and method reference.
-- [Architecture Decision Records (ADRs)](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/README.md) - Architectural decisions, design rationale, and governance.
+## Core Wiki Navigation
 
-## Core Agent Playbook Sections
+### 1. Architecture & Design Principles
+- [ADR Index & Architecture Decision Records](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/README.md)
+  - [ADR-001: 3-Tier Monolithic Agent Architecture](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-001-3-tier-monolithic-agent-architecture.md)
+  - [ADR-007: Explicit OOP Class Extension Hierarchy](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-007-oop-class-extension-hierarchy.md)
+  - [ADR-008: Deterministic Game Engine Architecture](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-008-deterministic-game-engine-architecture.md)
 
-- [Agent Memory](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/agent-memory.md) - Strict workspace constraints and design invariants.
-- [Key Findings](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/key-findings.md) - Lessons learned from previous multi-agent failures.
-- [Troubleshooting](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/troubleshooting.md) - Diagnostic tools and execution commands.
-- [Common Pitfalls](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/common-pitfalls.md) - Framework soup avoidance and syntax constraints.
-- [Design Patterns](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/patterns.md) - 3-tier monolithic patterns and tooling interfaces.
+### 2. Strategy & Methodology
+- [The Osmosis Learning Methodology & Strategy Guide](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/osmosis-methodology.md)
+  - Teacher Model (`pi-main`) vs Evolving Monolith (`LUMI-NEW`)
+  - The 4-Step Osmosis Cycle (Deep Inspection -> Reinterpret -> Monolithic Engraft -> Governance)
+  - Passes 1 - 5 History & Strategy Roadmap for Future Passes
+
+### 3. Developer & Agent Guides
+- [Agent Orientation Playbook](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/playbook.md)
+- [API Reference Guide](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/api-reference.md)
+- [Agent Memory & System Constraints](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/agent-memory.md)
+- [Troubleshooting & Verification](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/troubleshooting.md)

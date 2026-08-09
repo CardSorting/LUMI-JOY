@@ -6,6 +6,8 @@ This playbook serves as the primary orientation document for AI agents working i
 
 LUMI-NEW is a greenfield 3-tier monolithic agent framework built in TypeScript for Node.js (ESM). It is structured around the architectural design of a **Deterministic Game Engine**, where turns execute as frame ticks (`tick()`), state transitions are captured in immutable snapshots (`GameStateSnapshot`), and the runtime supports frame-perfect state rewind and replay.
 
+The framework evolves continuously through **The Osmosis Learning Methodology**, absorbing core features from the teacher model (`/Users/bozoegg/Downloads/pi-main`) and reinferring them cleanly into the 3-tier monolith.
+
 ### Deterministic Game Engine Subsystems
 
 - **Core Contracts & Abstracts (`src/core/`)**
@@ -34,8 +36,9 @@ npm run check
 npx tsx src/index.ts
 ```
 
-## Key Documentation & ADR Links
+## Key Documentation & Strategy Links
 
+- [The Osmosis Learning Methodology & Strategy Guide](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/osmosis-methodology.md)
 - [ADR-001: 3-Tier Monolithic Agent Architecture](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-001-3-tier-monolithic-agent-architecture.md)
 - [ADR-007: Explicit OOP Class Extension Hierarchy](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-007-oop-class-extension-hierarchy.md)
 - [ADR-008: Deterministic Game Engine Architecture](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-008-deterministic-game-engine-architecture.md)
