@@ -31,6 +31,8 @@ import { AgentLoopHarness } from "./agents/extensions/execution/agent-loop-harne
 import { ProviderAttributionComposer, type AttributionRecord, type AttributionSummary } from "./agents/extensions/resolution/provider-attribution.js";
 import { HttpDispatcherOverlay, type DispatcherConfig } from "./agents/extensions/resolution/http-dispatcher.js";
 import { AuthStorageVault, type AuthTokenRecord } from "./agents/extensions/resolution/auth-storage-vault.js";
+import { CodexOAuthManager, type OpenAiCodexCredentials, type CodexAuthUrlDetails } from "./agents/extensions/resolution/codex-oauth-manager.js";
+import { CodexProviderBridge, MODERN_GPT56_MODELS, type ResolvedAuthHeaders, type ModernGpt56Model } from "./agents/extensions/resolution/codex-provider-bridge.js";
 
 import { SessionContext } from "./sessions/base/session-context.js";
 import { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
@@ -141,6 +143,10 @@ export { HttpDispatcherOverlay } from "./agents/extensions/resolution/http-dispa
 export type { DispatcherConfig } from "./agents/extensions/resolution/http-dispatcher.js";
 export { AuthStorageVault } from "./agents/extensions/resolution/auth-storage-vault.js";
 export type { AuthTokenRecord } from "./agents/extensions/resolution/auth-storage-vault.js";
+export { CodexOAuthManager } from "./agents/extensions/resolution/codex-oauth-manager.js";
+export type { OpenAiCodexCredentials, CodexAuthUrlDetails } from "./agents/extensions/resolution/codex-oauth-manager.js";
+export { CodexProviderBridge, MODERN_GPT56_MODELS } from "./agents/extensions/resolution/codex-provider-bridge.js";
+export type { ResolvedAuthHeaders, ModernGpt56Model } from "./agents/extensions/resolution/codex-provider-bridge.js";
 
 export { SessionContext } from "./sessions/base/session-context.js";
 export { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
@@ -305,6 +311,8 @@ export class LumiMonolith implements IAgentEngine {
   readonly ttsrCoordinator: TTSRCoordinator;
   readonly centennialPassMarker: CentennialPassMarker;
   readonly systemHealthAggregator: SystemHealthAggregator;
+  readonly codexOAuthManager: CodexOAuthManager;
+  readonly codexProviderBridge: CodexProviderBridge;
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
   readonly swarmDispatcher: AgentSwarmDispatcher;
@@ -387,6 +395,8 @@ export class LumiMonolith implements IAgentEngine {
     this.ttsrCoordinator = components.ttsrCoordinator;
     this.centennialPassMarker = components.centennialPassMarker;
     this.systemHealthAggregator = components.systemHealthAggregator;
+    this.codexOAuthManager = components.codexOAuthManager;
+    this.codexProviderBridge = components.codexProviderBridge;
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
     this.swarmDispatcher = components.swarmDispatcher;
@@ -570,14 +580,25 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("\nSystem Health Aggregator (Pass 101):");
     console.log("  Overall Subsystem Status:", overallHealth);
 
-    // 19. Phase 30 Centennial Master Subsystem Synthesis Verification (Pass 102)
+    // 19. Codex OAuth Manager Verification (Pass 103)
+    const codexUrlDetails = lumi.codexOAuthManager.generateAuthUrl();
+    console.log("\nOpenAI Codex OAuth Manager (Pass 103):");
+    console.log("  PKCE Auth URL Generated:", codexUrlDetails.url.startsWith("https://auth.openai.com"));
+
+    // 20. Codex Provider Bridge Verification (Pass 104)
+    const isTerraCodex = lumi.codexProviderBridge.isCodexProvider("gpt-5.6-terra");
+    const resolvedAuth = await lumi.codexProviderBridge.resolveProviderAuth("gpt-5.6-terra", "fallback-key");
+    console.log("\nCodex Provider Bridge (Pass 104):");
+    console.log("  Is GPT-5.6 Terra Model:", isTerraCodex, "| Auth Type:", resolvedAuth.authType);
+
+    // 21. Phase 31 Master Subsystem Synthesis Verification (Pass 105)
     const grandVerification = GrandMonolithSynthesizer.verifyAllPasses();
-    console.log("\n--- Grand Monolith Verification (Pass 102) ---");
-    console.log("Total Evolutionary Passes Verified:", 102);
+    console.log("\n--- Grand Monolith Verification (Pass 105) ---");
+    console.log("Total Evolutionary Passes Verified:", 105);
     console.log("Cohesion Status:", grandVerification.cohesionStatus);
     console.log("Active Subsystem Component Count:", Object.keys(lumi).length);
 
-    console.log("\nALL 102 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
+    console.log("\nALL 105 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });

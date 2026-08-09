@@ -22,6 +22,8 @@ import { AgentLoopHarness } from "../agents/extensions/execution/agent-loop-harn
 import { ProviderAttributionComposer } from "../agents/extensions/resolution/provider-attribution.js";
 import { HttpDispatcherOverlay } from "../agents/extensions/resolution/http-dispatcher.js";
 import { AuthStorageVault } from "../agents/extensions/resolution/auth-storage-vault.js";
+import { CodexOAuthManager } from "../agents/extensions/resolution/codex-oauth-manager.js";
+import { CodexProviderBridge } from "../agents/extensions/resolution/codex-provider-bridge.js";
 
 import { SessionContext } from "../sessions/base/session-context.js";
 import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
@@ -154,6 +156,8 @@ export class MonolithFactory {
     ttsrCoordinator: TTSRCoordinator;
     centennialPassMarker: CentennialPassMarker;
     systemHealthAggregator: SystemHealthAggregator;
+    codexOAuthManager: CodexOAuthManager;
+    codexProviderBridge: CodexProviderBridge;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -241,6 +245,9 @@ export class MonolithFactory {
     const ttsrCoordinator = new TTSRCoordinator();
     const centennialPassMarker = new CentennialPassMarker();
     const systemHealthAggregator = new SystemHealthAggregator();
+    const codexOAuthManager = new CodexOAuthManager(authStorageVault);
+    const codexProviderBridge = new CodexProviderBridge(codexOAuthManager, authStorageVault);
+
 
 
 
@@ -352,6 +359,8 @@ export class MonolithFactory {
       ttsrCoordinator,
       centennialPassMarker,
       systemHealthAggregator,
+      codexOAuthManager,
+      codexProviderBridge,
       slashRouter,
       mentionResolver,
       swarmDispatcher,

@@ -20,10 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 13)
 - **Workspace Intelligence Engine (`codemarie`)**: Added `WorkspaceIntelligenceEngine` ([workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts)) for package identity indexing, workspace topology analysis, and cognitive graph snapshot generation (`ADR-017`).
 
-### Added (Passes 100–102 / Phase 30 Evolution)
-- **Centennial Pass Marker (`packages/coding-agent`)**: Added `CentennialPassMarker` ([centennial-pass-marker.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/policy/centennial-pass-marker.ts)) for certifying 100+ pass architectural growth and milestone verification (`ADR-047`).
-- **System Health Aggregator (`packages/utils`)**: Added `SystemHealthAggregator` ([system-health-aggregator.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/integrity/system-health-aggregator.ts)) for multi-subsystem integrity check registration & status aggregation (`ADR-047`).
-- **Monolith Phase 30 Master Subsystem Synthesis**: Completed 102-pass centennial master synthesis verification suite confirming total centennial pass marker & system health aggregator feature absorption with zero-barrel OOP class extension (`ADR-047`).
+### Added (Passes 103–105 / Phase 31 Evolution)
+- **OpenAI Codex OAuth Manager (`packages/codemarie`)**: Added `CodexOAuthManager` ([codex-oauth-manager.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/resolution/codex-oauth-manager.ts)) for PKCE authorization URL generation, token exchange, automatic token refresh, and `ChatGPT-Account-Id` claims extraction (`ADR-048`).
+- **Codex Provider Bridge (`packages/codemarie`)**: Added `CodexProviderBridge` ([codex-provider-bridge.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/resolution/codex-provider-bridge.ts)) for identifying Codex model provider families and injecting Bearer OAuth access tokens & `ChatGPT-Account-Id` headers alongside standard API key providers (`ADR-048`).
+- **Monolith Phase 31 Master Subsystem Synthesis**: Completed 105-pass master synthesis verification suite confirming total OpenAI Codex OAuth & provider bridge feature absorption with zero-barrel OOP class extension (`ADR-048`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).

@@ -12,7 +12,10 @@ export class ModelResolver {
   private totalTurnsExecuted = 0;
   private estimatedTokensConsumed = 0;
 
-  constructor(primaryModel = "gemini-2.5-flash", fallbackModels: readonly string[] = ["gemini-2.0-flash-lite", "claude-3-5-sonnet"]) {
+  constructor(
+    primaryModel = "gpt-5.6-terra",
+    fallbackModels: readonly string[] = ["gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-codex"]
+  ) {
     this.primaryModel = primaryModel;
     this.fallbackModels = fallbackModels;
     this.currentActiveModel = primaryModel;

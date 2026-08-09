@@ -38,6 +38,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
   [DONE] Passes 94–96 (Phase 28 Keybindings Controller & HTTP Dispatcher Overlay)
   [DONE] Passes 97–99 (Phase 29 Auth Storage Vault & TTSR Coordinator)
   [DONE] Passes 100–102 (Phase 30 Centennial Milestone & System Health Aggregator)
+  [DONE] Passes 103–105 (Phase 31 Codex OAuth & Provider Bridge)
 ```
 
 | Pass Stage | Status | Target Package in Teacher (`pi-main`) | Student Implementation (`LUMI-NEW`) | Governance & Code Links |
@@ -81,6 +82,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Passes 94–96** | `[COMPLETE]` | Phase 28 Keybindings & HTTP Overlay | KeybindingsController, HttpDispatcherOverlay & Master Synthesis | [ADR-045](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-045-phase-28-keybindings-controller-and-http-dispatcher.md) |
 | **Passes 97–99** | `[COMPLETE]` | Phase 29 Auth Vault & TTSR Telemetry | AuthStorageVault, TTSRCoordinator & Master Synthesis | [ADR-046](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-046-phase-29-auth-storage-vault-and-ttsr-coordinator.md) |
 | **Passes 100–102** | `[COMPLETE]` | Phase 30 Centennial & Health Aggregation | CentennialPassMarker, SystemHealthAggregator & Master Synthesis | [ADR-047](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-047-phase-30-centennial-pass-marker-and-system-health-aggregator.md) |
+| **Passes 103–105** | `[COMPLETE]` | Phase 31 Codex OAuth & Provider Bridge | CodexOAuthManager, CodexProviderBridge & Master Synthesis | [ADR-048](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-048-phase-31-openai-codex-oauth-and-provider-bridge.md) |
 
 
 ---
