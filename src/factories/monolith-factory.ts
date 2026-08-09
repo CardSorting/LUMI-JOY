@@ -53,6 +53,8 @@ import { McpHub } from "../tooling/extensions/mcp/mcp-hub.js";
 import { RipgrepSearchService } from "../tooling/extensions/perception/ripgrep-search-service.js";
 import { UrlContentFetcher } from "../tooling/extensions/perception/url-content-fetcher.js";
 import { LanguageSyntaxParser } from "../tooling/extensions/perception/language-syntax-parser.js";
+import { RoadmapCompletionGate } from "../tooling/extensions/policy/roadmap-completion-gate.js";
+import { RoadmapCheckpointDigest } from "../tooling/extensions/policy/roadmap-checkpoint-digest.js";
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
@@ -126,6 +128,8 @@ export class MonolithFactory {
     ripgrepSearchService: RipgrepSearchService;
     urlContentFetcher: UrlContentFetcher;
     languageSyntaxParser: LanguageSyntaxParser;
+    completionGate: RoadmapCompletionGate;
+    checkpointDigest: RoadmapCheckpointDigest;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -199,6 +203,8 @@ export class MonolithFactory {
     const ripgrepSearchService = new RipgrepSearchService();
     const urlContentFetcher = new UrlContentFetcher(resilientFetchClient);
     const languageSyntaxParser = new LanguageSyntaxParser();
+    const completionGate = new RoadmapCompletionGate();
+    const checkpointDigest = new RoadmapCheckpointDigest();
 
     const permissionController = new CommandPermissionController();
     const eyes = new AstPerceptionEyes();
@@ -291,6 +297,8 @@ export class MonolithFactory {
       ripgrepSearchService,
       urlContentFetcher,
       languageSyntaxParser,
+      completionGate,
+      checkpointDigest,
       slashRouter,
       mentionResolver,
       swarmDispatcher,

@@ -46,6 +46,7 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-038](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-038-phase-21-master-benchmark-orchestrator-and-grand-synthesis.md) | Phase 21 Master Benchmark Orchestrator & Grand Synthesis (Passes 73–75) | Accepted | 2026-08-09 | Phase 21 Evolution |
 | [ADR-039](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-039-phase-22-mcp-hub-and-ripgrep-search-service.md) | Phase 22 MCP Hub & Ripgrep Search Service (Passes 76–78) | Accepted | 2026-08-09 | Phase 22 Evolution |
 | [ADR-040](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-040-phase-23-url-content-fetcher-and-language-syntax-parser.md) | Phase 23 Web URL Content Fetcher & Language Syntax Parser (Passes 79–81) | Accepted | 2026-08-09 | Phase 23 Evolution |
+| [ADR-041](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-041-phase-24-roadmap-completion-gate-and-checkpoint-digest.md) | Phase 24 Roadmap Completion Gate & Checkpoint Digest (Passes 82–84) | Accepted | 2026-08-09 | Phase 24 Evolution |
 
 ## Domain Grouping
 

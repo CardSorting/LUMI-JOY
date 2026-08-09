@@ -31,6 +31,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
   [DONE] Passes 73–75 (Phase 21 Master Benchmark Orchestrator & Grand Synthesis)
   [DONE] Passes 76–78 (Phase 22 MCP Hub & Ripgrep Search Service)
   [DONE] Passes 79–81 (Phase 23 Web URL Content Fetcher & Language Syntax Parser)
+  [DONE] Passes 82–84 (Phase 24 Roadmap Completion Gate & Checkpoint Digest)
 ```
 
 | Pass Stage | Status | Target Package in Teacher (`pi-main`) | Student Implementation (`LUMI-NEW`) | Governance & Code Links |
@@ -67,6 +68,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Passes 73–75** | `[COMPLETE]` | Phase 21 Evals & Grand Monolith | MasterBenchmarkOrchestrator, GrandMonolithSynthesizer & Grand Synthesis | [ADR-038](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-038-phase-21-master-benchmark-orchestrator-and-grand-synthesis.md) |
 | **Passes 76–78** | `[COMPLETE]` | Phase 22 MCP & Perception | McpHub, RipgrepSearchService & Master Synthesis | [ADR-039](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-039-phase-22-mcp-hub-and-ripgrep-search-service.md) |
 | **Passes 79–81** | `[COMPLETE]` | Phase 23 Browser & Tree-Sitter | UrlContentFetcher, LanguageSyntaxParser & Master Synthesis | [ADR-040](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-040-phase-23-url-content-fetcher-and-language-syntax-parser.md) |
+| **Passes 82–84** | `[COMPLETE]` | Phase 24 Policy & Roadmap | RoadmapCompletionGate, RoadmapCheckpointDigest & Master Synthesis | [ADR-041](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-041-phase-24-roadmap-completion-gate-and-checkpoint-digest.md) |
 
 ---
 

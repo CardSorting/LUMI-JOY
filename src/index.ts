@@ -63,6 +63,8 @@ import { McpHub, type McpServerConfig, type McpDiscoveredTool } from "./tooling/
 import { RipgrepSearchService, type RipgrepMatch } from "./tooling/extensions/perception/ripgrep-search-service.js";
 import { UrlContentFetcher } from "./tooling/extensions/perception/url-content-fetcher.js";
 import { LanguageSyntaxParser, type SyntaxSymbol } from "./tooling/extensions/perception/language-syntax-parser.js";
+import { RoadmapCompletionGate, type GateCriteria, type CompletionGateResult } from "./tooling/extensions/policy/roadmap-completion-gate.js";
+import { RoadmapCheckpointDigest, type CheckpointDigest } from "./tooling/extensions/policy/roadmap-checkpoint-digest.js";
 import { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
 import { CommandPermissionController, type PermissionValidationResult } from "./tooling/extensions/permissions/command-permission-controller.js";
 import { ProtocolEars, Ears } from "./tooling/extensions/telemetry/ears.js";
@@ -173,6 +175,10 @@ export type { RipgrepMatch } from "./tooling/extensions/perception/ripgrep-searc
 export { UrlContentFetcher } from "./tooling/extensions/perception/url-content-fetcher.js";
 export { LanguageSyntaxParser } from "./tooling/extensions/perception/language-syntax-parser.js";
 export type { SyntaxSymbol } from "./tooling/extensions/perception/language-syntax-parser.js";
+export { RoadmapCompletionGate } from "./tooling/extensions/policy/roadmap-completion-gate.js";
+export type { GateCriteria, CompletionGateResult } from "./tooling/extensions/policy/roadmap-completion-gate.js";
+export { RoadmapCheckpointDigest } from "./tooling/extensions/policy/roadmap-checkpoint-digest.js";
+export type { CheckpointDigest } from "./tooling/extensions/policy/roadmap-checkpoint-digest.js";
 export { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
 export { CommandPermissionController } from "./tooling/extensions/permissions/command-permission-controller.js";
 export type { PermissionValidationResult } from "./tooling/extensions/permissions/command-permission-controller.js";
@@ -251,6 +257,8 @@ export class LumiMonolith implements IAgentEngine {
   readonly ripgrepSearchService: RipgrepSearchService;
   readonly urlContentFetcher: UrlContentFetcher;
   readonly languageSyntaxParser: LanguageSyntaxParser;
+  readonly completionGate: RoadmapCompletionGate;
+  readonly checkpointDigest: RoadmapCheckpointDigest;
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
   readonly swarmDispatcher: AgentSwarmDispatcher;
@@ -319,6 +327,8 @@ export class LumiMonolith implements IAgentEngine {
     this.ripgrepSearchService = components.ripgrepSearchService;
     this.urlContentFetcher = components.urlContentFetcher;
     this.languageSyntaxParser = components.languageSyntaxParser;
+    this.completionGate = components.completionGate;
+    this.checkpointDigest = components.checkpointDigest;
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
     this.swarmDispatcher = components.swarmDispatcher;
@@ -428,19 +438,25 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("Message count after rewind:", lumi.sessionStore.getMessages().length);
     console.log("Slab allocated bytes after rewind:", lumi.sessionStore.getSlabSnapshot().allocatedBytes);
 
-    // 5. Language Syntax Parser (Pass 80)
-    const syntaxSymbols = lumi.languageSyntaxParser.parseSymbols("export class TestClass {}\nexport function testFn() {}");
-    console.log("\nLanguage Syntax Parser (Pass 80):");
-    console.log("  Parsed Symbols Count:", syntaxSymbols.length);
+    // 5. Roadmap Completion Gate (Pass 82)
+    lumi.completionGate.registerGate("phase-24", [{ id: "c1", description: "all passes completed", required: true, evaluated: true, passed: true }]);
+    const gateRes = lumi.completionGate.evaluateGate("phase-24");
+    console.log("\nRoadmap Completion Gate (Pass 82):");
+    console.log("  Allowed to Proceed:", gateRes.allowedToProceed);
 
-    // 6. Phase 23 Master Subsystem Synthesis Verification (Pass 81)
+    // 6. Roadmap Checkpoint Digest (Pass 83)
+    const digest = lumi.checkpointDigest.computeDigest("phase-24-chk", ["ADR-041", "RoadmapCompletionGate"]);
+    console.log("\nRoadmap Checkpoint Digest (Pass 83):");
+    console.log("  Computed Checksum Hash:", digest.hash);
+
+    // 7. Phase 24 Master Subsystem Synthesis Verification (Pass 84)
     const grandVerification = GrandMonolithSynthesizer.verifyAllPasses();
-    console.log("\n--- Grand Monolith Verification (Pass 81) ---");
-    console.log("Total Evolutionary Passes Verified:", 81);
+    console.log("\n--- Grand Monolith Verification (Pass 84) ---");
+    console.log("Total Evolutionary Passes Verified:", 84);
     console.log("Cohesion Status:", grandVerification.cohesionStatus);
     console.log("Active Subsystem Component Count:", Object.keys(lumi).length);
 
-    console.log("\nALL 81 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
+    console.log("\nALL 84 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });

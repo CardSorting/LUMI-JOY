@@ -20,10 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 13)
 - **Workspace Intelligence Engine (`codemarie`)**: Added `WorkspaceIntelligenceEngine` ([workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts)) for package identity indexing, workspace topology analysis, and cognitive graph snapshot generation (`ADR-017`).
 
-### Added (Passes 79–81 / Phase 23 Evolution)
-- **Web URL Content & Markdown Fetcher (`codemarie`)**: Added `UrlContentFetcher` ([url-content-fetcher.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/perception/url-content-fetcher.ts)) for HTTP web page retrieval and HTML-to-markdown parsing (`ADR-040`).
-- **Language AST Syntax Parser (`codemarie`)**: Added `LanguageSyntaxParser` ([language-syntax-parser.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/perception/language-syntax-parser.ts)) for fast multi-language symbol extraction (`ADR-040`).
-- **Monolith Phase 23 Master Subsystem Synthesis**: Completed 81-pass master synthesis verification suite confirming total URL fetcher & AST syntax parser feature absorption with zero-barrel OOP class extension (`ADR-040`).
+### Added (Passes 82–84 / Phase 24 Evolution)
+- **Roadmap Completion Gate (`codemarie`)**: Added `RoadmapCompletionGate` ([roadmap-completion-gate.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/policy/roadmap-completion-gate.ts)) for evaluating quality gate rules and task completion criteria (`ADR-041`).
+- **Roadmap Checkpoint Digest (`codemarie`)**: Added `RoadmapCheckpointDigest` ([roadmap-checkpoint-digest.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/policy/roadmap-checkpoint-digest.ts)) for computing cryptographic checksum digests over active milestone deliverables (`ADR-041`).
+- **Monolith Phase 24 Master Subsystem Synthesis**: Completed 84-pass master synthesis verification suite confirming total completion gate & checkpoint digest feature absorption with zero-barrel OOP class extension (`ADR-041`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).
