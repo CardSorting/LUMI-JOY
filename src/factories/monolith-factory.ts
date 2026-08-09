@@ -49,6 +49,8 @@ import { ArgumentCoercer } from "../tooling/extensions/registry/argument-coercer
 import { BatchEditAnchorer } from "../tooling/extensions/hashline/batch-edit-anchorer.js";
 import { DiffSynthesizer } from "../tooling/extensions/hashline/diff-synthesizer.js";
 import { MasterBenchmarkOrchestrator } from "../tooling/extensions/evals/master-benchmark-orchestrator.js";
+import { McpHub } from "../tooling/extensions/mcp/mcp-hub.js";
+import { RipgrepSearchService } from "../tooling/extensions/perception/ripgrep-search-service.js";
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
@@ -118,6 +120,8 @@ export class MonolithFactory {
     batchAnchorer: BatchEditAnchorer;
     diffSynthesizer: DiffSynthesizer;
     masterBenchmarkOrchestrator: MasterBenchmarkOrchestrator;
+    mcpHub: McpHub;
+    ripgrepSearchService: RipgrepSearchService;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -187,6 +191,8 @@ export class MonolithFactory {
     const tabSpacingNormalizer = new TabSpacingNormalizer();
     const schemaValidator = new ToolCallSchemaValidator();
     const argumentCoercer = new ArgumentCoercer();
+    const mcpHub = new McpHub();
+    const ripgrepSearchService = new RipgrepSearchService();
 
     const permissionController = new CommandPermissionController();
     const eyes = new AstPerceptionEyes();
@@ -275,6 +281,8 @@ export class MonolithFactory {
       batchAnchorer,
       diffSynthesizer,
       masterBenchmarkOrchestrator,
+      mcpHub,
+      ripgrepSearchService,
       slashRouter,
       mentionResolver,
       swarmDispatcher,

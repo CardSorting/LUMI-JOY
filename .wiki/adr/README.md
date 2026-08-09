@@ -44,6 +44,7 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-036](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-036-phase-19-workspace-git-ignore-filter-and-tree-walker.md) | Phase 19 Workspace Git Ignore Filter & Tree Walker (Passes 67–69) | Accepted | 2026-08-09 | Phase 19 Evolution |
 | [ADR-037](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-037-phase-20-system-prompt-template-engine-and-dynamic-variable-injector.md) | Phase 20 System Prompt Template Engine & Dynamic Variable Injector (Passes 70–72) | Accepted | 2026-08-09 | Phase 20 Evolution |
 | [ADR-038](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-038-phase-21-master-benchmark-orchestrator-and-grand-synthesis.md) | Phase 21 Master Benchmark Orchestrator & Grand Synthesis (Passes 73–75) | Accepted | 2026-08-09 | Phase 21 Evolution |
+| [ADR-039](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-039-phase-22-mcp-hub-and-ripgrep-search-service.md) | Phase 22 MCP Hub & Ripgrep Search Service (Passes 76–78) | Accepted | 2026-08-09 | Phase 22 Evolution |
 
 ## Domain Grouping
 
