@@ -4,6 +4,7 @@ import { PromptComposer } from "../agents/extensions/compaction/prompt-composer.
 import { ModelResolver } from "../agents/extensions/resolution/model-resolver.js";
 import { AgentSlashRouter } from "../agents/extensions/resolution/agent-slash-router.js";
 import { MentionResolver } from "../agents/extensions/mentions/mention-resolver.js";
+import { AgentSwarmDispatcher } from "../agents/extensions/swarm/agent-swarm-dispatcher.js";
 import { SessionContext } from "../sessions/base/session-context.js";
 import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
 import { SessionCompactor } from "../sessions/extensions/compaction/session-compactor.js";
@@ -37,6 +38,7 @@ export class MonolithFactory {
     modelResolver: ModelResolver;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
+    swarmDispatcher: AgentSwarmDispatcher;
     eyes: AstPerceptionEyes;
     hands: AnchoredHands;
     ears: ProgressStreamingEars;
@@ -62,6 +64,7 @@ export class MonolithFactory {
     );
     const slashRouter = new AgentSlashRouter();
     const mentionResolver = new MentionResolver();
+    const swarmDispatcher = new AgentSwarmDispatcher();
 
     const eyes = new AstPerceptionEyes();
     const hands = new AnchoredHands();
@@ -101,6 +104,7 @@ export class MonolithFactory {
       modelResolver,
       slashRouter,
       mentionResolver,
+      swarmDispatcher,
       eyes,
       hands,
       ears,

@@ -12,6 +12,7 @@ import { PromptComposer } from "./agents/extensions/compaction/prompt-composer.j
 import { ModelResolver } from "./agents/extensions/resolution/model-resolver.js";
 import { AgentSlashRouter } from "./agents/extensions/resolution/agent-slash-router.js";
 import { MentionResolver } from "./agents/extensions/mentions/mention-resolver.js";
+import { AgentSwarmDispatcher, type SwarmSubagentTaskResult } from "./agents/extensions/swarm/agent-swarm-dispatcher.js";
 import { SessionContext } from "./sessions/base/session-context.js";
 import { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
 import { SessionCompactor } from "./sessions/extensions/compaction/session-compactor.js";
@@ -44,6 +45,8 @@ export { PromptComposer } from "./agents/extensions/compaction/prompt-composer.j
 export { ModelResolver } from "./agents/extensions/resolution/model-resolver.js";
 export { AgentSlashRouter } from "./agents/extensions/resolution/agent-slash-router.js";
 export { MentionResolver } from "./agents/extensions/mentions/mention-resolver.js";
+export { AgentSwarmDispatcher } from "./agents/extensions/swarm/agent-swarm-dispatcher.js";
+export type { SwarmSubagentTaskResult } from "./agents/extensions/swarm/agent-swarm-dispatcher.js";
 export { SessionContext } from "./sessions/base/session-context.js";
 export { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
 export { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.js";
@@ -76,6 +79,7 @@ export class LumiMonolith implements IAgentEngine {
   readonly modelResolver: ModelResolver;
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
+  readonly swarmDispatcher: AgentSwarmDispatcher;
   readonly eyes: AstPerceptionEyes;
   readonly hands: AnchoredHands;
   readonly ears: ProgressStreamingEars;
@@ -95,6 +99,7 @@ export class LumiMonolith implements IAgentEngine {
     this.modelResolver = components.modelResolver;
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
+    this.swarmDispatcher = components.swarmDispatcher;
     this.eyes = components.eyes;
     this.hands = components.hands;
     this.ears = components.ears;
@@ -207,6 +212,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("\nModule Decomposition Audit (Pass 10):");
     console.log("  Integrity Score:", report.integrityScore);
     console.log("  Coupling Score:", report.couplingScore);
+
+    // 9. Swarm Subagent Task Delegation (Pass 11)
+    const swarmTask = await lumi.swarmDispatcher.delegateSubagentTask("view: package.json", lumi);
+    console.log("\nSwarm Subagent Task Delegation (Pass 11):");
+    console.log("  Task ID:", swarmTask.taskId);
+    console.log("  Child Session ID:", swarmTask.childSessionId);
+    console.log("  Subagent Response:", swarmTask.tickResult.response);
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });
