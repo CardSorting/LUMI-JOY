@@ -14,12 +14,16 @@ import { AgentSlashRouter } from "./agents/extensions/resolution/agent-slash-rou
 import { MentionResolver } from "./agents/extensions/mentions/mention-resolver.js";
 import { AgentSwarmDispatcher, type SwarmSubagentTaskResult } from "./agents/extensions/swarm/agent-swarm-dispatcher.js";
 import { WorkspaceIntelligenceEngine, type WorkspaceCognitiveModel } from "./agents/extensions/intelligence/workspace-intelligence.js";
+import { ModelCatalog, type ModelSpecs } from "./agents/extensions/resolution/model-catalog.js";
+
 import { SessionContext } from "./sessions/base/session-context.js";
 import { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
 import { SessionCompactor } from "./sessions/extensions/compaction/session-compactor.js";
 import { SessionVfs } from "./sessions/extensions/vfs/session-vfs.js";
 import { SessionMemoryStore } from "./sessions/extensions/memory/session-memory-store.js";
 import { StabilityDoctor, type EnvironmentIntegrityReport } from "./sessions/extensions/integrity/stability-doctor.js";
+import { SnapcompactEngine, type SnapcompactResult } from "./sessions/extensions/compaction/snapcompact-engine.js";
+
 import { Eyes } from "./tooling/base/eyes.js";
 import { AstPerceptionEyes, type SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
@@ -29,6 +33,8 @@ import { ProgressStreamingEars, TerminalProgressRenderer } from "./tooling/exten
 import { SkillsIngestor } from "./tooling/extensions/registry/skills-ingestor.js";
 import { ValidatingToolRegistry, ToolRegistry } from "./tooling/extensions/registry/tool-registry.js";
 import { ModuleDecomposer } from "./tooling/extensions/policy/module-decomposer.js";
+import { MonolithGatewayServer } from "./tooling/extensions/gateway/monolith-gateway-server.js";
+import { MonolithBenchmarkEvaluator, type BenchmarkSuiteResult } from "./tooling/extensions/evals/benchmark-evaluator.js";
 
 import { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.js";
 
@@ -52,6 +58,9 @@ export { AgentSwarmDispatcher } from "./agents/extensions/swarm/agent-swarm-disp
 export type { SwarmSubagentTaskResult } from "./agents/extensions/swarm/agent-swarm-dispatcher.js";
 export { WorkspaceIntelligenceEngine } from "./agents/extensions/intelligence/workspace-intelligence.js";
 export type { WorkspaceCognitiveModel } from "./agents/extensions/intelligence/workspace-intelligence.js";
+export { ModelCatalog } from "./agents/extensions/resolution/model-catalog.js";
+export type { ModelSpecs } from "./agents/extensions/resolution/model-catalog.js";
+
 export { SessionContext } from "./sessions/base/session-context.js";
 export { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
 export { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.js";
@@ -60,6 +69,9 @@ export { SessionVfs } from "./sessions/extensions/vfs/session-vfs.js";
 export { SessionMemoryStore } from "./sessions/extensions/memory/session-memory-store.js";
 export { StabilityDoctor } from "./sessions/extensions/integrity/stability-doctor.js";
 export type { EnvironmentIntegrityReport } from "./sessions/extensions/integrity/stability-doctor.js";
+export { SnapcompactEngine } from "./sessions/extensions/compaction/snapcompact-engine.js";
+export type { SnapcompactResult } from "./sessions/extensions/compaction/snapcompact-engine.js";
+
 export type { SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
 export { Eyes } from "./tooling/base/eyes.js";
 export { AstPerceptionEyes } from "./tooling/extensions/perception/ast-eyes.js";
@@ -71,6 +83,10 @@ export { ProgressStreamingEars, TerminalProgressRenderer } from "./tooling/exten
 export { SkillsIngestor } from "./tooling/extensions/registry/skills-ingestor.js";
 export { ValidatingToolRegistry, ToolRegistry } from "./tooling/extensions/registry/tool-registry.js";
 export { ModuleDecomposer } from "./tooling/extensions/policy/module-decomposer.js";
+export { MonolithGatewayServer } from "./tooling/extensions/gateway/monolith-gateway-server.js";
+export { MonolithBenchmarkEvaluator } from "./tooling/extensions/evals/benchmark-evaluator.js";
+export type { BenchmarkSuiteResult } from "./tooling/extensions/evals/benchmark-evaluator.js";
+
 export { MonolithFactory } from "./factories/monolith-factory.js";
 
 /**
@@ -86,12 +102,16 @@ export class LumiMonolith implements IAgentEngine {
   readonly sessionVfs: SessionVfs;
   readonly sessionMemoryStore: SessionMemoryStore;
   readonly stabilityDoctor: StabilityDoctor;
+  readonly snapcompactEngine: SnapcompactEngine;
   readonly modelResolver: ModelResolver;
+  readonly modelCatalog: ModelCatalog;
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
   readonly swarmDispatcher: AgentSwarmDispatcher;
   readonly intelligenceEngine: WorkspaceIntelligenceEngine;
   readonly permissionController: CommandPermissionController;
+  readonly gatewayServer: MonolithGatewayServer;
+  readonly benchmarkEvaluator: MonolithBenchmarkEvaluator;
   readonly eyes: AstPerceptionEyes;
   readonly hands: AnchoredHands;
   readonly ears: ProgressStreamingEars;
@@ -109,12 +129,16 @@ export class LumiMonolith implements IAgentEngine {
     this.sessionVfs = components.sessionVfs;
     this.sessionMemoryStore = components.sessionMemoryStore;
     this.stabilityDoctor = components.stabilityDoctor;
+    this.snapcompactEngine = components.snapcompactEngine;
     this.modelResolver = components.modelResolver;
+    this.modelCatalog = components.modelCatalog;
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
     this.swarmDispatcher = components.swarmDispatcher;
     this.intelligenceEngine = components.intelligenceEngine;
     this.permissionController = components.permissionController;
+    this.gatewayServer = components.gatewayServer;
+    this.benchmarkEvaluator = components.benchmarkEvaluator;
     this.eyes = components.eyes;
     this.hands = components.hands;
     this.ears = components.ears;
@@ -253,6 +277,35 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("\nCommand Permission & Security Guardrail Audit (Pass 14):");
     console.log("  'sudo rm -rf /' Allowed:", permResult.allowed);
     console.log("  Blocked Reason:", permResult.reason);
+
+    // 13. Snapcompact History Compression (Pass 15)
+    const snapResult = lumi.snapcompactEngine.compactMessages(lumi.sessionStore.getMessages());
+    console.log("\nSnapcompact History Compression (Pass 15):");
+    console.log("  Archived Message Count:", snapResult.originalMessageCount);
+    console.log("  Compacted Frame Count:", snapResult.compactedFrameCount);
+    console.log("  Compression Summary:", snapResult.summaryText);
+
+    // 14. Model Catalog & Context Pricing Registry (Pass 16)
+    const sonnetInfo = lumi.modelCatalog.getModelInfo("claude-3-5-sonnet");
+    const turnCost = lumi.modelCatalog.calculateTurnCost("claude-3-5-sonnet", 1000, 500);
+    console.log("\nModel Catalog & Context Pricing Registry (Pass 16):");
+    console.log("  Model Specs:", `${sonnetInfo.modelName} (${sonnetInfo.contextWindowTokens} tokens max context)`);
+    console.log("  1k Input / 500 Output Turn Cost:", `$${turnCost}`);
+
+    // 15. Remote Web Gateway Server (Pass 17)
+    const gatewayRes = await lumi.gatewayServer.handleJsonRpcRequest(
+      JSON.stringify({ jsonrpc: "2.0", id: "rpc-1", method: "engine/audit" }),
+      lumi
+    );
+    console.log("\nRemote Web Gateway Server JSON-RPC Response (Pass 17):");
+    console.log(" ", gatewayRes.substring(0, 100) + "...");
+
+    // 16. Automated Benchmark Evaluator (Pass 18)
+    const benchResult = await lumi.benchmarkEvaluator.runBenchmarkSuite(lumi);
+    console.log("\nAutomated Benchmark Evaluator Suite (Pass 18):");
+    console.log("  Total Benchmark Tests:", benchResult.totalTests);
+    console.log("  Pass Rate:", `${benchResult.passRate}%`);
+    console.log("  Mean Turn Latency:", `${benchResult.meanLatencyMs}ms`);
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });

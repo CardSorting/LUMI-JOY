@@ -6,12 +6,16 @@ import { AgentSlashRouter } from "../agents/extensions/resolution/agent-slash-ro
 import { MentionResolver } from "../agents/extensions/mentions/mention-resolver.js";
 import { AgentSwarmDispatcher } from "../agents/extensions/swarm/agent-swarm-dispatcher.js";
 import { WorkspaceIntelligenceEngine } from "../agents/extensions/intelligence/workspace-intelligence.js";
+import { ModelCatalog } from "../agents/extensions/resolution/model-catalog.js";
+
 import { SessionContext } from "../sessions/base/session-context.js";
 import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
 import { SessionCompactor } from "../sessions/extensions/compaction/session-compactor.js";
 import { SessionVfs } from "../sessions/extensions/vfs/session-vfs.js";
 import { SessionMemoryStore } from "../sessions/extensions/memory/session-memory-store.js";
 import { StabilityDoctor } from "../sessions/extensions/integrity/stability-doctor.js";
+import { SnapcompactEngine } from "../sessions/extensions/compaction/snapcompact-engine.js";
+
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
@@ -20,6 +24,9 @@ import { ProtocolEars } from "../tooling/extensions/telemetry/ears.js";
 import { ProgressStreamingEars } from "../tooling/extensions/progress/progress-ears.js";
 import { SkillsIngestor } from "../tooling/extensions/registry/skills-ingestor.js";
 import { ValidatingToolRegistry } from "../tooling/extensions/registry/tool-registry.js";
+import { MonolithGatewayServer } from "../tooling/extensions/gateway/monolith-gateway-server.js";
+import { MonolithBenchmarkEvaluator } from "../tooling/extensions/evals/benchmark-evaluator.js";
+
 import type { GameStateSnapshot } from "../core/contracts/session.contracts.js";
 
 export interface MonolithFactoryOptions {
@@ -39,12 +46,16 @@ export class MonolithFactory {
     sessionVfs: SessionVfs;
     sessionMemoryStore: SessionMemoryStore;
     stabilityDoctor: StabilityDoctor;
+    snapcompactEngine: SnapcompactEngine;
     modelResolver: ModelResolver;
+    modelCatalog: ModelCatalog;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
     intelligenceEngine: WorkspaceIntelligenceEngine;
     permissionController: CommandPermissionController;
+    gatewayServer: MonolithGatewayServer;
+    benchmarkEvaluator: MonolithBenchmarkEvaluator;
     eyes: AstPerceptionEyes;
     hands: AnchoredHands;
     ears: ProgressStreamingEars;
@@ -65,16 +76,22 @@ export class MonolithFactory {
     const sessionVfs = new SessionVfs();
     const sessionMemoryStore = new SessionMemoryStore();
     const stabilityDoctor = new StabilityDoctor();
+    const snapcompactEngine = new SnapcompactEngine();
+
     const modelResolver = new ModelResolver(
       config.modelName,
       options.fallbackModels
     );
+    const modelCatalog = new ModelCatalog();
     const slashRouter = new AgentSlashRouter();
     const mentionResolver = new MentionResolver();
     const swarmDispatcher = new AgentSwarmDispatcher();
     const intelligenceEngine = new WorkspaceIntelligenceEngine();
 
     const permissionController = new CommandPermissionController();
+    const gatewayServer = new MonolithGatewayServer();
+    const benchmarkEvaluator = new MonolithBenchmarkEvaluator();
+
     const eyes = new AstPerceptionEyes();
     const hands = new AnchoredHands(permissionController);
     const ears = new ProgressStreamingEars();
@@ -111,12 +128,16 @@ export class MonolithFactory {
       sessionVfs,
       sessionMemoryStore,
       stabilityDoctor,
+      snapcompactEngine,
       modelResolver,
+      modelCatalog,
       slashRouter,
       mentionResolver,
       swarmDispatcher,
       intelligenceEngine,
       permissionController,
+      gatewayServer,
+      benchmarkEvaluator,
       eyes,
       hands,
       ears,

@@ -20,8 +20,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 13)
 - **Workspace Intelligence Engine (`codemarie`)**: Added `WorkspaceIntelligenceEngine` ([workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts)) for package identity indexing, workspace topology analysis, and cognitive graph snapshot generation (`ADR-017`).
 
-### Added (Pass 14)
-- **Command Permission & Security Guardrails (`codemarie`)**: Added `CommandPermissionController` ([command-permission-controller.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/permissions/command-permission-controller.ts)) integrated into `AnchoredHands.runCommand()` for shell execution security guardrails, allowlists/denylists, and destructive operator blocking (`ADR-018`).
+### Added (Passes 15–18 / Phase 2 Evolution)
+- **Snapcompact History Compression (`snapcompact`)**: Added `SnapcompactEngine` ([snapcompact-engine.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/compaction/snapcompact-engine.ts)) for dense text turn bitmap history archiving (`ADR-019`).
+- **Model Catalog & Context Pricing Registry (`catalog`)**: Added `ModelCatalog` ([model-catalog.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/resolution/model-catalog.ts)) for model specs, max output tokens, and turn token cost calculation (`ADR-019`).
+- **Remote Web Gateway Server (`server`)**: Added `MonolithGatewayServer` ([monolith-gateway-server.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/gateway/monolith-gateway-server.ts)) for JSON-RPC 2.0 gateway request handling (`ADR-019`).
+- **Automated Benchmark Evaluator (`evals`)**: Added `MonolithBenchmarkEvaluator` ([benchmark-evaluator.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/evals/benchmark-evaluator.ts)) for turn benchmark assertions and latency profiling (`ADR-019`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).

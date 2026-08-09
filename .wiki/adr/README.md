@@ -24,6 +24,7 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-016](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-016-environment-integrity-forensic-healing.md) | Environment Integrity & Forensic Healing (`codemarie`) | Accepted | 2026-08-09 | Environment Integrity |
 | [ADR-017](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-017-workspace-intelligence-engine.md) | Workspace Intelligence Engine (`codemarie`) | Accepted | 2026-08-09 | Workspace Topology |
 | [ADR-018](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-018-command-permission-security-guardrails.md) | Command Permission & Security Guardrails (`codemarie`) | Accepted | 2026-08-09 | Security & Guardrails |
+| [ADR-019](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-019-phase-2-extended-package-osmosis.md) | Phase 2 Extended Package Osmosis (Passes 15–18) | Accepted | 2026-08-09 | Phase 2 Evolution |
 
 ## Domain Grouping
 

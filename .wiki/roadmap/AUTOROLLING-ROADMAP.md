@@ -29,6 +29,10 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Pass 12** | `[COMPLETE]` | `packages/codemarie/src/core/integrity` | Environment auditing & self-healing diagnostics in `StabilityDoctor` | [ADR-016](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-016-environment-integrity-forensic-healing.md) |
 | **Pass 13** | `[COMPLETE]` | `packages/codemarie/src/core/workspace-intelligence` | Workspace topology & symbol knowledge graph in `WorkspaceIntelligenceEngine` | [ADR-017](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-017-workspace-intelligence-engine.md) |
 | **Pass 14** | `[COMPLETE]` | `packages/codemarie/src/core/permissions` | Command permission controller & execution guardrails in `CommandPermissionController` | [ADR-018](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-018-command-permission-security-guardrails.md) |
+| **Pass 15** | `[COMPLETE]` | `packages/snapcompact` | Dense bitmap history compression in `SnapcompactEngine` | [ADR-019](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-019-phase-2-extended-package-osmosis.md) |
+| **Pass 16** | `[COMPLETE]` | `packages/catalog` | Model capability specs & pricing calculation in `ModelCatalog` | [ADR-019](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-019-phase-2-extended-package-osmosis.md) |
+| **Pass 17** | `[COMPLETE]` | `packages/server` | JSON-RPC 2.0 streaming gateway in `MonolithGatewayServer` | [ADR-019](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-019-phase-2-extended-package-osmosis.md) |
+| **Pass 18** | `[COMPLETE]` | `packages/evals` | Automated benchmark suite evaluation & latency assertions in `MonolithBenchmarkEvaluator` | [ADR-019](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-019-phase-2-extended-package-osmosis.md) |
 
 ---
 
