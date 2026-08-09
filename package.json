@@ -6,7 +6,7 @@
   "main": "src/index.ts",
   "scripts": {
     "check": "tsc --noEmit",
-    "start": "node --import tsx/esm src/index.ts"
+    "start": "npx tsx src/index.ts"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

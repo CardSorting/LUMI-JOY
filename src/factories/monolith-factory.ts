@@ -1,18 +1,20 @@
 import { AgentConfig } from "../agents/base/agent-config.js";
-import { AgentEngine } from "../agents/extensions/agent-engine.js";
-import { PromptComposer } from "../agents/extensions/prompt-composer.js";
-import { ModelResolver } from "../agents/extensions/model-resolver.js";
-import { AgentSlashRouter } from "../agents/extensions/agent-slash-router.js";
+import { AgentEngine } from "../agents/extensions/execution/agent-engine.js";
+import { PromptComposer } from "../agents/extensions/compaction/prompt-composer.js";
+import { ModelResolver } from "../agents/extensions/resolution/model-resolver.js";
+import { AgentSlashRouter } from "../agents/extensions/resolution/agent-slash-router.js";
 import { SessionContext } from "../sessions/base/session-context.js";
-import { PersistentSessionStore } from "../sessions/extensions/session-store.js";
-import { SessionCompactor } from "../sessions/extensions/session-compactor.js";
-import { SessionVfs } from "../sessions/extensions/session-vfs.js";
-import { SessionMemoryStore } from "../sessions/extensions/session-memory-store.js";
+import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
+import { SessionCompactor } from "../sessions/extensions/compaction/session-compactor.js";
+import { SessionVfs } from "../sessions/extensions/vfs/session-vfs.js";
+import { SessionMemoryStore } from "../sessions/extensions/memory/session-memory-store.js";
 import { Eyes } from "../tooling/base/eyes.js";
-import { AnchoredHands } from "../tooling/extensions/hands.js";
-import { ProtocolEars } from "../tooling/extensions/ears.js";
-import { SkillsIngestor } from "../tooling/extensions/skills-ingestor.js";
-import { ValidatingToolRegistry } from "../tooling/extensions/tool-registry.js";
+import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
+import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
+import { ProtocolEars } from "../tooling/extensions/telemetry/ears.js";
+import { ProgressStreamingEars } from "../tooling/extensions/progress/progress-ears.js";
+import { SkillsIngestor } from "../tooling/extensions/registry/skills-ingestor.js";
+import { ValidatingToolRegistry } from "../tooling/extensions/registry/tool-registry.js";
 import type { GameStateSnapshot } from "../core/contracts/session.contracts.js";
 
 export interface MonolithFactoryOptions {
@@ -33,9 +35,9 @@ export class MonolithFactory {
     sessionMemoryStore: SessionMemoryStore;
     modelResolver: ModelResolver;
     slashRouter: AgentSlashRouter;
-    eyes: Eyes;
+    eyes: AstPerceptionEyes;
     hands: AnchoredHands;
-    ears: ProtocolEars;
+    ears: ProgressStreamingEars;
     skillsIngestor: SkillsIngestor;
     toolRegistry: ValidatingToolRegistry;
     promptComposer: PromptComposer;
@@ -58,9 +60,9 @@ export class MonolithFactory {
     );
     const slashRouter = new AgentSlashRouter();
 
-    const eyes = new Eyes();
+    const eyes = new AstPerceptionEyes();
     const hands = new AnchoredHands();
-    const ears = new ProtocolEars();
+    const ears = new ProgressStreamingEars();
     const skillsIngestor = new SkillsIngestor(eyes);
 
     const toolRegistry = new ValidatingToolRegistry(

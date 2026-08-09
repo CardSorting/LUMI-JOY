@@ -20,6 +20,15 @@ export interface ToolingEvent {
   durationMs?: number;
 }
 
+export interface TerminalProgressFrame {
+  frameIndex: number;
+  spinnerSymbol: string;
+  label: string;
+  percent: number;
+  progressBar: string;
+  timestamp: number;
+}
+
 export interface JsonRpcNotification {
   jsonrpc: "2.0";
   method: string;

@@ -14,6 +14,10 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-006](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-006-osmosis-evolution-monorepo-package-absorption.md) | Osmosis Evolution 5 - Monorepo Package Absorption (`hashline`, `omptype`, `session-backends`, `protocol`) | Accepted | 2026-08-09 | Feature Evolution |
 | [ADR-007](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-007-oop-class-extension-hierarchy.md) | Explicit OOP Class Extension Hierarchy | Accepted | 2026-08-09 | Architectural Patterns |
 | [ADR-008](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-008-deterministic-game-engine-architecture.md) | Deterministic Game Engine Architecture | Accepted | 2026-08-09 | Game Engine Architecture |
+| [ADR-009](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-009-zero-gc-substrate-memory-allocation.md) | Zero-GC Substrate Memory Allocation (`broccolidb`) | Accepted | 2026-08-09 | Substrate Memory Allocation |
+| [ADR-010](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-010-ast-symbol-perception.md) | AST Symbol Perception (`codemarie`) | Accepted | 2026-08-09 | Tooling & Symbol Perception |
+| [ADR-011](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-011-terminal-progress-renderer.md) | Terminal Progress Renderer (`tui` & `client`) | Accepted | 2026-08-09 | Terminal Progress Telemetry |
+| [ADR-012](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-012-non-destructive-osmosis-class-extension-strategy.md) | Non-Destructive Osmosis Class Extension Strategy | Accepted | 2026-08-09 | Architectural Governance |
 
 ## Domain Grouping
 
@@ -21,6 +25,10 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 - **[ADR-001](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-001-3-tier-monolithic-agent-architecture.md)**: Greenfield 3-tier monolith (`agents`, `sessions`, `tooling`).
 - **[ADR-007](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-007-oop-class-extension-hierarchy.md)**: Explicit class inheritance (`class Child extends Parent`) hierarchy.
 - **[ADR-008](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-008-deterministic-game-engine-architecture.md)**: Deterministic Game Engine Architecture (`tick()`, `GameStateSnapshot`, rewind/replay).
+- **[ADR-009](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-009-zero-gc-substrate-memory-allocation.md)**: Zero-GC Substrate Memory Allocation (`ArenaAllocator`, slab array buffer caching).
+- **[ADR-010](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-010-ast-symbol-perception.md)**: AST Symbol Perception (`AstPerceptionEyes`, structural symbol indexing).
+- **[ADR-011](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-011-terminal-progress-renderer.md)**: Terminal Progress Renderer (`ProgressStreamingEars`, `TerminalProgressRenderer`).
+- **[ADR-012](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-012-non-destructive-osmosis-class-extension-strategy.md)**: Non-Destructive Class Extension & Additive Osmosis Strategy.
 
 ### Feature Evolution & Osmosis Learning
 - **[ADR-002](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-002-osmosis-evolution-compaction-skills-composition.md)**: Context compaction, skill discovery, and prompt composition.

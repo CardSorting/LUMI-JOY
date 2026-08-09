@@ -1,8 +1,12 @@
-import { AbstractEars } from "../../core/abstracts/abstract-ears.js";
-import type { ToolingEvent, JsonRpcNotification } from "../../core/contracts/tooling.contracts.js";
+import { AbstractEars } from "../../../core/abstracts/abstract-ears.js";
+import type { ToolingEvent, JsonRpcNotification } from "../../../core/contracts/tooling.contracts.js";
 
+/**
+ * Protocol Telemetry Ears Subclass.
+ * Provides microsecond performance timers and JSON-RPC 2.0 telemetry formatting.
+ */
 export class ProtocolEars extends AbstractEars {
-  private readonly timers: Map<string, number>;
+  protected readonly timers: Map<string, number>;
 
   constructor() {
     super();

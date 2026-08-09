@@ -7,24 +7,28 @@ import { AbstractHands } from "./core/abstracts/abstract-hands.js";
 import { AbstractEars } from "./core/abstracts/abstract-ears.js";
 import { AbstractToolRegistry } from "./core/abstracts/abstract-tool-registry.js";
 import { AgentConfig } from "./agents/base/agent-config.js";
-import { AgentEngine } from "./agents/extensions/agent-engine.js";
-import { PromptComposer } from "./agents/extensions/prompt-composer.js";
-import { ModelResolver } from "./agents/extensions/model-resolver.js";
-import { AgentSlashRouter } from "./agents/extensions/agent-slash-router.js";
+import { AgentEngine } from "./agents/extensions/execution/agent-engine.js";
+import { PromptComposer } from "./agents/extensions/compaction/prompt-composer.js";
+import { ModelResolver } from "./agents/extensions/resolution/model-resolver.js";
+import { AgentSlashRouter } from "./agents/extensions/resolution/agent-slash-router.js";
 import { SessionContext } from "./sessions/base/session-context.js";
-import { PersistentSessionStore, SessionStore } from "./sessions/extensions/session-store.js";
-import { SessionCompactor } from "./sessions/extensions/session-compactor.js";
-import { SessionVfs } from "./sessions/extensions/session-vfs.js";
-import { SessionMemoryStore } from "./sessions/extensions/session-memory-store.js";
+import { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
+import { SessionCompactor } from "./sessions/extensions/compaction/session-compactor.js";
+import { SessionVfs } from "./sessions/extensions/vfs/session-vfs.js";
+import { SessionMemoryStore } from "./sessions/extensions/memory/session-memory-store.js";
 import { Eyes } from "./tooling/base/eyes.js";
-import { AnchoredHands, Hands } from "./tooling/extensions/hands.js";
-import { ProtocolEars, Ears } from "./tooling/extensions/ears.js";
-import { SkillsIngestor } from "./tooling/extensions/skills-ingestor.js";
-import { ValidatingToolRegistry, ToolRegistry } from "./tooling/extensions/tool-registry.js";
+import { AstPerceptionEyes, type SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
+import { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
+import { ProtocolEars, Ears } from "./tooling/extensions/telemetry/ears.js";
+import { ProgressStreamingEars, TerminalProgressRenderer } from "./tooling/extensions/progress/progress-ears.js";
+import { SkillsIngestor } from "./tooling/extensions/registry/skills-ingestor.js";
+import { ValidatingToolRegistry, ToolRegistry } from "./tooling/extensions/registry/tool-registry.js";
+
+import { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.js";
 
 export type { EngineTickInput, EngineTickResult, IAgentEngine } from "./core/contracts/agent.contracts.js";
-export type { GameStateSnapshot, SessionMessage, ISessionStore } from "./core/contracts/session.contracts.js";
-export type { CommandResult, AnchoredEditResult, ToolingEvent, JsonRpcNotification, IHands, IEars, IToolRegistry } from "./core/contracts/tooling.contracts.js";
+export type { GameStateSnapshot, SessionMessage, ISessionStore, SlabBufferSnapshot } from "./core/contracts/session.contracts.js";
+export type { CommandResult, AnchoredEditResult, ToolingEvent, JsonRpcNotification, TerminalProgressFrame, IHands, IEars, IToolRegistry } from "./core/contracts/tooling.contracts.js";
 
 export { AbstractAgentEngine } from "./core/abstracts/abstract-agent-engine.js";
 export { AbstractSessionStore } from "./core/abstracts/abstract-session-store.js";
@@ -33,20 +37,24 @@ export { AbstractEars } from "./core/abstracts/abstract-ears.js";
 export { AbstractToolRegistry } from "./core/abstracts/abstract-tool-registry.js";
 
 export { AgentConfig } from "./agents/base/agent-config.js";
-export { AgentEngine } from "./agents/extensions/agent-engine.js";
-export { PromptComposer } from "./agents/extensions/prompt-composer.js";
-export { ModelResolver } from "./agents/extensions/model-resolver.js";
-export { AgentSlashRouter } from "./agents/extensions/agent-slash-router.js";
+export { AgentEngine } from "./agents/extensions/execution/agent-engine.js";
+export { PromptComposer } from "./agents/extensions/compaction/prompt-composer.js";
+export { ModelResolver } from "./agents/extensions/resolution/model-resolver.js";
+export { AgentSlashRouter } from "./agents/extensions/resolution/agent-slash-router.js";
 export { SessionContext } from "./sessions/base/session-context.js";
-export { PersistentSessionStore, SessionStore } from "./sessions/extensions/session-store.js";
-export { SessionCompactor } from "./sessions/extensions/session-compactor.js";
-export { SessionVfs } from "./sessions/extensions/session-vfs.js";
-export { SessionMemoryStore } from "./sessions/extensions/session-memory-store.js";
+export { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
+export { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.js";
+export { SessionCompactor } from "./sessions/extensions/compaction/session-compactor.js";
+export { SessionVfs } from "./sessions/extensions/vfs/session-vfs.js";
+export { SessionMemoryStore } from "./sessions/extensions/memory/session-memory-store.js";
+export type { SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
 export { Eyes } from "./tooling/base/eyes.js";
-export { AnchoredHands, Hands } from "./tooling/extensions/hands.js";
-export { ProtocolEars, Ears } from "./tooling/extensions/ears.js";
-export { SkillsIngestor } from "./tooling/extensions/skills-ingestor.js";
-export { ValidatingToolRegistry, ToolRegistry } from "./tooling/extensions/tool-registry.js";
+export { AstPerceptionEyes } from "./tooling/extensions/perception/ast-eyes.js";
+export { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
+export { ProtocolEars, Ears } from "./tooling/extensions/telemetry/ears.js";
+export { ProgressStreamingEars, TerminalProgressRenderer } from "./tooling/extensions/progress/progress-ears.js";
+export { SkillsIngestor } from "./tooling/extensions/registry/skills-ingestor.js";
+export { ValidatingToolRegistry, ToolRegistry } from "./tooling/extensions/registry/tool-registry.js";
 export { MonolithFactory } from "./factories/monolith-factory.js";
 
 /**
@@ -63,9 +71,9 @@ export class LumiMonolith implements IAgentEngine {
   readonly sessionMemoryStore: SessionMemoryStore;
   readonly modelResolver: ModelResolver;
   readonly slashRouter: AgentSlashRouter;
-  readonly eyes: Eyes;
+  readonly eyes: AstPerceptionEyes;
   readonly hands: AnchoredHands;
-  readonly ears: ProtocolEars;
+  readonly ears: ProgressStreamingEars;
   readonly skillsIngestor: SkillsIngestor;
   readonly toolRegistry: ValidatingToolRegistry;
   readonly promptComposer: PromptComposer;
@@ -150,16 +158,30 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     // 2. Create Frame-Perfect Snapshot
     const snapshot = lumi.createSnapshot();
     console.log(`Created Snapshot ID: '${snapshot.snapshotId}' at Frame #${snapshot.frameIndex}`);
+    console.log("Zero-GC Slab Memory Snapshot:", snapshot.slabSnapshot);
 
     // 3. Frame Tick 2
     const frame2 = await lumi.tick({ prompt: "view: package.json" });
     console.log(`Frame #${frame2.frameIndex} Result:`, frame2.response);
     console.log("Current message count before rewind:", lumi.sessionStore.getMessages().length);
+    console.log("Slab allocated bytes before rewind:", lumi.sessionStore.getSlabSnapshot().allocatedBytes);
 
     // 4. Rewind to Snapshot 1
     lumi.rewindToSnapshot(snapshot);
     console.log("Rewound frame index:", lumi.sessionContext.turnCount);
     console.log("Message count after rewind:", lumi.sessionStore.getMessages().length);
+    console.log("Slab allocated bytes after rewind:", lumi.sessionStore.getSlabSnapshot().allocatedBytes);
+
+    // 5. AST Symbol Perception Search (Pass 7)
+    const symbolResults = await lumi.eyes.searchSymbols(process.cwd(), "LumiMonolith");
+    console.log(`\nAST Symbol Perception Search ('LumiMonolith'): Found ${symbolResults.length} matches`);
+    if (symbolResults.length > 0) {
+      console.log(`  First match: [${symbolResults[0].kind}] ${symbolResults[0].symbol} @ line ${symbolResults[0].line}`);
+    }
+
+    // 6. Terminal Progress Renderer & JSON-RPC Stream (Pass 8)
+    const progressNotification = lumi.ears.emitProgress("Executing Pass 8 Frame Tick", 75);
+    console.log("\nTerminal Progress Renderer JSON-RPC Notification:", JSON.stringify(progressNotification, null, 2));
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });

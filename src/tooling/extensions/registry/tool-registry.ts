@@ -1,10 +1,11 @@
-import { AbstractToolRegistry } from "../../core/abstracts/abstract-tool-registry.js";
-import type { SchemaValidationResult } from "../../core/contracts/tooling.contracts.js";
-import type { Eyes } from "../base/eyes.js";
-import type { AnchoredHands } from "./hands.js";
-import type { ProtocolEars } from "./ears.js";
+import { AbstractToolRegistry } from "../../../core/abstracts/abstract-tool-registry.js";
+import type { SchemaValidationResult } from "../../../core/contracts/tooling.contracts.js";
+import type { Eyes } from "../../base/eyes.js";
+import type { AstPerceptionEyes } from "../perception/ast-eyes.js";
+import type { AnchoredHands } from "../hashline/hands.js";
+import type { ProtocolEars } from "../telemetry/ears.js";
 import { SkillsIngestor } from "./skills-ingestor.js";
-import type { SessionMemoryStore } from "../../sessions/extensions/session-memory-store.js";
+import type { SessionMemoryStore } from "../../../sessions/extensions/memory/session-memory-store.js";
 
 export class ValidatingToolRegistry extends AbstractToolRegistry {
   readonly skillsIngestor: SkillsIngestor;
@@ -164,6 +165,20 @@ export class ValidatingToolRegistry extends AbstractToolRegistry {
         const category = (args.category as "fact" | "rule" | "troubleshooting" | "ki") ?? "fact";
         const entry = this.memoryStore.saveMemory(key, value, category);
         return { success: true, entry };
+      },
+    });
+
+    this.registerTool({
+      name: "search_symbols",
+      description: "Search AST code symbols (classes, functions, interfaces, types) in workspace (Eyes)",
+      parameters: {
+        query: { type: "string", required: true, description: "Symbol name or substring to match" },
+      },
+      execute: async (args, cwd) => {
+        const query = String(args.query);
+        const searchPath = typeof args.path === "string" ? args.path : cwd;
+        const astEyes = this.eyes as AstPerceptionEyes;
+        return astEyes.searchSymbols ? astEyes.searchSymbols(searchPath, query) : [];
       },
     });
   }

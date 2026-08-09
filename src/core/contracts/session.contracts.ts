@@ -6,6 +6,13 @@ export interface SessionMessage {
   timestamp: number;
 }
 
+export interface SlabBufferSnapshot {
+  capacityBytes: number;
+  offsetWords: number;
+  allocatedBytes: number;
+  resetCount: number;
+}
+
 export interface GameStateSnapshot {
   snapshotId: string;
   frameIndex: number;
@@ -14,6 +21,7 @@ export interface GameStateSnapshot {
   stagedFiles: Array<{ path: string; originalContent: string; stagedContent: string; isNew: boolean }>;
   memories: Array<{ key: string; value: string; category: string; timestamp: number }>;
   modelMetrics: { totalTurns: number; totalTokensEstimated: number; fallbackTriggeredCount: number };
+  slabSnapshot?: SlabBufferSnapshot;
 }
 
 export interface ISessionStore {

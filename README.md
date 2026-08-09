@@ -58,24 +58,44 @@ Traditional AI agent frameworks suffer from **"framework soup"**—sprawling mul
 ## 🏗️ Subsystem Architecture & File Tree
 
 ```
-                                  ┌────────────────────────┐
-                                  │      LumiMonolith      │ (src/index.ts)
-                                  │  Deterministic Engine  │
-                                  └───────────┬────────────┘
-                                              │
-                    ┌─────────────────────────┼─────────────────────────┐
-                    ▼                         ▼                         ▼
-          ┌───────────────────┐     ┌───────────────────┐     ┌───────────────────┐
-          │   ENGINE TICK     │     │   WORLD STATE     │     │ SENSORY SUBSYSTEM │
-          │    (AGENTS)       │     │   (SESSIONS)      │     │    (TOOLING)      │
-          ├───────────────────┤     ├───────────────────┤     ├───────────────────┤
-          │ AbstractEngine    │     │ AbstractSession   │     │ AbstractHands     │
-          │ AgentEngine       │     │ PersistentSession │     │ AbstractEars      │
-          │ PromptComposer    │     │ SessionVfs        │     │ AbstractRegistry  │
-          │ ModelResolver     │     │ SessionMemory     │     │ Eyes (Input)      │
-          │ SlashRouter       │     │ SessionCompactor  │     │ SkillsIngestor    │
-          └───────────────────┘     └───────────────────┘     └───────────────────┘
+src/
+├── core/
+│   ├── contracts/                         # System Interfaces & GameStateSnapshot
+│   └── abstracts/                         # Abstract Base Classes (DIP)
+│
+├── agents/                                # Tier 1: Agents Subsystem
+│   ├── base/                              # Agent Base Config
+│   └── extensions/                        # Domain Mutation Subdirectories
+│       ├── compaction/                    # prompt-composer.ts
+│       ├── resolution/                    # model-resolver.ts, agent-slash-router.ts
+│       └── execution/                     # agent-engine.ts
+│
+├── sessions/                              # Tier 2: Sessions Subsystem
+│   ├── base/                              # Session Context Base
+│   └── extensions/                        # Domain Mutation Subdirectories
+│       ├── substrate/                     # arena-allocator.ts
+│       ├── persistence/                   # session-store.ts
+│       ├── memory/                        # session-memory-store.ts
+│       ├── vfs/                           # session-vfs.ts
+│       └── compaction/                    # session-compactor.ts
+│
+├── tooling/                               # Tier 3: Tooling Subsystem
+│   ├── base/                              # eyes.ts
+│   └── extensions/                        # Domain Mutation Subdirectories
+│       ├── perception/                    # ast-eyes.ts
+│       ├── progress/                      # progress-ears.ts
+│       ├── telemetry/                     # ears.ts
+│       ├── hashline/                      # hands.ts
+│       └── registry/                      # skills-ingestor.ts, tool-registry.ts
+│
+├── factories/                             # Engine Monolith Bootstrapper
+│   └── monolith-factory.ts
+│
+└── index.ts                               # Composition Root (LumiMonolith)
 ```
+
+> 🛡️ **Non-Destructive Osmosis Extension Strategy (`ADR-012`)**:  
+> Base classes in `src/*/base/` remain immutable. Evolutionary passes introduce single-responsibility extension classes in dedicated mutation subdirectories (`src/*/extensions/<mutation-domain>/`) and compose them cleanly in `MonolithFactory` and `LumiMonolith`.
 
 ---
 
