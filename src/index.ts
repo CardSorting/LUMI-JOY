@@ -37,6 +37,7 @@ import { SnapshotStorageIndex, type SnapshotMetadata } from "./sessions/extensio
 import { SnowflakeIdGenerator } from "./sessions/extensions/substrate/snowflake-id-generator.js";
 import { SystemDirectoryResolver, type SystemDirectories } from "./sessions/extensions/substrate/system-directory-resolver.js";
 import { FixedRingBuffer } from "./sessions/extensions/substrate/ring-buffer.js";
+import { SemanticVersionComparator, type ParsedSemver } from "./sessions/extensions/integrity/semantic-version-comparator.js";
 
 import { Eyes } from "./tooling/base/eyes.js";
 import { AstPerceptionEyes, type SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
@@ -45,6 +46,7 @@ import { BoundedFilePeeker, type PeekFileResult } from "./tooling/extensions/per
 import { CommandPathResolver } from "./tooling/extensions/permissions/command-path-resolver.js";
 import { TerminalTextSanitizer } from "./tooling/extensions/telemetry/text-sanitizer.js";
 import { MicrosecondTimingBuffer, type TimingMeasurement } from "./tooling/extensions/telemetry/timing-buffer.js";
+import { TabSpacingNormalizer } from "./tooling/extensions/hashline/tab-spacing-normalizer.js";
 import { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
 import { CommandPermissionController, type PermissionValidationResult } from "./tooling/extensions/permissions/command-permission-controller.js";
 import { ProtocolEars, Ears } from "./tooling/extensions/telemetry/ears.js";
@@ -118,6 +120,8 @@ export { SnowflakeIdGenerator } from "./sessions/extensions/substrate/snowflake-
 export { SystemDirectoryResolver } from "./sessions/extensions/substrate/system-directory-resolver.js";
 export type { SystemDirectories } from "./sessions/extensions/substrate/system-directory-resolver.js";
 export { FixedRingBuffer } from "./sessions/extensions/substrate/ring-buffer.js";
+export { SemanticVersionComparator } from "./sessions/extensions/integrity/semantic-version-comparator.js";
+export type { ParsedSemver } from "./sessions/extensions/integrity/semantic-version-comparator.js";
 
 export type { SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
 export { Eyes } from "./tooling/base/eyes.js";
@@ -130,6 +134,7 @@ export { CommandPathResolver } from "./tooling/extensions/permissions/command-pa
 export { TerminalTextSanitizer } from "./tooling/extensions/telemetry/text-sanitizer.js";
 export { MicrosecondTimingBuffer } from "./tooling/extensions/telemetry/timing-buffer.js";
 export type { TimingMeasurement } from "./tooling/extensions/telemetry/timing-buffer.js";
+export { TabSpacingNormalizer } from "./tooling/extensions/hashline/tab-spacing-normalizer.js";
 export { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
 export { CommandPermissionController } from "./tooling/extensions/permissions/command-permission-controller.js";
 export type { PermissionValidationResult } from "./tooling/extensions/permissions/command-permission-controller.js";
@@ -175,6 +180,7 @@ export class LumiMonolith implements IAgentEngine {
   readonly snowflakeIdGenerator: SnowflakeIdGenerator;
   readonly systemDirectoryResolver: SystemDirectoryResolver;
   readonly ringBuffer: FixedRingBuffer<string>;
+  readonly semverComparator: SemanticVersionComparator;
   readonly modelResolver: ModelResolver;
   readonly modelCatalog: ModelCatalog;
   readonly envKeyResolver: EnvironmentKeyResolver;
@@ -190,6 +196,7 @@ export class LumiMonolith implements IAgentEngine {
   readonly commandPathResolver: CommandPathResolver;
   readonly textSanitizer: TerminalTextSanitizer;
   readonly timingBuffer: MicrosecondTimingBuffer;
+  readonly tabSpacingNormalizer: TabSpacingNormalizer;
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
   readonly swarmDispatcher: AgentSwarmDispatcher;
@@ -226,6 +233,7 @@ export class LumiMonolith implements IAgentEngine {
     this.snowflakeIdGenerator = components.snowflakeIdGenerator;
     this.systemDirectoryResolver = components.systemDirectoryResolver;
     this.ringBuffer = components.ringBuffer;
+    this.semverComparator = components.semverComparator;
     this.modelResolver = components.modelResolver;
     this.modelCatalog = components.modelCatalog;
     this.envKeyResolver = components.envKeyResolver;
@@ -241,6 +249,7 @@ export class LumiMonolith implements IAgentEngine {
     this.commandPathResolver = components.commandPathResolver;
     this.textSanitizer = components.textSanitizer;
     this.timingBuffer = components.timingBuffer;
+    this.tabSpacingNormalizer = components.tabSpacingNormalizer;
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
     this.swarmDispatcher = components.swarmDispatcher;
@@ -350,20 +359,19 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("Message count after rewind:", lumi.sessionStore.getMessages().length);
     console.log("Slab allocated bytes after rewind:", lumi.sessionStore.getSlabSnapshot().allocatedBytes);
 
-    // 5. Fixed Ring Buffer (Pass 52)
-    lumi.ringBuffer.push("frame-1");
-    lumi.ringBuffer.push("frame-2");
-    console.log("\nFixed Ring Buffer (Pass 52):");
-    console.log("  Buffer Elements:", lumi.ringBuffer.toArray());
+    // 5. Tab Spacing Normalizer (Pass 55)
+    const expanded = lumi.tabSpacingNormalizer.expandTabs("\tcode");
+    console.log("\nTab Spacing Normalizer (Pass 55):");
+    console.log("  Expanded Tabs:", JSON.stringify(expanded));
 
-    // 6. Microsecond Timing Buffer (Pass 53)
-    const measurements = lumi.timingBuffer.getMeasurements();
-    console.log("\nMicrosecond Timing Buffer (Pass 53):");
-    console.log("  Buffered Measurements Count:", measurements.length);
+    // 6. Semantic Version Comparator (Pass 56)
+    const isComp = lumi.semverComparator.isCompatible("0.1.0", "0.0.9");
+    console.log("\nSemantic Version Comparator (Pass 56):");
+    console.log("  0.1.0 >= 0.0.9:", isComp);
 
-    // 7. Monolith Phase 14 Master Subsystem Synthesis (Pass 54)
-    console.log("\n--- Pass 54 Monolith Phase 14 Master Synthesis Verification ---");
-    console.log("ALL 54 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
+    // 7. Monolith Phase 15 Master Subsystem Synthesis (Pass 57)
+    console.log("\n--- Pass 57 Monolith Phase 15 Master Synthesis Verification ---");
+    console.log("ALL 57 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });

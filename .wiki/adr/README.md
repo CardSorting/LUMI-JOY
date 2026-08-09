@@ -37,6 +37,7 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-029](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-029-phase-12-system-directory-resolver-and-command-path-resolver.md) | Phase 12 System Directory Resolver & Command Path Resolver (Passes 46–48) | Accepted | 2026-08-09 | Phase 12 Evolution |
 | [ADR-030](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-030-phase-13-terminal-text-sanitizer-and-loop-phase-controller.md) | Phase 13 Terminal Text Sanitizer & Loop Phase Controller (Passes 49–51) | Accepted | 2026-08-09 | Phase 13 Evolution |
 | [ADR-031](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-031-phase-14-fixed-ring-buffer-and-microsecond-timing-buffer.md) | Phase 14 Fixed Ring Buffer & Microsecond Timing Buffer (Passes 52–54) | Accepted | 2026-08-09 | Phase 14 Evolution |
+| [ADR-032](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-032-phase-15-tab-spacing-normalizer-and-semantic-version-comparator.md) | Phase 15 Tab Spacing Normalizer & Semantic Version Comparator (Passes 55–57) | Accepted | 2026-08-09 | Phase 15 Evolution |
 
 ## Domain Grouping
 

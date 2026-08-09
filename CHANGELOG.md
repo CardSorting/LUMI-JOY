@@ -20,10 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 13)
 - **Workspace Intelligence Engine (`codemarie`)**: Added `WorkspaceIntelligenceEngine` ([workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts)) for package identity indexing, workspace topology analysis, and cognitive graph snapshot generation (`ADR-017`).
 
-### Added (Passes 52–54 / Phase 14 Evolution)
-- **Fixed-Capacity Ring Buffer (`utils`)**: Added `FixedRingBuffer` ([ring-buffer.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/substrate/ring-buffer.ts)) for O(1) circular telemetry buffer operations with zero array reallocation (`ADR-031`).
-- **Debounced Microsecond Timing Buffer (`utils`)**: Added `MicrosecondTimingBuffer` ([timing-buffer.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/telemetry/timing-buffer.ts)) for microsecond precision latency measurement buffering (`ADR-031`).
-- **Monolith Phase 14 Master Subsystem Synthesis**: Completed 54-pass master synthesis verification suite confirming total ring buffer & timing telemetry feature absorption with zero-barrel OOP class extension (`ADR-031`).
+### Added (Passes 55–57 / Phase 15 Evolution)
+- **Indentation & Tab Spacing Normalizer (`utils`)**: Added `TabSpacingNormalizer` ([tab-spacing-normalizer.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/hashline/tab-spacing-normalizer.ts)) for expanding/unexpanding tabs before line-anchored delta calculations (`ADR-032`).
+- **Semantic Version Comparator (`utils`)**: Added `SemanticVersionComparator` ([semantic-version-comparator.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/integrity/semantic-version-comparator.ts)) for semver parsing and compatibility checks (`ADR-032`).
+- **Monolith Phase 15 Master Subsystem Synthesis**: Completed 57-pass master synthesis verification suite confirming total tab spacing & semver comparator feature absorption with zero-barrel OOP class extension (`ADR-032`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).

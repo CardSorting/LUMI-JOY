@@ -28,6 +28,7 @@ import { SnapshotStorageIndex } from "../sessions/extensions/persistence/snapsho
 import { SnowflakeIdGenerator } from "../sessions/extensions/substrate/snowflake-id-generator.js";
 import { SystemDirectoryResolver } from "../sessions/extensions/substrate/system-directory-resolver.js";
 import { FixedRingBuffer } from "../sessions/extensions/substrate/ring-buffer.js";
+import { SemanticVersionComparator } from "../sessions/extensions/integrity/semantic-version-comparator.js";
 
 import { TransportConnectionController } from "../tooling/extensions/gateway/transport-connection-controller.js";
 import { ResilientFetchClient } from "../tooling/extensions/telemetry/resilient-fetch-client.js";
@@ -36,6 +37,7 @@ import { BoundedFilePeeker } from "../tooling/extensions/perception/file-peeker.
 import { CommandPathResolver } from "../tooling/extensions/permissions/command-path-resolver.js";
 import { TerminalTextSanitizer } from "../tooling/extensions/telemetry/text-sanitizer.js";
 import { MicrosecondTimingBuffer } from "../tooling/extensions/telemetry/timing-buffer.js";
+import { TabSpacingNormalizer } from "../tooling/extensions/hashline/tab-spacing-normalizer.js";
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
@@ -77,6 +79,7 @@ export class MonolithFactory {
     snowflakeIdGenerator: SnowflakeIdGenerator;
     systemDirectoryResolver: SystemDirectoryResolver;
     ringBuffer: FixedRingBuffer<string>;
+    semverComparator: SemanticVersionComparator;
     modelResolver: ModelResolver;
     modelCatalog: ModelCatalog;
     envKeyResolver: EnvironmentKeyResolver;
@@ -92,6 +95,7 @@ export class MonolithFactory {
     commandPathResolver: CommandPathResolver;
     textSanitizer: TerminalTextSanitizer;
     timingBuffer: MicrosecondTimingBuffer;
+    tabSpacingNormalizer: TabSpacingNormalizer;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -131,6 +135,7 @@ export class MonolithFactory {
     const snowflakeIdGenerator = new SnowflakeIdGenerator();
     const systemDirectoryResolver = new SystemDirectoryResolver();
     const ringBuffer = new FixedRingBuffer<string>(100);
+    const semverComparator = new SemanticVersionComparator();
 
     const modelResolver = new ModelResolver(
       config.modelName,
@@ -150,6 +155,7 @@ export class MonolithFactory {
     const commandPathResolver = new CommandPathResolver();
     const textSanitizer = new TerminalTextSanitizer();
     const timingBuffer = new MicrosecondTimingBuffer(100);
+    const tabSpacingNormalizer = new TabSpacingNormalizer();
     const slashRouter = new AgentSlashRouter();
     const mentionResolver = new MentionResolver();
     const swarmDispatcher = new AgentSwarmDispatcher();
@@ -207,6 +213,7 @@ export class MonolithFactory {
       snowflakeIdGenerator,
       systemDirectoryResolver,
       ringBuffer,
+      semverComparator,
       modelResolver,
       modelCatalog,
       envKeyResolver,
@@ -222,6 +229,7 @@ export class MonolithFactory {
       commandPathResolver,
       textSanitizer,
       timingBuffer,
+      tabSpacingNormalizer,
       slashRouter,
       mentionResolver,
       swarmDispatcher,
