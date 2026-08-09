@@ -51,6 +51,8 @@ import { DiffSynthesizer } from "../tooling/extensions/hashline/diff-synthesizer
 import { MasterBenchmarkOrchestrator } from "../tooling/extensions/evals/master-benchmark-orchestrator.js";
 import { McpHub } from "../tooling/extensions/mcp/mcp-hub.js";
 import { RipgrepSearchService } from "../tooling/extensions/perception/ripgrep-search-service.js";
+import { UrlContentFetcher } from "../tooling/extensions/perception/url-content-fetcher.js";
+import { LanguageSyntaxParser } from "../tooling/extensions/perception/language-syntax-parser.js";
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
@@ -122,6 +124,8 @@ export class MonolithFactory {
     masterBenchmarkOrchestrator: MasterBenchmarkOrchestrator;
     mcpHub: McpHub;
     ripgrepSearchService: RipgrepSearchService;
+    urlContentFetcher: UrlContentFetcher;
+    languageSyntaxParser: LanguageSyntaxParser;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -193,6 +197,8 @@ export class MonolithFactory {
     const argumentCoercer = new ArgumentCoercer();
     const mcpHub = new McpHub();
     const ripgrepSearchService = new RipgrepSearchService();
+    const urlContentFetcher = new UrlContentFetcher(resilientFetchClient);
+    const languageSyntaxParser = new LanguageSyntaxParser();
 
     const permissionController = new CommandPermissionController();
     const eyes = new AstPerceptionEyes();
@@ -283,6 +289,8 @@ export class MonolithFactory {
       masterBenchmarkOrchestrator,
       mcpHub,
       ripgrepSearchService,
+      urlContentFetcher,
+      languageSyntaxParser,
       slashRouter,
       mentionResolver,
       swarmDispatcher,

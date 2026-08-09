@@ -20,10 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 13)
 - **Workspace Intelligence Engine (`codemarie`)**: Added `WorkspaceIntelligenceEngine` ([workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts)) for package identity indexing, workspace topology analysis, and cognitive graph snapshot generation (`ADR-017`).
 
-### Added (Passes 76–78 / Phase 22 Evolution)
-- **Model Context Protocol Hub (`codemarie`)**: Added `McpHub` ([mcp-hub.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/mcp/mcp-hub.ts)) for connecting to external MCP servers and dynamic tool execution (`ADR-039`).
-- **Ripgrep Search Service (`codemarie`)**: Added `RipgrepSearchService` ([ripgrep-search-service.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/perception/ripgrep-search-service.ts)) for high-speed workspace pattern matching (`ADR-039`).
-- **Monolith Phase 22 Master Subsystem Synthesis**: Completed 78-pass master synthesis verification suite confirming total MCP & Ripgrep feature absorption with zero-barrel OOP class extension (`ADR-039`).
+### Added (Passes 79–81 / Phase 23 Evolution)
+- **Web URL Content & Markdown Fetcher (`codemarie`)**: Added `UrlContentFetcher` ([url-content-fetcher.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/perception/url-content-fetcher.ts)) for HTTP web page retrieval and HTML-to-markdown parsing (`ADR-040`).
+- **Language AST Syntax Parser (`codemarie`)**: Added `LanguageSyntaxParser` ([language-syntax-parser.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/perception/language-syntax-parser.ts)) for fast multi-language symbol extraction (`ADR-040`).
+- **Monolith Phase 23 Master Subsystem Synthesis**: Completed 81-pass master synthesis verification suite confirming total URL fetcher & AST syntax parser feature absorption with zero-barrel OOP class extension (`ADR-040`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).

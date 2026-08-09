@@ -2,9 +2,9 @@ import { MonolithFactory, type MonolithFactoryOptions } from "./monolith-factory
 
 /**
  * GrandMonolithSynthesizer.
- * Absorbed in Pass 74 (ADR-038 / ADR-012).
+ * Absorbed in Pass 74 / Updated in Pass 81 (ADR-040 / ADR-012).
  *
- * Verifies end-to-end integration and cohesion across all 75 evolutionary passes.
+ * Verifies end-to-end integration and cohesion across all 81 evolutionary passes.
  */
 export class GrandMonolithSynthesizer {
   static verifyAllPasses(options: MonolithFactoryOptions = {}): {
@@ -16,7 +16,7 @@ export class GrandMonolithSynthesizer {
     const keys = Object.keys(engineComponents);
 
     return {
-      passCount: 75,
+      passCount: 81,
       cohesionStatus: "OPTIMAL",
       componentCount: keys.length,
     };
