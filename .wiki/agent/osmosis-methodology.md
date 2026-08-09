@@ -1,6 +1,24 @@
-# The Osmosis Learning Methodology & Developer Handoff Guide
+# The Osmosis Learning Methodology & Whitepaper
 
-This document is the authoritative guide for human developers and AI agents adopting **The Osmosis Learning Methodology** in `/Users/bozoegg/Desktop/LUMI-NEW`. It details the Teacher-Student framework, the exact history of evolution passes completed, and a step-by-step playbook for continuing the evolutionary chain.
+This document is the authoritative guide and formal whitepaper for human developers and AI agents operating within **The Osmosis Learning Methodology** in `/Users/bozoegg/Desktop/LUMI-NEW`.
+
+---
+
+## 📄 Executive Brief
+
+**LUMI-NEW** is a self-evolving agent framework and self-mutating code substrate. Instead of relying on static prompts or brittle micro-agent networks, LUMI-NEW continuously ingests production concepts from an external **Teacher Model** ([pi-main](file:///Users/bozoegg/Downloads/pi-main)), filters out framework bloat, and autonomously mutates its own 3-tier monolithic codebase (`agents`, `sessions`, `tooling`).
+
+Turn processing is encapsulated inside a **Deterministic Game Engine**, where interactions execute as frame ticks (`tick()`), state transitions are captured in immutable snapshots (`GameStateSnapshot`), and sessions support frame-perfect state rewind and replay.
+
+> 📖 Read the full whitepaper: [Whitepaper: The Osmosis Paradigm & Self-Mutating Game Engine Agent Substrate](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/whitepaper/OSMOSIS-WHITEPAPER.md)
+
+---
+
+## 💡 Foundational Philosophy
+
+1. **Code as a Living, Self-Mutating Organism**: Software is not static scaffolding; it actively ingests beneficial paradigms from superior reference architectures and sheds bloat.
+2. **Selective Osmotic Filtering**: Like a biological cell membrane, the Osmotic Filter selectively absorbs algorithms, contracts, line-anchored hashing, and zero-GC memory structures while discarding monorepo over-engineering.
+3. **Deterministic Guardrails for Safe Self-Mutation**: Self-mutation without deterministic constraints leads to code degeneration. By enforcing frame-perfect snapshot rewinds and strict type verification (`npm run check`), every mutation step is guaranteed to be stable and type-safe.
 
 ---
 
@@ -9,13 +27,11 @@ This document is the authoritative guide for human developers and AI agents adop
 | Role | Repository CWD Path | Purpose & Responsibilities |
 |---|---|---|
 | **Teacher Model** | `/Users/bozoegg/Downloads/pi-main` | Reference codebase containing production feature packages (`packages/*`). Audited for algorithms, patterns, and contracts. Never modified directly. |
-| **Student Model (Evolving Engine)** | `/Users/bozoegg/Desktop/LUMI-NEW` | Greenfield 3-tier monolithic agent framework (`agents`, `sessions`, `tooling`). Reinvents absorbed concepts under the **Deterministic Game Engine Strategy**. |
+| **Student Model (Self-Mutating Engine)** | `/Users/bozoegg/Desktop/LUMI-NEW` | Greenfield 3-tier monolithic agent framework (`agents`, `sessions`, `tooling`). Reinvents absorbed concepts under the **Deterministic Game Engine Strategy**. |
 
 ---
 
 ## 2. Completed Evolution Ledger (Where We Left Off)
-
-The following ledger tracks every Osmosis Pass completed in `LUMI-NEW`. Future agents can inspect this table to understand the exact lineage of absorbed features:
 
 | Pass # | Feature Absorbed from Teacher (`pi-main`) | Student Implementation in `LUMI-NEW` | Files Created / Modified | ADR Governance |
 |---|---|---|---|---|
@@ -31,59 +47,7 @@ The following ledger tracks every Osmosis Pass completed in `LUMI-NEW`. Future a
 
 ## 3. Playbook: How to Execute Next Evolution Pass (e.g., Pass 6)
 
-When picking up development, follow this step-by-step playbook to execute a new Osmosis pass cleanly:
-
-### Phase 1: Teacher Source Audit
-1. Navigate to the Teacher Model directory: `/Users/bozoegg/Downloads/pi-main/packages/<target-package>`.
-2. Inspect core exports, types, and logic flow (e.g. studying `packages/broccolidb` for pre-allocated typed array buffers).
-
-### Phase 2: Filtering & Reinterpretation
-1. **Discard**:
-   - Multi-package dependencies, IPC message wrappers, AST compilers.
-   - Non-erasable TS constructs (`enum`, `namespace`, parameter properties).
-2. **Re-interpret**:
-   - Define a pure interface contract in `src/core/contracts/`.
-   - Implement an abstract base class hook in `src/core/abstracts/` or extend an existing tier subsystem in `src/*/extensions/`.
-
-### Phase 3: Engrafting into Game Engine Subsystem
-1. Ensure new logic hooks directly into the **Deterministic Game Engine Tick Loop** (`AbstractAgentEngine.tick()`) or **State Snapshot Engine** (`createSnapshot()` / `rewindToSnapshot()`).
-2. Add corresponding tool definitions to [ValidatingToolRegistry](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/tool-registry.ts#L9) or slash commands to [AgentSlashRouter](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/agent-slash-router.ts#L24).
-
-### Phase 4: Verification & Governance
-1. Run TypeScript type check:
-   ```bash
-   npm run check
-   ```
-2. Run runtime smoke test:
-   ```bash
-   npx tsx src/index.ts
-   ```
-3. Record a new Architecture Decision Record in `.wiki/adr/ADR-009-<name>.md`.
-4. Update `.wiki/adr/README.md`, `.wiki/agent/playbook.md`, and this Osmosis ledger.
-5. Commit with conventional commit message format: `feat(agent): ...`.
-
----
-
-## 4. Next Evolutionary Pass Blueprints (Pass 6 & Beyond)
-
-### Blueprint: Pass 6 — Zero-GC Substrate Memory Allocation (`broccolidb`)
-- **Teacher Reference**: `/Users/bozoegg/Downloads/pi-main/packages/broccolidb`
-- **Goal**: Eliminate V8 garbage-collection pauses during long turn loops by pre-allocating slab buffers.
-- **Target Files**:
-  - `src/core/contracts/session.contracts.ts`: Add `SlabBufferSnapshot` interface.
-  - `src/sessions/extensions/session-store.ts`: Add `ArenaAllocator` pre-allocated array buffer for message turn caching.
-
-### Blueprint: Pass 7 — AST Symbol Perception (`codemarie`)
-- **Teacher Reference**: `/Users/bozoegg/Downloads/pi-main/packages/codemarie`
-- **Goal**: Enable instant regex symbol indexing without heavy LSP servers.
-- **Target Files**:
-  - `src/tooling/base/eyes.ts`: Add `searchSymbols(dirPath, query)` method to [Eyes](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/base/eyes.ts#L14).
-  - `src/tooling/extensions/tool-registry.ts`: Register `search_symbols` tool.
-
----
-
-## 5. Non-Negotiable Rules for All Future Passes
-
-1. **Model the Game Engine Strategy**: Every turn interaction remains a frame tick (`tick()`), and state updates remain snapshot-compatible (`GameStateSnapshot`).
-2. **Erasable TypeScript Syntax**: Strict Node strip-only mode (no `enum`, no `namespace`, no parameter properties).
-3. **Single Composition Root**: [LumiMonolith](file:///Users/bozoegg/Desktop/LUMI-NEW/src/index.ts#L57) in `src/index.ts` remains the single parent composition root.
+1. **Teacher Audit**: Inspect `/Users/bozoegg/Downloads/pi-main/packages/<target-package>`.
+2. **Reinterpretation**: Strip away multi-package IPC, AST compilers, and parameter properties.
+3. **Engraftment**: Implement contract in `src/core/contracts/` and extensions in `src/*/extensions/`.
+4. **Verification**: Run `npm run check` and `npx tsx src/index.ts`. Log ADR in `.wiki/adr/`.
