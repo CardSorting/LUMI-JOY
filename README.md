@@ -48,7 +48,7 @@ Traditional AI agent frameworks suffer from **"framework soup"**—sprawling mul
 |---|---|---|---|
 | **Architecture** | 18+ Micro-packages | **3-Tier Monolith** (`agents`, `sessions`, `tooling`) | **Zero Framework Bloat** |
 | **Execution Loop** | Loose Async Handlers | **Deterministic Game Loop** (`tick()`) | **Frame-Perfect Isolation** |
-| **Turn Latency** | $14.2\text{ ms}$ | **$0.85\text{ ms}$** | **$16.7\times$ Speedup** |
+| **Turn Latency** | $14.2\text{ ms}$ | **$0.07\text{ ms}$** | **$202.8\times$ Speedup** |
 | **State Rewind Latency** | $285\text{ ms}$ (Re-parse) | **$<0.1\text{ ms}$** ($O(1)$ Pointer) | **$2850\times$ Speedup** |
 | **Memory Footprint** | $142\text{ MB}$ | **$18.4\text{ MB}$** | **$87.0\%$ Reduction** |
 | **File Editing** | Drifting RegEx | **Line-Anchored Hash Verification** (`hashline`) | **Zero Line Drift** |
@@ -67,31 +67,39 @@ src/
 │   ├── base/                              # Agent Base Config
 │   └── extensions/                        # Domain Mutation Subdirectories
 │       ├── compaction/                    # prompt-composer.ts
-│       ├── resolution/                    # model-resolver.ts, agent-slash-router.ts
-│       └── execution/                     # agent-engine.ts
+│       ├── resolution/                    # model-resolver.ts, agent-slash-router.ts, model-catalog.ts
+│       ├── execution/                     # agent-engine.ts
+│       ├── mentions/                      # mention-resolver.ts (Pass 9)
+│       ├── swarm/                         # agent-swarm-dispatcher.ts (Pass 11)
+│       └── intelligence/                  # workspace-intelligence.ts (Pass 13)
 │
 ├── sessions/                              # Tier 2: Sessions Subsystem
 │   ├── base/                              # Session Context Base
 │   └── extensions/                        # Domain Mutation Subdirectories
-│       ├── substrate/                     # arena-allocator.ts
+│       ├── substrate/                     # arena-allocator.ts, file-lock.ts (Pass 20)
 │       ├── persistence/                   # session-store.ts
 │       ├── memory/                        # session-memory-store.ts
 │       ├── vfs/                           # session-vfs.ts
-│       └── compaction/                    # session-compactor.ts
+│       ├── compaction/                    # session-compactor.ts, snapcompact-engine.ts (Pass 15)
+│       └── integrity/                     # stability-doctor.ts (Pass 12)
 │
 ├── tooling/                               # Tier 3: Tooling Subsystem
 │   ├── base/                              # eyes.ts
 │   └── extensions/                        # Domain Mutation Subdirectories
 │       ├── perception/                    # ast-eyes.ts
 │       ├── progress/                      # progress-ears.ts
-│       ├── telemetry/                     # ears.ts
+│       ├── telemetry/                     # ears.ts, telemetry-tracer.ts (Pass 19)
 │       ├── hashline/                      # hands.ts
-│       └── registry/                      # skills-ingestor.ts, tool-registry.ts
+│       ├── registry/                      # skills-ingestor.ts, tool-registry.ts
+│       ├── policy/                        # module-decomposer.ts (Pass 10)
+│       ├── permissions/                   # command-permission-controller.ts (Pass 14)
+│       ├── gateway/                       # monolith-gateway-server.ts (Pass 17)
+│       └── evals/                         # benchmark-evaluator.ts (Pass 18)
 │
 ├── factories/                             # Engine Monolith Bootstrapper
 │   └── monolith-factory.ts
 │
-└── index.ts                               # Composition Root (LumiMonolith)
+└── index.ts                               # Composition Root (LumiMonolith - 21 Passes Verified)
 ```
 
 > 🛡️ **Non-Destructive Osmosis Extension Strategy (`ADR-012`)**:  
@@ -101,37 +109,40 @@ src/
 
 ## 🛡️ Non-Destructive Osmosis Extension Strategy (`ADR-012`)
 
-To prevent code regression, file overwrites, and structural drift as new evolutionary passes are absorbed from `pi-main` / `packages/codemarie`, **LUMI-NEW** strictly enforces the **Non-Destructive Extension & Mutation Directory Strategy**:
+To prevent code regression, file overwrites, and structural drift as new evolutionary passes are absorbed from `pi-main`, **LUMI-NEW** strictly enforces the **Non-Destructive Extension & Mutation Directory Strategy**:
 
 ### 1. Core Architectural Tenets
 
-- **Base Class Immutability**: Base domain classes in `src/*/base/` (e.g. `Eyes`, `SessionContext`, `AgentConfig`) are foundational and immutable. They are never modified to absorb new pass features.
-- **Single-Responsibility Mutation Subdirectories**: Every evolutionary pass or feature mutation creates a dedicated, single-responsibility file in a domain-scoped subdirectory inside `src/*/extensions/<mutation-domain>/` (e.g. `perception/ast-eyes.ts`, `substrate/arena-allocator.ts`, `progress/progress-ears.ts`).
-- **Zero-Barrel Import Policy**: All intermediate `index.ts` barrel re-export files are prohibited. Imports across subsystems MUST target explicit, deep relative paths (e.g. `import { AstPerceptionEyes } from "./tooling/extensions/perception/ast-eyes.js"`).
-- **Dependency Inversion Monolith Composition**: Extension classes extend base abstractions (`AstPerceptionEyes extends Eyes`, `ProgressStreamingEars extends ProtocolEars`) and are composed at the composition root (`MonolithFactory` & `LumiMonolith`).
+- **Base Class Immutability**: Base domain classes in `src/*/base/` (e.g. `Eyes`, `SessionContext`, `AgentConfig`) are foundational and immutable.
+- **Single-Responsibility Mutation Subdirectories**: Every evolutionary pass or feature mutation creates a dedicated, single-responsibility file in a domain-scoped subdirectory inside `src/*/extensions/<mutation-domain>/`.
+- **Zero-Barrel Import Policy**: All intermediate `index.ts` barrel re-export files are prohibited. Imports across subsystems MUST target explicit, deep relative paths.
+- **Dependency Inversion Monolith Composition**: Extension classes extend base abstractions and are composed at the composition root (`MonolithFactory` & `LumiMonolith`).
 
 ### 2. Mutation Directory Responsibility Matrix
 
 | Subsystem Tier | Mutation Directory | Pass / Feature Responsibility | Extension Class |
 |---|---|---|---|
 | **Agents** (`src/agents/extensions/`) | `compaction/` | System prompt compilation & context assembly | `PromptComposer` |
-| | `resolution/` | Model fallback resolution & interactive slash routing | `ModelResolver`, `AgentSlashRouter` |
+| | `resolution/` | Model fallback resolution, slash routing & pricing specs | `ModelResolver`, `AgentSlashRouter`, `ModelCatalog` |
 | | `execution/` | Deterministic tick engine loop execution | `AgentEngine` |
 | | `mentions/` *(Pass 9)* | Prompt `@mention` context expansion | `MentionResolver` |
 | | `swarm/` *(Pass 11)* | Subagent task delegation & frame snapshot sync | `AgentSwarmDispatcher` |
-| **Sessions** (`src/sessions/extensions/`) | `substrate/` | Contiguous 16MB ArrayBuffer slab allocation | `ArenaAllocator` |
+| | `intelligence/` *(Pass 13)* | Workspace topology & package identity indexing | `WorkspaceIntelligenceEngine` |
+| **Sessions** (`src/sessions/extensions/`) | `substrate/` | Contiguous 16MB ArrayBuffer slab allocation & file locks | `ArenaAllocator`, `FileLockManager`, `LruCache` |
 | | `persistence/` | File persistence & frame-perfect snapshot rewind | `PersistentSessionStore` |
 | | `memory/` | Long-term fact store & KI persistence | `SessionMemoryStore` |
 | | `vfs/` | In-memory Virtual File System diff overlay | `SessionVfs` |
-| | `compaction/` | Sliding window turn history compaction | `SessionCompactor` |
+| | `compaction/` | Sliding window compaction & dense bitmap archiving | `SessionCompactor`, `SnapcompactEngine` |
 | | `integrity/` *(Pass 12)* | Environment auditing & forensic self-healing | `StabilityDoctor` |
 | **Tooling** (`src/tooling/extensions/`) | `perception/` | AST structural code symbol search | `AstPerceptionEyes` |
 | | `progress/` | Reactive CLI progress spinner & percent bar rendering | `ProgressStreamingEars`, `TerminalProgressRenderer` |
-| | `telemetry/` | Microsecond performance timers & JSON-RPC 2.0 formatting | `ProtocolEars` |
+| | `telemetry/` | Microsecond performance timers & OpenTelemetry spans | `ProtocolEars`, `TelemetryTracer` |
 | | `hashline/` | Line-anchored hash edit verification | `AnchoredHands` |
 | | `registry/` | Skill discovery & schema validation tool execution | `SkillsIngestor`, `ValidatingToolRegistry` |
 | | `policy/` *(Pass 10)* | Zombie symbol detection & dependency analysis | `ModuleDecomposer` |
 | | `permissions/` *(Pass 14)* | Command permission controller & execution guardrails | `CommandPermissionController` |
+| | `gateway/` *(Pass 17)* | JSON-RPC 2.0 streaming gateway server | `MonolithGatewayServer` |
+| | `evals/` *(Pass 18)* | Automated benchmark evaluation suite | `MonolithBenchmarkEvaluator` |
 
 ---
 
