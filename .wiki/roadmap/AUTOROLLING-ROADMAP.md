@@ -39,6 +39,9 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Pass 22** | `[COMPLETE]` | `packages/coding-agent/src/commit` | Automated conventional commit message generator in `AgenticCommitGenerator` | [ADR-021](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-021-phase-4-agentic-commit-interactive-cli-controller.md) |
 | **Pass 23** | `[COMPLETE]` | `packages/coding-agent/src/modes` | Interactive CLI turn execution controller in `InteractiveModeController` | [ADR-021](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-021-phase-4-agentic-commit-interactive-cli-controller.md) |
 | **Pass 24** | `[COMPLETE]` | Phase 4 Orchestration | 24-Pass Monolith master verification & complete feature synthesis | [ADR-021](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-021-phase-4-agentic-commit-interactive-cli-controller.md) |
+| **Pass 25** | `[COMPLETE]` | `packages/ai/src/env-api-keys.ts` | Environment provider key resolver in `EnvironmentKeyResolver` | [ADR-022](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-022-phase-5-environment-key-and-image-model-registry.md) |
+| **Pass 26** | `[COMPLETE]` | `packages/ai/src/image-models.ts` | Image model capabilities registry in `ImageModelRegistry` | [ADR-022](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-022-phase-5-environment-key-and-image-model-registry.md) |
+| **Pass 27** | `[COMPLETE]` | Phase 5 Synthesis | 27-Pass Monolith master synthesis & complete framework verification | [ADR-022](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-022-phase-5-environment-key-and-image-model-registry.md) |
 
 ---
 

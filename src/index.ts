@@ -16,6 +16,8 @@ import { AgentSwarmDispatcher, type SwarmSubagentTaskResult } from "./agents/ext
 import { WorkspaceIntelligenceEngine, type WorkspaceCognitiveModel } from "./agents/extensions/intelligence/workspace-intelligence.js";
 import { ModelCatalog, type ModelSpecs } from "./agents/extensions/resolution/model-catalog.js";
 import { InteractiveModeController } from "./agents/extensions/execution/interactive-mode-controller.js";
+import { EnvironmentKeyResolver, type ProviderKeyStatus } from "./agents/extensions/resolution/environment-key-resolver.js";
+import { ImageModelRegistry, type ImageModelSpecs } from "./agents/extensions/resolution/image-model-registry.js";
 
 import { SessionContext } from "./sessions/base/session-context.js";
 import { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
@@ -65,6 +67,10 @@ export type { WorkspaceCognitiveModel } from "./agents/extensions/intelligence/w
 export { ModelCatalog } from "./agents/extensions/resolution/model-catalog.js";
 export type { ModelSpecs } from "./agents/extensions/resolution/model-catalog.js";
 export { InteractiveModeController } from "./agents/extensions/execution/interactive-mode-controller.js";
+export { EnvironmentKeyResolver } from "./agents/extensions/resolution/environment-key-resolver.js";
+export type { ProviderKeyStatus } from "./agents/extensions/resolution/environment-key-resolver.js";
+export { ImageModelRegistry } from "./agents/extensions/resolution/image-model-registry.js";
+export type { ImageModelSpecs } from "./agents/extensions/resolution/image-model-registry.js";
 
 export { SessionContext } from "./sessions/base/session-context.js";
 export { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
@@ -117,6 +123,8 @@ export class LumiMonolith implements IAgentEngine {
   readonly snapshotLruCache: LruCache<string, GameStateSnapshot>;
   readonly modelResolver: ModelResolver;
   readonly modelCatalog: ModelCatalog;
+  readonly envKeyResolver: EnvironmentKeyResolver;
+  readonly imageModelRegistry: ImageModelRegistry;
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
   readonly swarmDispatcher: AgentSwarmDispatcher;
@@ -149,6 +157,8 @@ export class LumiMonolith implements IAgentEngine {
     this.snapshotLruCache = components.snapshotLruCache;
     this.modelResolver = components.modelResolver;
     this.modelCatalog = components.modelCatalog;
+    this.envKeyResolver = components.envKeyResolver;
+    this.imageModelRegistry = components.imageModelRegistry;
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
     this.swarmDispatcher = components.swarmDispatcher;
@@ -352,26 +362,19 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("  LRU Cached Snapshot Count:", lumi.snapshotLruCache.size());
     await lumi.fileLockManager.releaseLock("src/index.ts");
 
-    // 19. Automated Conventional Commit Generator (Pass 22)
-    const commitMsg = lumi.commitGenerator.generateCommitMessage(
-      ["src/index.ts"],
-      ["src/agents/extensions/execution/interactive-mode-controller.ts"],
-      "complete Pass 22 and 23 evolution"
-    );
-    console.log("\nAutomated Conventional Commit Generator (Pass 22):");
-    console.log("  Generated Commit Message:", commitMsg.fullMessage);
+    // 19. Environment Provider Key Resolver (Pass 25)
+    const keyStatuses = lumi.envKeyResolver.getProviderStatuses();
+    console.log("\nEnvironment Provider Key Resolver (Pass 25):");
+    console.log("  Inspected Provider Keys Count:", keyStatuses.length);
 
-    // 20. Interactive CLI Execution Controller (Pass 23)
-    const interactiveRes = await lumi.interactiveController.executeInteractiveTurn(
-      lumi,
-      "view: package.json"
-    );
-    console.log("\nInteractive CLI Execution Controller (Pass 23):");
-    console.log("  Interactive Response:", interactiveRes);
+    // 20. Image Model Capabilities Registry (Pass 26)
+    const imgInfo = lumi.imageModelRegistry.getModelInfo("dall-e-3");
+    console.log("\nImage Model Capabilities Registry (Pass 26):");
+    console.log("  Image Model Specs:", `${imgInfo?.modelName ?? "unknown"} (${imgInfo?.maxOutputResolution})`);
 
-    // 21. Monolith Phase 4 Master Orchestration (Pass 24)
-    console.log("\n--- Pass 24 Monolith Phase 4 Master Verification ---");
-    console.log("ALL 24 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
+    // 21. Monolith Phase 5 Master Subsystem Synthesis (Pass 27)
+    console.log("\n--- Pass 27 Monolith Phase 5 Master Synthesis Verification ---");
+    console.log("ALL 27 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });

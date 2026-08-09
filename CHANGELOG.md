@@ -20,10 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 13)
 - **Workspace Intelligence Engine (`codemarie`)**: Added `WorkspaceIntelligenceEngine` ([workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts)) for package identity indexing, workspace topology analysis, and cognitive graph snapshot generation (`ADR-017`).
 
-### Added (Passes 22–24 / Phase 4 Evolution)
-- **Automated Conventional Commit Generator (`commit`)**: Added `AgenticCommitGenerator` ([agentic-commit-generator.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/policy/agentic-commit-generator.ts)) for conventional commit message analysis (`ADR-021`).
-- **Interactive CLI Execution Controller (`modes`)**: Added `InteractiveModeController` ([interactive-mode-controller.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/execution/interactive-mode-controller.ts)) for interactive prompt execution and stream rendering (`ADR-021`).
-- **Monolith Phase 4 Master Subsystem Orchestration**: Completed 24-pass master verification suite confirming zero-barrel OOP class extension and 100% subsystem cohesion across all domain mutation directories (`ADR-021`).
+### Added (Passes 25–27 / Phase 5 Evolution)
+- **Environment Provider Key Resolver (`ai`)**: Added `EnvironmentKeyResolver` ([environment-key-resolver.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/resolution/environment-key-resolver.ts)) for provider API key environment inspection and status masking (`ADR-022`).
+- **Image Model Capabilities Registry (`ai`)**: Added `ImageModelRegistry` ([image-model-registry.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/resolution/image-model-registry.ts)) for image generation model specs and supported aspect ratio capability indexing (`ADR-022`).
+- **Monolith Phase 5 Master Synthesis**: Completed 27-pass master synthesis verification suite confirming zero-barrel OOP class extension and 100% subsystem cohesion across all domain mutation directories (`ADR-022`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).

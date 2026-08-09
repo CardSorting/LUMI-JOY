@@ -8,6 +8,8 @@ import { AgentSwarmDispatcher } from "../agents/extensions/swarm/agent-swarm-dis
 import { WorkspaceIntelligenceEngine } from "../agents/extensions/intelligence/workspace-intelligence.js";
 import { ModelCatalog } from "../agents/extensions/resolution/model-catalog.js";
 import { InteractiveModeController } from "../agents/extensions/execution/interactive-mode-controller.js";
+import { EnvironmentKeyResolver } from "../agents/extensions/resolution/environment-key-resolver.js";
+import { ImageModelRegistry } from "../agents/extensions/resolution/image-model-registry.js";
 
 import { SessionContext } from "../sessions/base/session-context.js";
 import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
@@ -55,6 +57,8 @@ export class MonolithFactory {
     snapshotLruCache: LruCache<string, GameStateSnapshot>;
     modelResolver: ModelResolver;
     modelCatalog: ModelCatalog;
+    envKeyResolver: EnvironmentKeyResolver;
+    imageModelRegistry: ImageModelRegistry;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -94,6 +98,8 @@ export class MonolithFactory {
       options.fallbackModels
     );
     const modelCatalog = new ModelCatalog();
+    const envKeyResolver = new EnvironmentKeyResolver();
+    const imageModelRegistry = new ImageModelRegistry();
     const slashRouter = new AgentSlashRouter();
     const mentionResolver = new MentionResolver();
     const swarmDispatcher = new AgentSwarmDispatcher();
@@ -147,6 +153,8 @@ export class MonolithFactory {
       snapshotLruCache,
       modelResolver,
       modelCatalog,
+      envKeyResolver,
+      imageModelRegistry,
       slashRouter,
       mentionResolver,
       swarmDispatcher,
