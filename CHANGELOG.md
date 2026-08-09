@@ -17,8 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 8)
 - **Terminal Progress Renderer (`tui` & `client`)**: Added `ProgressStreamingEars` and `TerminalProgressRenderer` ([progress-ears.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/progress/progress-ears.ts)) for streaming JSON-RPC `telemetry/progress` notifications and published `ADR-011`.
 
-### Added (Pass 9)
-- **Workspace Mention Resolution (`codemarie`)**: Added `MentionResolver` ([mention-resolver.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/mentions/mention-resolver.ts)) for parsing dynamic prompt `@mention` specifiers (`@file:<path>`, `@symbol:<name>`, `@git:staged`, `@terminal:last`) into structured context blocks and published `ADR-013`.
+### Added (Pass 10)
+- **Zombie Symbol & Module Decomposition (`codemarie`)**: Added `ModuleDecomposer` ([module-decomposer.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/policy/module-decomposer.ts)) for module integrity scoring, coupling metrics, and orphan zombie symbol auditing via the `audit_symbols` tool (`ADR-014`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).

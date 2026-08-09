@@ -9,7 +9,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 ```
   [DONE] Pass 1 ──► [DONE] Pass 2 ──► [DONE] Pass 3 ──► [DONE] Pass 4 ──► [DONE] Pass 5 ──► [DONE] AKD-DSO
                                                                                                │
-  [PLANNED] Pass 14 ◄── [PLANNED] Pass 13 ◄── [PLANNED] Pass 12 ◄── [PLANNED] Pass 11 ◄── [ACTIVE NEXT] Pass 10 ◄── [DONE] Pass 9 ◄── [DONE] Pass 8 ◄── [DONE] Pass 7 ◄── [DONE] Pass 6 ◄──┘
+  [PLANNED] Pass 14 ◄── [PLANNED] Pass 13 ◄── [PLANNED] Pass 12 ◄── [ACTIVE NEXT] Pass 11 ◄── [DONE] Pass 10 ◄── [DONE] Pass 9 ◄── [DONE] Pass 8 ◄── [DONE] Pass 7 ◄── [DONE] Pass 6 ◄──┘
 ```
 
 | Pass Stage | Status | Target Package in Teacher (`pi-main`) | Student Implementation (`LUMI-NEW`) | Governance & Code Links |
@@ -24,8 +24,8 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Pass 7** | `[COMPLETE]` | `packages/codemarie` | AST structural code symbol search in `Eyes` (`searchSymbols`) | [ADR-010](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-010-ast-symbol-perception.md) |
 | **Pass 8** | `[COMPLETE]` | `packages/tui` & `packages/client` | Terminal progress renderer connected to `ProtocolEars` stream | [ADR-011](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-011-terminal-progress-renderer.md) |
 | **Pass 9** | `[COMPLETE]` | `packages/codemarie/src/core/mentions` | Context `@mention` resolution (`@file`, `@symbol`, `@git`, `@terminal`) in `MentionResolver` | [ADR-013](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-013-workspace-mention-resolution.md) |
-| **Pass 10** | `[ACTIVE NEXT]` | `packages/codemarie/src/core/policy` | Zombie symbol detection & dependency analysis in `ModuleDecomposer` | [Pass 10 Blueprint](#pass-10-zombie-symbol--module-decomposition) |
-| **Pass 11** | `[PLANNED]` | `packages/codemarie/src/core/swarm` | Subagent task delegation & snapshot sync in `AgentSwarmDispatcher` | [Pass 11 Blueprint](#pass-11-swarm-subagent-task-delegation) |
+| **Pass 10** | `[COMPLETE]` | `packages/codemarie/src/core/policy` | Zombie symbol detection & dependency analysis in `ModuleDecomposer` | [ADR-014](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-014-zombie-symbol-module-decomposition.md) |
+| **Pass 11** | `[ACTIVE NEXT]` | `packages/codemarie/src/core/swarm` | Subagent task delegation & snapshot sync in `AgentSwarmDispatcher` | [Pass 11 Blueprint](#pass-11-swarm-subagent-task-delegation) |
 | **Pass 12** | `[PLANNED]` | `packages/codemarie/src/core/integrity` | Environment auditing & self-healing diagnostics in `StabilityDoctor` | [Pass 12 Blueprint](#pass-12-environment-integrity--forensic-healing) |
 | **Pass 13** | `[PLANNED]` | `packages/codemarie/src/core/workspace-intelligence` | Workspace topology & symbol knowledge graph in `WorkspaceIntelligenceEngine` | [Pass 13 Blueprint](#pass-13-workspace-intelligence-engine) |
 | **Pass 14** | `[PLANNED]` | `packages/codemarie/src/core/permissions` | Command permission controller & execution guardrails in `CommandPermissionController` | [Pass 14 Blueprint](#pass-14-command-permission--security-guardrails) |
@@ -68,15 +68,15 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
   - [src/factories/monolith-factory.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/factories/monolith-factory.ts): Wire `MentionResolver` into engine monad composition root.
 
 ### Pass 10: Zombie Symbol & Module Decomposition (`packages/codemarie/src/core/policy`)
-- **Status**: `[ACTIVE NEXT]`
+- **Status**: `[COMPLETE]`
 - **Teacher Reference**: `/Users/bozoegg/Downloads/pi-main/packages/codemarie/src/core/policy/ModuleDecomposer.ts`
 - **Objective**: Detect orphan/zombie exported symbols with zero active importers and calculate module coupling metrics.
-- **Files to Modify/Create**:
-  - `src/tooling/extensions/module-decomposer.ts`: Create `ModuleDecomposer`.
-  - [src/tooling/extensions/tool-registry.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/tool-registry.ts): Register `audit_symbols` tool.
+- **Files Modified/Created**:
+  - [src/tooling/extensions/policy/module-decomposer.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/policy/module-decomposer.ts): Implement `ModuleDecomposer` & zombie symbol auditing.
+  - [src/tooling/extensions/registry/tool-registry.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/registry/tool-registry.ts): Register `audit_symbols` tool.
 
 ### Pass 11: Swarm Subagent Task Delegation (`packages/codemarie/src/core/swarm`)
-- **Status**: `[PLANNED]`
+- **Status**: `[ACTIVE NEXT]`
 - **Teacher Reference**: `/Users/bozoegg/Downloads/pi-main/packages/codemarie/src/core/swarm`
 - **Objective**: Delegate isolated sub-tasks to child `LumiMonolith` session instances with frame snapshot synchronization.
 - **Files to Modify/Create**:

@@ -24,6 +24,7 @@ import { ProtocolEars, Ears } from "./tooling/extensions/telemetry/ears.js";
 import { ProgressStreamingEars, TerminalProgressRenderer } from "./tooling/extensions/progress/progress-ears.js";
 import { SkillsIngestor } from "./tooling/extensions/registry/skills-ingestor.js";
 import { ValidatingToolRegistry, ToolRegistry } from "./tooling/extensions/registry/tool-registry.js";
+import { ModuleDecomposer } from "./tooling/extensions/policy/module-decomposer.js";
 
 import { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.js";
 
@@ -57,6 +58,7 @@ export { ProtocolEars, Ears } from "./tooling/extensions/telemetry/ears.js";
 export { ProgressStreamingEars, TerminalProgressRenderer } from "./tooling/extensions/progress/progress-ears.js";
 export { SkillsIngestor } from "./tooling/extensions/registry/skills-ingestor.js";
 export { ValidatingToolRegistry, ToolRegistry } from "./tooling/extensions/registry/tool-registry.js";
+export { ModuleDecomposer } from "./tooling/extensions/policy/module-decomposer.js";
 export { MonolithFactory } from "./factories/monolith-factory.js";
 
 /**
@@ -198,6 +200,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("  Parsed Prompt:", mentionResult.parsedPrompt);
     console.log("  Resolved Mentions:", mentionResult.resolvedMentions);
     console.log("  Context Blocks Generated:", mentionResult.expandedContextBlocks.length);
+
+    // 8. Zombie Symbol & Module Decomposition (Pass 10)
+    const decomposer = lumi.toolRegistry.moduleDecomposer;
+    const report = decomposer.analyzeModule("src/index.ts", "export class LumiMonolith {}");
+    console.log("\nModule Decomposition Audit (Pass 10):");
+    console.log("  Integrity Score:", report.integrityScore);
+    console.log("  Coupling Score:", report.couplingScore);
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });

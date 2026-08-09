@@ -7,9 +7,12 @@ import type { ProtocolEars } from "../telemetry/ears.js";
 import { SkillsIngestor } from "./skills-ingestor.js";
 import type { SessionMemoryStore } from "../../../sessions/extensions/memory/session-memory-store.js";
 
+import { ModuleDecomposer } from "../policy/module-decomposer.js";
+
 export class ValidatingToolRegistry extends AbstractToolRegistry {
   readonly skillsIngestor: SkillsIngestor;
   readonly memoryStore?: SessionMemoryStore;
+  readonly moduleDecomposer: ModuleDecomposer;
 
   constructor(
     eyes: Eyes,
@@ -21,6 +24,7 @@ export class ValidatingToolRegistry extends AbstractToolRegistry {
     super(eyes, hands, ears);
     this.skillsIngestor = skillsIngestor ?? new SkillsIngestor(eyes);
     this.memoryStore = memoryStore;
+    this.moduleDecomposer = new ModuleDecomposer();
     this.registerBuiltins();
   }
 
@@ -179,6 +183,14 @@ export class ValidatingToolRegistry extends AbstractToolRegistry {
         const searchPath = typeof args.path === "string" ? args.path : cwd;
         const astEyes = this.eyes as AstPerceptionEyes;
         return astEyes.searchSymbols ? astEyes.searchSymbols(searchPath, query) : [];
+      },
+    });
+
+    this.registerTool({
+      name: "audit_symbols",
+      description: "Audit workspace orphan zombie symbols and module coupling metrics (ModuleDecomposer)",
+      execute: async (_args, cwd) => {
+        return this.moduleDecomposer.auditZombieSymbols(cwd, this.eyes);
       },
     });
   }

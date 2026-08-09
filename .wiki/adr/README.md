@@ -19,6 +19,7 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-011](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-011-terminal-progress-renderer.md) | Terminal Progress Renderer (`tui` & `client`) | Accepted | 2026-08-09 | Terminal Progress Telemetry |
 | [ADR-012](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-012-non-destructive-osmosis-class-extension-strategy.md) | Non-Destructive Osmosis Class Extension Strategy | Accepted | 2026-08-09 | Architectural Governance |
 | [ADR-013](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-013-workspace-mention-resolution.md) | Workspace Mention Resolution (`codemarie`) | Accepted | 2026-08-09 | Context & Mention Resolution |
+| [ADR-014](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-014-zombie-symbol-module-decomposition.md) | Zombie Symbol & Module Decomposition (`codemarie`) | Accepted | 2026-08-09 | Policy & Symbol Audit |
 
 ## Domain Grouping
 
