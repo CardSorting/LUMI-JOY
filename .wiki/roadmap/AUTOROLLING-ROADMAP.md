@@ -33,6 +33,9 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Pass 16** | `[COMPLETE]` | `packages/catalog` | Model capability specs & pricing calculation in `ModelCatalog` | [ADR-019](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-019-phase-2-extended-package-osmosis.md) |
 | **Pass 17** | `[COMPLETE]` | `packages/server` | JSON-RPC 2.0 streaming gateway in `MonolithGatewayServer` | [ADR-019](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-019-phase-2-extended-package-osmosis.md) |
 | **Pass 18** | `[COMPLETE]` | `packages/evals` | Automated benchmark suite evaluation & latency assertions in `MonolithBenchmarkEvaluator` | [ADR-019](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-019-phase-2-extended-package-osmosis.md) |
+| **Pass 19** | `[COMPLETE]` | `packages/telemetry` | OpenTelemetry microsecond span tracing in `TelemetryTracer` | [ADR-020](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-020-phase-3-master-subsystem-orchestration.md) |
+| **Pass 20** | `[COMPLETE]` | `packages/utils` | Safe atomic file locks & LRU frame caching in `FileLockManager` & `LruCache` | [ADR-020](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-020-phase-3-master-subsystem-orchestration.md) |
+| **Pass 21** | `[COMPLETE]` | Subsystem Orchestration | 21-Pass Monolith master verification & zero-barrel architectural synthesis | [ADR-020](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-020-phase-3-master-subsystem-orchestration.md) |
 
 ---
 

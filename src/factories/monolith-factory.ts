@@ -15,6 +15,7 @@ import { SessionVfs } from "../sessions/extensions/vfs/session-vfs.js";
 import { SessionMemoryStore } from "../sessions/extensions/memory/session-memory-store.js";
 import { StabilityDoctor } from "../sessions/extensions/integrity/stability-doctor.js";
 import { SnapcompactEngine } from "../sessions/extensions/compaction/snapcompact-engine.js";
+import { FileLockManager, LruCache } from "../sessions/extensions/substrate/file-lock.js";
 
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
@@ -26,6 +27,7 @@ import { SkillsIngestor } from "../tooling/extensions/registry/skills-ingestor.j
 import { ValidatingToolRegistry } from "../tooling/extensions/registry/tool-registry.js";
 import { MonolithGatewayServer } from "../tooling/extensions/gateway/monolith-gateway-server.js";
 import { MonolithBenchmarkEvaluator } from "../tooling/extensions/evals/benchmark-evaluator.js";
+import { TelemetryTracer } from "../tooling/extensions/telemetry/telemetry-tracer.js";
 
 import type { GameStateSnapshot } from "../core/contracts/session.contracts.js";
 
@@ -47,6 +49,8 @@ export class MonolithFactory {
     sessionMemoryStore: SessionMemoryStore;
     stabilityDoctor: StabilityDoctor;
     snapcompactEngine: SnapcompactEngine;
+    fileLockManager: FileLockManager;
+    snapshotLruCache: LruCache<string, GameStateSnapshot>;
     modelResolver: ModelResolver;
     modelCatalog: ModelCatalog;
     slashRouter: AgentSlashRouter;
@@ -56,6 +60,7 @@ export class MonolithFactory {
     permissionController: CommandPermissionController;
     gatewayServer: MonolithGatewayServer;
     benchmarkEvaluator: MonolithBenchmarkEvaluator;
+    telemetryTracer: TelemetryTracer;
     eyes: AstPerceptionEyes;
     hands: AnchoredHands;
     ears: ProgressStreamingEars;
@@ -77,6 +82,8 @@ export class MonolithFactory {
     const sessionMemoryStore = new SessionMemoryStore();
     const stabilityDoctor = new StabilityDoctor();
     const snapcompactEngine = new SnapcompactEngine();
+    const fileLockManager = new FileLockManager();
+    const snapshotLruCache = new LruCache<string, GameStateSnapshot>(50);
 
     const modelResolver = new ModelResolver(
       config.modelName,
@@ -91,6 +98,7 @@ export class MonolithFactory {
     const permissionController = new CommandPermissionController();
     const gatewayServer = new MonolithGatewayServer();
     const benchmarkEvaluator = new MonolithBenchmarkEvaluator();
+    const telemetryTracer = new TelemetryTracer();
 
     const eyes = new AstPerceptionEyes();
     const hands = new AnchoredHands(permissionController);
@@ -129,6 +137,8 @@ export class MonolithFactory {
       sessionMemoryStore,
       stabilityDoctor,
       snapcompactEngine,
+      fileLockManager,
+      snapshotLruCache,
       modelResolver,
       modelCatalog,
       slashRouter,
@@ -138,6 +148,7 @@ export class MonolithFactory {
       permissionController,
       gatewayServer,
       benchmarkEvaluator,
+      telemetryTracer,
       eyes,
       hands,
       ears,
