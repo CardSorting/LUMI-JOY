@@ -3,6 +3,7 @@ import { AgentEngine } from "../agents/extensions/execution/agent-engine.js";
 import { PromptComposer } from "../agents/extensions/compaction/prompt-composer.js";
 import { ModelResolver } from "../agents/extensions/resolution/model-resolver.js";
 import { AgentSlashRouter } from "../agents/extensions/resolution/agent-slash-router.js";
+import { MentionResolver } from "../agents/extensions/mentions/mention-resolver.js";
 import { SessionContext } from "../sessions/base/session-context.js";
 import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
 import { SessionCompactor } from "../sessions/extensions/compaction/session-compactor.js";
@@ -35,6 +36,7 @@ export class MonolithFactory {
     sessionMemoryStore: SessionMemoryStore;
     modelResolver: ModelResolver;
     slashRouter: AgentSlashRouter;
+    mentionResolver: MentionResolver;
     eyes: AstPerceptionEyes;
     hands: AnchoredHands;
     ears: ProgressStreamingEars;
@@ -59,6 +61,7 @@ export class MonolithFactory {
       options.fallbackModels
     );
     const slashRouter = new AgentSlashRouter();
+    const mentionResolver = new MentionResolver();
 
     const eyes = new AstPerceptionEyes();
     const hands = new AnchoredHands();
@@ -97,6 +100,7 @@ export class MonolithFactory {
       sessionMemoryStore,
       modelResolver,
       slashRouter,
+      mentionResolver,
       eyes,
       hands,
       ears,

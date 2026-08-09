@@ -11,6 +11,7 @@ import { AgentEngine } from "./agents/extensions/execution/agent-engine.js";
 import { PromptComposer } from "./agents/extensions/compaction/prompt-composer.js";
 import { ModelResolver } from "./agents/extensions/resolution/model-resolver.js";
 import { AgentSlashRouter } from "./agents/extensions/resolution/agent-slash-router.js";
+import { MentionResolver } from "./agents/extensions/mentions/mention-resolver.js";
 import { SessionContext } from "./sessions/base/session-context.js";
 import { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
 import { SessionCompactor } from "./sessions/extensions/compaction/session-compactor.js";
@@ -41,6 +42,7 @@ export { AgentEngine } from "./agents/extensions/execution/agent-engine.js";
 export { PromptComposer } from "./agents/extensions/compaction/prompt-composer.js";
 export { ModelResolver } from "./agents/extensions/resolution/model-resolver.js";
 export { AgentSlashRouter } from "./agents/extensions/resolution/agent-slash-router.js";
+export { MentionResolver } from "./agents/extensions/mentions/mention-resolver.js";
 export { SessionContext } from "./sessions/base/session-context.js";
 export { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
 export { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.js";
@@ -71,6 +73,7 @@ export class LumiMonolith implements IAgentEngine {
   readonly sessionMemoryStore: SessionMemoryStore;
   readonly modelResolver: ModelResolver;
   readonly slashRouter: AgentSlashRouter;
+  readonly mentionResolver: MentionResolver;
   readonly eyes: AstPerceptionEyes;
   readonly hands: AnchoredHands;
   readonly ears: ProgressStreamingEars;
@@ -89,6 +92,7 @@ export class LumiMonolith implements IAgentEngine {
     this.sessionMemoryStore = components.sessionMemoryStore;
     this.modelResolver = components.modelResolver;
     this.slashRouter = components.slashRouter;
+    this.mentionResolver = components.mentionResolver;
     this.eyes = components.eyes;
     this.hands = components.hands;
     this.ears = components.ears;
@@ -182,6 +186,18 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     // 6. Terminal Progress Renderer & JSON-RPC Stream (Pass 8)
     const progressNotification = lumi.ears.emitProgress("Executing Pass 8 Frame Tick", 75);
     console.log("\nTerminal Progress Renderer JSON-RPC Notification:", JSON.stringify(progressNotification, null, 2));
+
+    // 7. Workspace Mention Resolution (Pass 9)
+    const mentionResult = await lumi.mentionResolver.resolveMentions(
+      "inspect @file:package.json and find @symbol:LumiMonolith",
+      process.cwd(),
+      lumi.eyes,
+      lumi.hands
+    );
+    console.log("\nWorkspace Mention Resolution (Pass 9):");
+    console.log("  Parsed Prompt:", mentionResult.parsedPrompt);
+    console.log("  Resolved Mentions:", mentionResult.resolvedMentions);
+    console.log("  Context Blocks Generated:", mentionResult.expandedContextBlocks.length);
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });

@@ -8,8 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-### Planned (Pass 6)
-- **Zero-GC Substrate Memory Allocation (`broccolidb`)**: Pre-allocated slab array buffer caching in `PersistentSessionStore` to eliminate V8 garbage collection pauses during multi-turn LLM agent execution loops.
+### Added (Pass 6)
+- **Zero-GC Substrate Memory Allocation (`broccolidb`)**: Added `ArenaAllocator` ([arena-allocator.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/substrate/arena-allocator.ts)) contiguous 16MB ArrayBuffer slab allocation inside `PersistentSessionStore` ([session-store.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/persistence/session-store.ts)) and published `ADR-009`.
+
+### Added (Pass 7)
+- **AST Symbol Perception (`codemarie`)**: Added `AstPerceptionEyes.searchSymbols()` ([ast-eyes.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/perception/ast-eyes.ts)) for fast structural code symbol searching (`class`, `function`, `interface`, `type`, `enum`, `const`) and published `ADR-010`.
+
+### Added (Pass 8)
+- **Terminal Progress Renderer (`tui` & `client`)**: Added `ProgressStreamingEars` and `TerminalProgressRenderer` ([progress-ears.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/progress/progress-ears.ts)) for streaming JSON-RPC `telemetry/progress` notifications and published `ADR-011`.
+
+### Added (Pass 9)
+- **Workspace Mention Resolution (`codemarie`)**: Added `MentionResolver` ([mention-resolver.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/mentions/mention-resolver.ts)) for parsing dynamic prompt `@mention` specifiers (`@file:<path>`, `@symbol:<name>`, `@git:staged`, `@terminal:last`) into structured context blocks and published `ADR-013`.
+
+### Added (ADR-012 Architecture)
+- **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).
 
 ---
 
