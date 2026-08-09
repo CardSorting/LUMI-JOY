@@ -1,18 +1,60 @@
-# Troubleshooting & Diagnostic Guide
+# Troubleshooting & Verification Guide
 
-## 1. Type-Checking Failures (`npm run check`)
+This guide provides troubleshooting steps and common fixes for issues encountered when developing or executing `/Users/bozoegg/Desktop/LUMI-NEW`.
 
-- **Symptom**: `tsc` error regarding parameter properties or `enum` syntax.
-- **Cause**: Using non-erasable TypeScript features. Node's `--experimental-strip-types` / strip-only mode fails when encountering non-erasable syntax.
-- **Fix**: Replace parameter properties with explicit fields and constructor assignments. Replace `enum` with union types.
+---
 
-## 2. ESM Import Resolution
+## Common Verification Commands
 
-- **Symptom**: `Cannot find module './agent-config'` at runtime under Node ESM.
-- **Cause**: Missing `.js` file extensions in relative import paths under `"moduleResolution": "NodeNext"`.
-- **Fix**: Ensure all relative TypeScript imports specify `.js` extension (e.g. `import { AgentConfig } from "./agent-config.js"`).
+### 1. TypeScript Type Verification
 
-## 3. Hydrating Workspace Dependencies
+Run `tsc --noEmit` across all workspace modules (`src/core/`, `src/agents/`, `src/sessions/`, `src/tooling/`, `src/factories/`, `src/index.ts`):
 
-- **Command**: `npm install --ignore-scripts`
-- **Rule**: Never run lifecycle scripts automatically during dependency hydration.
+```bash
+npm run check
+```
+
+**Common Causes of Failure**:
+- Using erasable TS violations (e.g. `enum`, `namespace`, parameter properties in constructors).
+- Missing `type` keyword on interface imports under `verbatimModuleSyntax`.
+- Dynamic inline imports (`await import()`). Use top-level imports only.
+
+---
+
+### 2. Runtime Game Engine Smoke Test
+
+Run the game loop smoke test executing frame ticks, state snapshot capture, and frame-perfect rewind:
+
+```bash
+npx tsx src/index.ts
+```
+
+**Expected Output**:
+```text
+Initializing Deterministic Game Engine Monolith...
+
+--- Subsystem Abstract Base Class Verification ---
+lumi.agentEngine instanceof AbstractAgentEngine: true
+lumi.sessionStore instanceof AbstractSessionStore: true
+lumi.hands instanceof AbstractHands: true
+lumi.ears instanceof AbstractEars: true
+lumi.toolRegistry instanceof AbstractToolRegistry: true
+
+Frame #1 Result: Persisted memory fact: engine = deterministic (0.85ms)
+Created Snapshot ID: 'snapshot-frame-1-...' at Frame #1
+Frame #2 Result: Read file content from package.json
+Current message count before rewind: 4
+Rewound frame index: 1
+Message count after rewind: 2
+```
+
+---
+
+## Known Pitfalls & Solutions
+
+| Error | Root Cause | Solution |
+|---|---|---|
+| `TS2742: Inferred type of this node cannot be named without a reference to...` | Missing explicit return type on public method | Add explicit return type annotations to class methods |
+| `TS2307: Cannot find module './...'` | Missing `.js` extension in ESM import | Include explicit `.js` extension in ESM import statements (e.g. `import { Eyes } from "./eyes.js"`) |
+| `Line anchor hash mismatch at line X` | Target line content modified externally | Recalculate expected line hash using `AnchoredHands.computeLineHash(currentContent)` |
+| `Tool argument schema validation failed` | Missing required parameter or invalid type | Pass required parameters matching tool schema defined in `ValidatingToolRegistry` |
