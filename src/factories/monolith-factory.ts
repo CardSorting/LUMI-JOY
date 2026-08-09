@@ -28,6 +28,8 @@ import { SnowflakeIdGenerator } from "../sessions/extensions/substrate/snowflake
 
 import { TransportConnectionController } from "../tooling/extensions/gateway/transport-connection-controller.js";
 import { ResilientFetchClient } from "../tooling/extensions/telemetry/resilient-fetch-client.js";
+import { FrontmatterParser } from "../tooling/extensions/perception/frontmatter-parser.js";
+import { BoundedFilePeeker } from "../tooling/extensions/perception/file-peeker.js";
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
@@ -76,6 +78,8 @@ export class MonolithFactory {
     dynamicModelCache: DynamicModelCache;
     connectionController: TransportConnectionController;
     resilientFetchClient: ResilientFetchClient;
+    frontmatterParser: FrontmatterParser;
+    filePeeker: BoundedFilePeeker;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -126,6 +130,8 @@ export class MonolithFactory {
     const dynamicModelCache = new DynamicModelCache();
     const connectionController = new TransportConnectionController();
     const resilientFetchClient = new ResilientFetchClient();
+    const frontmatterParser = new FrontmatterParser();
+    const filePeeker = new BoundedFilePeeker();
     const slashRouter = new AgentSlashRouter();
     const mentionResolver = new MentionResolver();
     const swarmDispatcher = new AgentSwarmDispatcher();
@@ -190,6 +196,8 @@ export class MonolithFactory {
       dynamicModelCache,
       connectionController,
       resilientFetchClient,
+      frontmatterParser,
+      filePeeker,
       slashRouter,
       mentionResolver,
       swarmDispatcher,

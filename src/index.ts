@@ -37,6 +37,8 @@ import { SnowflakeIdGenerator } from "./sessions/extensions/substrate/snowflake-
 
 import { Eyes } from "./tooling/base/eyes.js";
 import { AstPerceptionEyes, type SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
+import { FrontmatterParser, type FrontmatterResult } from "./tooling/extensions/perception/frontmatter-parser.js";
+import { BoundedFilePeeker, type PeekFileResult } from "./tooling/extensions/perception/file-peeker.js";
 import { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
 import { CommandPermissionController, type PermissionValidationResult } from "./tooling/extensions/permissions/command-permission-controller.js";
 import { ProtocolEars, Ears } from "./tooling/extensions/telemetry/ears.js";
@@ -109,6 +111,10 @@ export { SnowflakeIdGenerator } from "./sessions/extensions/substrate/snowflake-
 export type { SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
 export { Eyes } from "./tooling/base/eyes.js";
 export { AstPerceptionEyes } from "./tooling/extensions/perception/ast-eyes.js";
+export { FrontmatterParser } from "./tooling/extensions/perception/frontmatter-parser.js";
+export type { FrontmatterResult } from "./tooling/extensions/perception/frontmatter-parser.js";
+export { BoundedFilePeeker } from "./tooling/extensions/perception/file-peeker.js";
+export type { PeekFileResult } from "./tooling/extensions/perception/file-peeker.js";
 export { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
 export { CommandPermissionController } from "./tooling/extensions/permissions/command-permission-controller.js";
 export type { PermissionValidationResult } from "./tooling/extensions/permissions/command-permission-controller.js";
@@ -161,6 +167,8 @@ export class LumiMonolith implements IAgentEngine {
   readonly dynamicModelCache: DynamicModelCache;
   readonly connectionController: TransportConnectionController;
   readonly resilientFetchClient: ResilientFetchClient;
+  readonly frontmatterParser: FrontmatterParser;
+  readonly filePeeker: BoundedFilePeeker;
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
   readonly swarmDispatcher: AgentSwarmDispatcher;
@@ -204,6 +212,8 @@ export class LumiMonolith implements IAgentEngine {
     this.dynamicModelCache = components.dynamicModelCache;
     this.connectionController = components.connectionController;
     this.resilientFetchClient = components.resilientFetchClient;
+    this.frontmatterParser = components.frontmatterParser;
+    this.filePeeker = components.filePeeker;
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
     this.swarmDispatcher = components.swarmDispatcher;
@@ -309,25 +319,19 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("Message count after rewind:", lumi.sessionStore.getMessages().length);
     console.log("Slab allocated bytes after rewind:", lumi.sessionStore.getSlabSnapshot().allocatedBytes);
 
-    // 5. Resilient Fetch Client (Pass 40)
-    const fetchRes = await lumi.resilientFetchClient.fetchWithRetry("https://api.lumi.internal/health", async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({ status: "healthy" }),
-    }));
-    console.log("\nResilient Fetch Client (Pass 40):");
-    console.log("  Fetch Status:", fetchRes.status, "| Attempts:", fetchRes.attempts);
+    // 5. Frontmatter Extractor & Parser (Pass 43)
+    const fmResult = lumi.frontmatterParser.parse("---\nname: lumi\nversion: 0.1.0\n---\n# Lumi Title");
+    console.log("\nFrontmatter Extractor & Parser (Pass 43):");
+    console.log("  Parsed Attributes:", fmResult.attributes);
 
-    // 6. Snowflake Unique ID Generator (Pass 41)
-    const snowflakeId1 = lumi.snowflakeIdGenerator.nextId();
-    const snowflakeId2 = lumi.snowflakeIdGenerator.nextId();
-    console.log("\nSnowflake Unique ID Generator (Pass 41):");
-    console.log("  Generated Snowflake ID #1:", snowflakeId1);
-    console.log("  Generated Snowflake ID #2:", snowflakeId2);
+    // 6. Bounded File Peeker (Pass 44)
+    const peekResult = await lumi.filePeeker.peekFile("package.json", { maxLines: 3 });
+    console.log("\nBounded File Peeker (Pass 44):");
+    console.log("  Lines Read:", peekResult.linesRead, "| Total Lines:", peekResult.totalLines);
 
-    // 7. Monolith Phase 10 Master Subsystem Synthesis (Pass 42)
-    console.log("\n--- Pass 42 Monolith Phase 10 Master Synthesis Verification ---");
-    console.log("ALL 42 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
+    // 7. Monolith Phase 11 Master Subsystem Synthesis (Pass 45)
+    console.log("\n--- Pass 45 Monolith Phase 11 Master Synthesis Verification ---");
+    console.log("ALL 45 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });

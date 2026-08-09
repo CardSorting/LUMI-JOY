@@ -33,6 +33,7 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-025](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-025-phase-8-transport-connection-and-remote-session-handle.md) | Phase 8 Transport Connection & Remote Session Handle (Passes 34–36) | Accepted | 2026-08-09 | Phase 8 Evolution |
 | [ADR-026](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-026-phase-9-gateway-session-registry-and-snapshot-storage-index.md) | Phase 9 Gateway Session Registry & Snapshot Storage Index (Passes 37–39) | Accepted | 2026-08-09 | Phase 9 Evolution |
 | [ADR-027](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-027-phase-10-resilient-fetch-client-and-snowflake-id-generator.md) | Phase 10 Resilient Fetch Client & Snowflake ID Generator (Passes 40–42) | Accepted | 2026-08-09 | Phase 10 Evolution |
+| [ADR-028](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-028-phase-11-frontmatter-parser-and-bounded-file-peeker.md) | Phase 11 Frontmatter Parser & Bounded File Peeker (Passes 43–45) | Accepted | 2026-08-09 | Phase 11 Evolution |
 
 ## Domain Grouping
 
