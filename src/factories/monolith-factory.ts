@@ -24,8 +24,10 @@ import { SnapcompactEngine } from "../sessions/extensions/compaction/snapcompact
 import { FileLockManager, LruCache } from "../sessions/extensions/substrate/file-lock.js";
 import { GatewaySessionRegistry } from "../sessions/extensions/persistence/gateway-session-registry.js";
 import { SnapshotStorageIndex } from "../sessions/extensions/persistence/snapshot-storage-index.js";
+import { SnowflakeIdGenerator } from "../sessions/extensions/substrate/snowflake-id-generator.js";
 
 import { TransportConnectionController } from "../tooling/extensions/gateway/transport-connection-controller.js";
+import { ResilientFetchClient } from "../tooling/extensions/telemetry/resilient-fetch-client.js";
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
@@ -64,6 +66,7 @@ export class MonolithFactory {
     snapshotLruCache: LruCache<string, GameStateSnapshot>;
     gatewaySessionRegistry: GatewaySessionRegistry;
     snapshotStorageIndex: SnapshotStorageIndex;
+    snowflakeIdGenerator: SnowflakeIdGenerator;
     modelResolver: ModelResolver;
     modelCatalog: ModelCatalog;
     envKeyResolver: EnvironmentKeyResolver;
@@ -72,6 +75,7 @@ export class MonolithFactory {
     reasoningEffortController: ReasoningEffortController;
     dynamicModelCache: DynamicModelCache;
     connectionController: TransportConnectionController;
+    resilientFetchClient: ResilientFetchClient;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -108,6 +112,7 @@ export class MonolithFactory {
     const snapshotLruCache = new LruCache<string, GameStateSnapshot>(50);
     const gatewaySessionRegistry = new GatewaySessionRegistry();
     const snapshotStorageIndex = new SnapshotStorageIndex();
+    const snowflakeIdGenerator = new SnowflakeIdGenerator();
 
     const modelResolver = new ModelResolver(
       config.modelName,
@@ -120,6 +125,7 @@ export class MonolithFactory {
     const reasoningEffortController = new ReasoningEffortController();
     const dynamicModelCache = new DynamicModelCache();
     const connectionController = new TransportConnectionController();
+    const resilientFetchClient = new ResilientFetchClient();
     const slashRouter = new AgentSlashRouter();
     const mentionResolver = new MentionResolver();
     const swarmDispatcher = new AgentSwarmDispatcher();
@@ -174,6 +180,7 @@ export class MonolithFactory {
       snapshotLruCache,
       gatewaySessionRegistry,
       snapshotStorageIndex,
+      snowflakeIdGenerator,
       modelResolver,
       modelCatalog,
       envKeyResolver,
@@ -182,6 +189,7 @@ export class MonolithFactory {
       reasoningEffortController,
       dynamicModelCache,
       connectionController,
+      resilientFetchClient,
       slashRouter,
       mentionResolver,
       swarmDispatcher,

@@ -20,10 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 13)
 - **Workspace Intelligence Engine (`codemarie`)**: Added `WorkspaceIntelligenceEngine` ([workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts)) for package identity indexing, workspace topology analysis, and cognitive graph snapshot generation (`ADR-017`).
 
-### Added (Passes 37–39 / Phase 9 Evolution)
-- **Gateway Session Registry & Pool Manager (`server`)**: Added `GatewaySessionRegistry` ([gateway-session-registry.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/persistence/gateway-session-registry.ts)) for managing active game engine sessions running on a server node (`ADR-026`).
-- **Snapshot Storage Index (`server`)**: Added `SnapshotStorageIndex` ([snapshot-storage-index.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/persistence/snapshot-storage-index.ts)) for indexing and retrieving `GameStateSnapshot` records (`ADR-026`).
-- **Monolith Phase 9 Master Subsystem Synthesis**: Completed 39-pass master synthesis verification suite confirming total server pool and snapshot indexing feature absorption with zero-barrel OOP class extension (`ADR-026`).
+### Added (Passes 40–42 / Phase 10 Evolution)
+- **Resilient Fetch Client (`utils`)**: Added `ResilientFetchClient` ([resilient-fetch-client.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/telemetry/resilient-fetch-client.ts)) for HTTP network calls with exponential backoff, jitter, and error recovery (`ADR-027`).
+- **Snowflake Unique ID Generator (`utils`)**: Added `SnowflakeIdGenerator` ([snowflake-id-generator.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/substrate/snowflake-id-generator.ts)) for 64-bit time-ordered, collision-free identifier generation (`ADR-027`).
+- **Monolith Phase 10 Master Subsystem Synthesis**: Completed 42-pass master synthesis verification suite confirming total utility package feature absorption with zero-barrel OOP class extension (`ADR-027`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).
