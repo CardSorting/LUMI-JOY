@@ -20,6 +20,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
   [DONE] Passes 40–42 (Phase 10 Resilient Fetch Client & Snowflake ID Generator)
   [DONE] Passes 43–45 (Phase 11 Frontmatter Parser & Bounded File Peeker)
   [DONE] Passes 46–48 (Phase 12 System Directory Resolver & Command Path Resolver)
+  [DONE] Passes 49–51 (Phase 13 Terminal Text Sanitizer & Loop Phase Controller)
 ```
 
 | Pass Stage | Status | Target Package in Teacher (`pi-main`) | Student Implementation (`LUMI-NEW`) | Governance & Code Links |
@@ -45,6 +46,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Passes 40–42** | `[COMPLETE]` | Phase 10 Utils | ResilientFetchClient, SnowflakeIdGenerator & Master Synthesis | [ADR-027](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-027-phase-10-resilient-fetch-client-and-snowflake-id-generator.md) |
 | **Passes 43–45** | `[COMPLETE]` | Phase 11 Utils | FrontmatterParser, BoundedFilePeeker & Master Synthesis | [ADR-028](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-028-phase-11-frontmatter-parser-and-bounded-file-peeker.md) |
 | **Passes 46–48** | `[COMPLETE]` | Phase 12 Utils | SystemDirectoryResolver, CommandPathResolver & Master Synthesis | [ADR-029](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-029-phase-12-system-directory-resolver-and-command-path-resolver.md) |
+| **Passes 49–51** | `[COMPLETE]` | Phase 13 Utils | TerminalTextSanitizer, LoopPhaseController & Master Synthesis | [ADR-030](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-030-phase-13-terminal-text-sanitizer-and-loop-phase-controller.md) |
 
 ---
 

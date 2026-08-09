@@ -35,6 +35,7 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-027](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-027-phase-10-resilient-fetch-client-and-snowflake-id-generator.md) | Phase 10 Resilient Fetch Client & Snowflake ID Generator (Passes 40–42) | Accepted | 2026-08-09 | Phase 10 Evolution |
 | [ADR-028](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-028-phase-11-frontmatter-parser-and-bounded-file-peeker.md) | Phase 11 Frontmatter Parser & Bounded File Peeker (Passes 43–45) | Accepted | 2026-08-09 | Phase 11 Evolution |
 | [ADR-029](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-029-phase-12-system-directory-resolver-and-command-path-resolver.md) | Phase 12 System Directory Resolver & Command Path Resolver (Passes 46–48) | Accepted | 2026-08-09 | Phase 12 Evolution |
+| [ADR-030](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-030-phase-13-terminal-text-sanitizer-and-loop-phase-controller.md) | Phase 13 Terminal Text Sanitizer & Loop Phase Controller (Passes 49–51) | Accepted | 2026-08-09 | Phase 13 Evolution |
 
 ## Domain Grouping
 

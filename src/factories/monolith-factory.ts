@@ -13,6 +13,7 @@ import { ImageModelRegistry } from "../agents/extensions/resolution/image-model-
 import { LlmProxyGateway } from "../agents/extensions/resolution/llm-proxy-gateway.js";
 import { ReasoningEffortController } from "../agents/extensions/resolution/reasoning-effort-controller.js";
 import { DynamicModelCache } from "../agents/extensions/resolution/dynamic-model-cache.js";
+import { LoopPhaseController } from "../agents/extensions/execution/loop-phase-controller.js";
 
 import { SessionContext } from "../sessions/base/session-context.js";
 import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
@@ -32,6 +33,7 @@ import { ResilientFetchClient } from "../tooling/extensions/telemetry/resilient-
 import { FrontmatterParser } from "../tooling/extensions/perception/frontmatter-parser.js";
 import { BoundedFilePeeker } from "../tooling/extensions/perception/file-peeker.js";
 import { CommandPathResolver } from "../tooling/extensions/permissions/command-path-resolver.js";
+import { TerminalTextSanitizer } from "../tooling/extensions/telemetry/text-sanitizer.js";
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
@@ -79,11 +81,13 @@ export class MonolithFactory {
     proxyGateway: LlmProxyGateway;
     reasoningEffortController: ReasoningEffortController;
     dynamicModelCache: DynamicModelCache;
+    loopPhaseController: LoopPhaseController;
     connectionController: TransportConnectionController;
     resilientFetchClient: ResilientFetchClient;
     frontmatterParser: FrontmatterParser;
     filePeeker: BoundedFilePeeker;
     commandPathResolver: CommandPathResolver;
+    textSanitizer: TerminalTextSanitizer;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -133,11 +137,13 @@ export class MonolithFactory {
     const proxyGateway = new LlmProxyGateway();
     const reasoningEffortController = new ReasoningEffortController();
     const dynamicModelCache = new DynamicModelCache();
+    const loopPhaseController = new LoopPhaseController();
     const connectionController = new TransportConnectionController();
     const resilientFetchClient = new ResilientFetchClient();
     const frontmatterParser = new FrontmatterParser();
     const filePeeker = new BoundedFilePeeker();
     const commandPathResolver = new CommandPathResolver();
+    const textSanitizer = new TerminalTextSanitizer();
     const slashRouter = new AgentSlashRouter();
     const mentionResolver = new MentionResolver();
     const swarmDispatcher = new AgentSwarmDispatcher();
@@ -201,11 +207,13 @@ export class MonolithFactory {
       proxyGateway,
       reasoningEffortController,
       dynamicModelCache,
+      loopPhaseController,
       connectionController,
       resilientFetchClient,
       frontmatterParser,
       filePeeker,
       commandPathResolver,
+      textSanitizer,
       slashRouter,
       mentionResolver,
       swarmDispatcher,

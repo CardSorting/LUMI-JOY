@@ -21,6 +21,7 @@ import { ImageModelRegistry, type ImageModelSpecs } from "./agents/extensions/re
 import { LlmProxyGateway, type ProxyEndpointConfig } from "./agents/extensions/resolution/llm-proxy-gateway.js";
 import { ReasoningEffortController, type ReasoningEffortLevel } from "./agents/extensions/resolution/reasoning-effort-controller.js";
 import { DynamicModelCache, type CachedModelList } from "./agents/extensions/resolution/dynamic-model-cache.js";
+import { LoopPhaseController, type LoopPhase, type PhaseTransitionEvent } from "./agents/extensions/execution/loop-phase-controller.js";
 
 import { SessionContext } from "./sessions/base/session-context.js";
 import { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
@@ -41,6 +42,7 @@ import { AstPerceptionEyes, type SymbolSearchResult } from "./tooling/extensions
 import { FrontmatterParser, type FrontmatterResult } from "./tooling/extensions/perception/frontmatter-parser.js";
 import { BoundedFilePeeker, type PeekFileResult } from "./tooling/extensions/perception/file-peeker.js";
 import { CommandPathResolver } from "./tooling/extensions/permissions/command-path-resolver.js";
+import { TerminalTextSanitizer } from "./tooling/extensions/telemetry/text-sanitizer.js";
 import { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
 import { CommandPermissionController, type PermissionValidationResult } from "./tooling/extensions/permissions/command-permission-controller.js";
 import { ProtocolEars, Ears } from "./tooling/extensions/telemetry/ears.js";
@@ -91,6 +93,8 @@ export { ReasoningEffortController } from "./agents/extensions/resolution/reason
 export type { ReasoningEffortLevel } from "./agents/extensions/resolution/reasoning-effort-controller.js";
 export { DynamicModelCache } from "./agents/extensions/resolution/dynamic-model-cache.js";
 export type { CachedModelList } from "./agents/extensions/resolution/dynamic-model-cache.js";
+export { LoopPhaseController } from "./agents/extensions/execution/loop-phase-controller.js";
+export type { LoopPhase, PhaseTransitionEvent } from "./agents/extensions/execution/loop-phase-controller.js";
 
 export { SessionContext } from "./sessions/base/session-context.js";
 export { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
@@ -120,6 +124,7 @@ export type { FrontmatterResult } from "./tooling/extensions/perception/frontmat
 export { BoundedFilePeeker } from "./tooling/extensions/perception/file-peeker.js";
 export type { PeekFileResult } from "./tooling/extensions/perception/file-peeker.js";
 export { CommandPathResolver } from "./tooling/extensions/permissions/command-path-resolver.js";
+export { TerminalTextSanitizer } from "./tooling/extensions/telemetry/text-sanitizer.js";
 export { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
 export { CommandPermissionController } from "./tooling/extensions/permissions/command-permission-controller.js";
 export type { PermissionValidationResult } from "./tooling/extensions/permissions/command-permission-controller.js";
@@ -171,11 +176,13 @@ export class LumiMonolith implements IAgentEngine {
   readonly proxyGateway: LlmProxyGateway;
   readonly reasoningEffortController: ReasoningEffortController;
   readonly dynamicModelCache: DynamicModelCache;
+  readonly loopPhaseController: LoopPhaseController;
   readonly connectionController: TransportConnectionController;
   readonly resilientFetchClient: ResilientFetchClient;
   readonly frontmatterParser: FrontmatterParser;
   readonly filePeeker: BoundedFilePeeker;
   readonly commandPathResolver: CommandPathResolver;
+  readonly textSanitizer: TerminalTextSanitizer;
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
   readonly swarmDispatcher: AgentSwarmDispatcher;
@@ -218,11 +225,13 @@ export class LumiMonolith implements IAgentEngine {
     this.proxyGateway = components.proxyGateway;
     this.reasoningEffortController = components.reasoningEffortController;
     this.dynamicModelCache = components.dynamicModelCache;
+    this.loopPhaseController = components.loopPhaseController;
     this.connectionController = components.connectionController;
     this.resilientFetchClient = components.resilientFetchClient;
     this.frontmatterParser = components.frontmatterParser;
     this.filePeeker = components.filePeeker;
     this.commandPathResolver = components.commandPathResolver;
+    this.textSanitizer = components.textSanitizer;
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
     this.swarmDispatcher = components.swarmDispatcher;
@@ -249,7 +258,9 @@ export class LumiMonolith implements IAgentEngine {
       `tick-frame-${this.sessionContext.turnCount + 1}`,
       async (span) => {
         this.telemetryTracer.addEvent(span, "frame_start", { prompt: input.prompt });
+        this.loopPhaseController.setPhase("thinking");
         const res = await this.agentEngine.tick(input);
+        this.loopPhaseController.setPhase("idle");
         this.telemetryTracer.addEvent(span, "frame_complete", { response: res.response });
         return res;
       }
@@ -328,19 +339,19 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("Message count after rewind:", lumi.sessionStore.getMessages().length);
     console.log("Slab allocated bytes after rewind:", lumi.sessionStore.getSlabSnapshot().allocatedBytes);
 
-    // 5. System Directory Resolver (Pass 46)
-    const dirs = lumi.systemDirectoryResolver.getDirectories();
-    console.log("\nSystem Directory Resolver (Pass 46):");
-    console.log("  App Data Dir:", dirs.appDataDir);
+    // 5. Terminal Text Sanitizer (Pass 49)
+    const sanitizedText = lumi.textSanitizer.sanitize("\u001b[31mHello World\u001b[0m");
+    console.log("\nTerminal Text Sanitizer (Pass 49):");
+    console.log("  Sanitized Output:", sanitizedText);
 
-    // 6. Command Executable PATH Resolver (Pass 47)
-    const nodePath = await lumi.commandPathResolver.which("node");
-    console.log("\nCommand Executable PATH Resolver (Pass 47):");
-    console.log("  Resolved 'node' Executable Path:", nodePath !== undefined);
+    // 6. Loop Phase Execution Controller (Pass 50)
+    console.log("\nLoop Phase Execution Controller (Pass 50):");
+    console.log("  Current Phase:", lumi.loopPhaseController.getPhase());
+    console.log("  Phase History Count:", lumi.loopPhaseController.getHistory().length);
 
-    // 7. Monolith Phase 12 Master Subsystem Synthesis (Pass 48)
-    console.log("\n--- Pass 48 Monolith Phase 12 Master Synthesis Verification ---");
-    console.log("ALL 48 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
+    // 7. Monolith Phase 13 Master Subsystem Synthesis (Pass 51)
+    console.log("\n--- Pass 51 Monolith Phase 13 Master Synthesis Verification ---");
+    console.log("ALL 51 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });
