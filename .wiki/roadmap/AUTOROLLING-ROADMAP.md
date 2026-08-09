@@ -32,6 +32,12 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
   [DONE] Passes 76–78 (Phase 22 MCP Hub & Ripgrep Search Service)
   [DONE] Passes 79–81 (Phase 23 Web URL Content Fetcher & Language Syntax Parser)
   [DONE] Passes 82–84 (Phase 24 Roadmap Completion Gate & Checkpoint Digest)
+  [DONE] Passes 85–87 (Phase 25 Native Clipboard Bridge & Agent Loop Harness)
+  [DONE] Passes 88–90 (Phase 26 Postmortem Diagnostic & Process Lifecycle Manager)
+  [DONE] Passes 91–93 (Phase 27 Provider Attribution & Stderr Guard)
+  [DONE] Passes 94–96 (Phase 28 Keybindings Controller & HTTP Dispatcher Overlay)
+  [DONE] Passes 97–99 (Phase 29 Auth Storage Vault & TTSR Coordinator)
+  [DONE] Passes 100–102 (Phase 30 Centennial Milestone & System Health Aggregator)
 ```
 
 | Pass Stage | Status | Target Package in Teacher (`pi-main`) | Student Implementation (`LUMI-NEW`) | Governance & Code Links |
@@ -69,6 +75,13 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Passes 76–78** | `[COMPLETE]` | Phase 22 MCP & Perception | McpHub, RipgrepSearchService & Master Synthesis | [ADR-039](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-039-phase-22-mcp-hub-and-ripgrep-search-service.md) |
 | **Passes 79–81** | `[COMPLETE]` | Phase 23 Browser & Tree-Sitter | UrlContentFetcher, LanguageSyntaxParser & Master Synthesis | [ADR-040](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-040-phase-23-url-content-fetcher-and-language-syntax-parser.md) |
 | **Passes 82–84** | `[COMPLETE]` | Phase 24 Policy & Roadmap | RoadmapCompletionGate, RoadmapCheckpointDigest & Master Synthesis | [ADR-041](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-041-phase-24-roadmap-completion-gate-and-checkpoint-digest.md) |
+| **Passes 85–87** | `[COMPLETE]` | Phase 25 Natives & Agent Harness | NativeClipboardBridge, AgentLoopHarness & Master Synthesis | [ADR-042](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-042-phase-25-native-clipboard-and-agent-loop-harness.md) |
+| **Passes 88–90** | `[COMPLETE]` | Phase 26 Integrity & Process Mgr | PostmortemDiagnostic, ProcessLifecycleManager & Master Synthesis | [ADR-043](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-043-phase-26-postmortem-diagnostics-and-process-lifecycle.md) |
+| **Passes 91–93** | `[COMPLETE]` | Phase 27 Attribution & Stderr Guard | ProviderAttributionComposer, StderrGuardFilter & Master Synthesis | [ADR-044](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-044-phase-27-provider-attribution-and-stderr-guard.md) |
+| **Passes 94–96** | `[COMPLETE]` | Phase 28 Keybindings & HTTP Overlay | KeybindingsController, HttpDispatcherOverlay & Master Synthesis | [ADR-045](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-045-phase-28-keybindings-controller-and-http-dispatcher.md) |
+| **Passes 97–99** | `[COMPLETE]` | Phase 29 Auth Vault & TTSR Telemetry | AuthStorageVault, TTSRCoordinator & Master Synthesis | [ADR-046](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-046-phase-29-auth-storage-vault-and-ttsr-coordinator.md) |
+| **Passes 100–102** | `[COMPLETE]` | Phase 30 Centennial & Health Aggregation | CentennialPassMarker, SystemHealthAggregator & Master Synthesis | [ADR-047](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-047-phase-30-centennial-pass-marker-and-system-health-aggregator.md) |
+
 
 ---
 

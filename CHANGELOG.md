@@ -20,10 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 13)
 - **Workspace Intelligence Engine (`codemarie`)**: Added `WorkspaceIntelligenceEngine` ([workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts)) for package identity indexing, workspace topology analysis, and cognitive graph snapshot generation (`ADR-017`).
 
-### Added (Passes 82–84 / Phase 24 Evolution)
-- **Roadmap Completion Gate (`codemarie`)**: Added `RoadmapCompletionGate` ([roadmap-completion-gate.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/policy/roadmap-completion-gate.ts)) for evaluating quality gate rules and task completion criteria (`ADR-041`).
-- **Roadmap Checkpoint Digest (`codemarie`)**: Added `RoadmapCheckpointDigest` ([roadmap-checkpoint-digest.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/policy/roadmap-checkpoint-digest.ts)) for computing cryptographic checksum digests over active milestone deliverables (`ADR-041`).
-- **Monolith Phase 24 Master Subsystem Synthesis**: Completed 84-pass master synthesis verification suite confirming total completion gate & checkpoint digest feature absorption with zero-barrel OOP class extension (`ADR-041`).
+### Added (Passes 100–102 / Phase 30 Evolution)
+- **Centennial Pass Marker (`packages/coding-agent`)**: Added `CentennialPassMarker` ([centennial-pass-marker.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/policy/centennial-pass-marker.ts)) for certifying 100+ pass architectural growth and milestone verification (`ADR-047`).
+- **System Health Aggregator (`packages/utils`)**: Added `SystemHealthAggregator` ([system-health-aggregator.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/integrity/system-health-aggregator.ts)) for multi-subsystem integrity check registration & status aggregation (`ADR-047`).
+- **Monolith Phase 30 Master Subsystem Synthesis**: Completed 102-pass centennial master synthesis verification suite confirming total centennial pass marker & system health aggregator feature absorption with zero-barrel OOP class extension (`ADR-047`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).

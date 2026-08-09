@@ -47,6 +47,12 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-039](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-039-phase-22-mcp-hub-and-ripgrep-search-service.md) | Phase 22 MCP Hub & Ripgrep Search Service (Passes 76–78) | Accepted | 2026-08-09 | Phase 22 Evolution |
 | [ADR-040](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-040-phase-23-url-content-fetcher-and-language-syntax-parser.md) | Phase 23 Web URL Content Fetcher & Language Syntax Parser (Passes 79–81) | Accepted | 2026-08-09 | Phase 23 Evolution |
 | [ADR-041](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-041-phase-24-roadmap-completion-gate-and-checkpoint-digest.md) | Phase 24 Roadmap Completion Gate & Checkpoint Digest (Passes 82–84) | Accepted | 2026-08-09 | Phase 24 Evolution |
+| [ADR-042](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-042-phase-25-native-clipboard-and-agent-loop-harness.md) | Phase 25 Native Clipboard Bridge & Agent Loop Harness (Passes 85–87) | Accepted | 2026-08-09 | Phase 25 Evolution |
+| [ADR-043](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-043-phase-26-postmortem-diagnostics-and-process-lifecycle.md) | Phase 26 Postmortem Diagnostic & Process Lifecycle Manager (Passes 88–90) | Accepted | 2026-08-09 | Phase 26 Evolution |
+| [ADR-044](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-044-phase-27-provider-attribution-and-stderr-guard.md) | Phase 27 Provider Attribution & Stderr Guard (Passes 91–93) | Accepted | 2026-08-09 | Phase 27 Evolution |
+| [ADR-045](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-045-phase-28-keybindings-controller-and-http-dispatcher.md) | Phase 28 Keybindings Controller & HTTP Dispatcher Overlay (Passes 94–96) | Accepted | 2026-08-09 | Phase 28 Evolution |
+| [ADR-046](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-046-phase-29-auth-storage-vault-and-ttsr-coordinator.md) | Phase 29 Auth Storage Vault & TTSR Coordinator (Passes 97–99) | Accepted | 2026-08-09 | Phase 29 Evolution |
+| [ADR-047](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-047-phase-30-centennial-pass-marker-and-system-health-aggregator.md) | Phase 30 Centennial Milestone & System Health Aggregator (Passes 100–102) | Accepted | 2026-08-09 | Phase 30 Evolution |
 
 ## Domain Grouping
 

@@ -18,6 +18,10 @@ import { ContextBudgetCalculator } from "../agents/extensions/compaction/context
 import { TokenTruncator } from "../agents/extensions/compaction/token-truncator.js";
 import { PromptTemplateEngine } from "../agents/extensions/compaction/prompt-template-engine.js";
 import { DynamicVariableInjector } from "../agents/extensions/compaction/dynamic-variable-injector.js";
+import { AgentLoopHarness } from "../agents/extensions/execution/agent-loop-harness.js";
+import { ProviderAttributionComposer } from "../agents/extensions/resolution/provider-attribution.js";
+import { HttpDispatcherOverlay } from "../agents/extensions/resolution/http-dispatcher.js";
+import { AuthStorageVault } from "../agents/extensions/resolution/auth-storage-vault.js";
 
 import { SessionContext } from "../sessions/base/session-context.js";
 import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
@@ -25,6 +29,8 @@ import { SessionCompactor } from "../sessions/extensions/compaction/session-comp
 import { SessionVfs } from "../sessions/extensions/vfs/session-vfs.js";
 import { SessionMemoryStore } from "../sessions/extensions/memory/session-memory-store.js";
 import { StabilityDoctor } from "../sessions/extensions/integrity/stability-doctor.js";
+import { PostmortemDiagnostic } from "../sessions/extensions/integrity/postmortem-diagnostic.js";
+import { SystemHealthAggregator } from "../sessions/extensions/integrity/system-health-aggregator.js";
 import { SnapcompactEngine } from "../sessions/extensions/compaction/snapcompact-engine.js";
 import { FileLockManager, LruCache } from "../sessions/extensions/substrate/file-lock.js";
 import { GatewaySessionRegistry } from "../sessions/extensions/persistence/gateway-session-registry.js";
@@ -57,8 +63,11 @@ import { RoadmapCompletionGate } from "../tooling/extensions/policy/roadmap-comp
 import { RoadmapCheckpointDigest } from "../tooling/extensions/policy/roadmap-checkpoint-digest.js";
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
+import { NativeClipboardBridge } from "../tooling/extensions/perception/native-clipboard.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
 import { CommandPermissionController } from "../tooling/extensions/permissions/command-permission-controller.js";
+import { ProcessLifecycleManager } from "../tooling/extensions/permissions/process-lifecycle-manager.js";
+import { KeybindingsController } from "../tooling/extensions/permissions/keybindings-controller.js";
 import { ProtocolEars } from "../tooling/extensions/telemetry/ears.js";
 import { ProgressStreamingEars } from "../tooling/extensions/progress/progress-ears.js";
 import { SkillsIngestor } from "../tooling/extensions/registry/skills-ingestor.js";
@@ -68,6 +77,9 @@ import { MonolithBenchmarkEvaluator } from "../tooling/extensions/evals/benchmar
 import { TelemetryTracer } from "../tooling/extensions/telemetry/telemetry-tracer.js";
 import { AgenticCommitGenerator } from "../tooling/extensions/policy/agentic-commit-generator.js";
 import { StreamEventFormatter } from "../tooling/extensions/telemetry/stream-event-formatter.js";
+import { StderrGuardFilter } from "../tooling/extensions/telemetry/stderr-guard.js";
+import { TTSRCoordinator } from "../tooling/extensions/telemetry/ttsr-coordinator.js";
+import { CentennialPassMarker } from "../tooling/extensions/policy/centennial-pass-marker.js";
 
 import type { GameStateSnapshot } from "../core/contracts/session.contracts.js";
 
@@ -130,6 +142,18 @@ export class MonolithFactory {
     languageSyntaxParser: LanguageSyntaxParser;
     completionGate: RoadmapCompletionGate;
     checkpointDigest: RoadmapCheckpointDigest;
+    clipboardBridge: NativeClipboardBridge;
+    loopHarness: AgentLoopHarness;
+    postmortemDiagnostic: PostmortemDiagnostic;
+    processLifecycleManager: ProcessLifecycleManager;
+    providerAttribution: ProviderAttributionComposer;
+    stderrGuard: StderrGuardFilter;
+    keybindingsController: KeybindingsController;
+    httpDispatcher: HttpDispatcherOverlay;
+    authStorageVault: AuthStorageVault;
+    ttsrCoordinator: TTSRCoordinator;
+    centennialPassMarker: CentennialPassMarker;
+    systemHealthAggregator: SystemHealthAggregator;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -205,6 +229,23 @@ export class MonolithFactory {
     const languageSyntaxParser = new LanguageSyntaxParser();
     const completionGate = new RoadmapCompletionGate();
     const checkpointDigest = new RoadmapCheckpointDigest();
+    const clipboardBridge = new NativeClipboardBridge();
+    const loopHarness = new AgentLoopHarness();
+    const postmortemDiagnostic = new PostmortemDiagnostic();
+    const processLifecycleManager = new ProcessLifecycleManager();
+    const providerAttribution = new ProviderAttributionComposer();
+    const stderrGuard = new StderrGuardFilter();
+    const keybindingsController = new KeybindingsController();
+    const httpDispatcher = new HttpDispatcherOverlay();
+    const authStorageVault = new AuthStorageVault();
+    const ttsrCoordinator = new TTSRCoordinator();
+    const centennialPassMarker = new CentennialPassMarker();
+    const systemHealthAggregator = new SystemHealthAggregator();
+
+
+
+
+
 
     const permissionController = new CommandPermissionController();
     const eyes = new AstPerceptionEyes();
@@ -299,6 +340,18 @@ export class MonolithFactory {
       languageSyntaxParser,
       completionGate,
       checkpointDigest,
+      clipboardBridge,
+      loopHarness,
+      postmortemDiagnostic,
+      processLifecycleManager,
+      providerAttribution,
+      stderrGuard,
+      keybindingsController,
+      httpDispatcher,
+      authStorageVault,
+      ttsrCoordinator,
+      centennialPassMarker,
+      systemHealthAggregator,
       slashRouter,
       mentionResolver,
       swarmDispatcher,
