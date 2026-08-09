@@ -11,6 +11,8 @@ import { InteractiveModeController } from "../agents/extensions/execution/intera
 import { EnvironmentKeyResolver } from "../agents/extensions/resolution/environment-key-resolver.js";
 import { ImageModelRegistry } from "../agents/extensions/resolution/image-model-registry.js";
 import { LlmProxyGateway } from "../agents/extensions/resolution/llm-proxy-gateway.js";
+import { ReasoningEffortController } from "../agents/extensions/resolution/reasoning-effort-controller.js";
+import { DynamicModelCache } from "../agents/extensions/resolution/dynamic-model-cache.js";
 
 import { SessionContext } from "../sessions/base/session-context.js";
 import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
@@ -62,6 +64,8 @@ export class MonolithFactory {
     envKeyResolver: EnvironmentKeyResolver;
     imageModelRegistry: ImageModelRegistry;
     proxyGateway: LlmProxyGateway;
+    reasoningEffortController: ReasoningEffortController;
+    dynamicModelCache: DynamicModelCache;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -105,6 +109,8 @@ export class MonolithFactory {
     const envKeyResolver = new EnvironmentKeyResolver();
     const imageModelRegistry = new ImageModelRegistry();
     const proxyGateway = new LlmProxyGateway();
+    const reasoningEffortController = new ReasoningEffortController();
+    const dynamicModelCache = new DynamicModelCache();
     const slashRouter = new AgentSlashRouter();
     const mentionResolver = new MentionResolver();
     const swarmDispatcher = new AgentSwarmDispatcher();
@@ -162,6 +168,8 @@ export class MonolithFactory {
       envKeyResolver,
       imageModelRegistry,
       proxyGateway,
+      reasoningEffortController,
+      dynamicModelCache,
       slashRouter,
       mentionResolver,
       swarmDispatcher,

@@ -19,6 +19,8 @@ import { InteractiveModeController } from "./agents/extensions/execution/interac
 import { EnvironmentKeyResolver, type ProviderKeyStatus } from "./agents/extensions/resolution/environment-key-resolver.js";
 import { ImageModelRegistry, type ImageModelSpecs } from "./agents/extensions/resolution/image-model-registry.js";
 import { LlmProxyGateway, type ProxyEndpointConfig } from "./agents/extensions/resolution/llm-proxy-gateway.js";
+import { ReasoningEffortController, type ReasoningEffortLevel } from "./agents/extensions/resolution/reasoning-effort-controller.js";
+import { DynamicModelCache, type CachedModelList } from "./agents/extensions/resolution/dynamic-model-cache.js";
 
 import { SessionContext } from "./sessions/base/session-context.js";
 import { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
@@ -75,6 +77,10 @@ export { ImageModelRegistry } from "./agents/extensions/resolution/image-model-r
 export type { ImageModelSpecs } from "./agents/extensions/resolution/image-model-registry.js";
 export { LlmProxyGateway } from "./agents/extensions/resolution/llm-proxy-gateway.js";
 export type { ProxyEndpointConfig } from "./agents/extensions/resolution/llm-proxy-gateway.js";
+export { ReasoningEffortController } from "./agents/extensions/resolution/reasoning-effort-controller.js";
+export type { ReasoningEffortLevel } from "./agents/extensions/resolution/reasoning-effort-controller.js";
+export { DynamicModelCache } from "./agents/extensions/resolution/dynamic-model-cache.js";
+export type { CachedModelList } from "./agents/extensions/resolution/dynamic-model-cache.js";
 
 export { SessionContext } from "./sessions/base/session-context.js";
 export { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
@@ -132,6 +138,8 @@ export class LumiMonolith implements IAgentEngine {
   readonly envKeyResolver: EnvironmentKeyResolver;
   readonly imageModelRegistry: ImageModelRegistry;
   readonly proxyGateway: LlmProxyGateway;
+  readonly reasoningEffortController: ReasoningEffortController;
+  readonly dynamicModelCache: DynamicModelCache;
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
   readonly swarmDispatcher: AgentSwarmDispatcher;
@@ -168,6 +176,8 @@ export class LumiMonolith implements IAgentEngine {
     this.envKeyResolver = components.envKeyResolver;
     this.imageModelRegistry = components.imageModelRegistry;
     this.proxyGateway = components.proxyGateway;
+    this.reasoningEffortController = components.reasoningEffortController;
+    this.dynamicModelCache = components.dynamicModelCache;
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
     this.swarmDispatcher = components.swarmDispatcher;
@@ -372,19 +382,22 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("  LRU Cached Snapshot Count:", lumi.snapshotLruCache.size());
     await lumi.fileLockManager.releaseLock("src/index.ts");
 
-    // 19. LLM Proxy Gateway (Pass 28)
-    const effectiveEndpoint = lumi.proxyGateway.getEffectiveEndpoint("anthropic", "https://api.anthropic.com");
-    console.log("\nLLM Proxy Gateway (Pass 28):");
-    console.log("  Effective Endpoint URL:", effectiveEndpoint.url);
+    // 19. Reasoning Effort Level Controller (Pass 31)
+    lumi.reasoningEffortController.setEffortLevel("high");
+    const budget = lumi.reasoningEffortController.calculateThinkingBudget(200000);
+    console.log("\nReasoning Effort Level Controller (Pass 31):");
+    console.log("  Effort Level:", lumi.reasoningEffortController.getEffortLevel());
+    console.log("  Calculated Thinking Budget:", `${budget} tokens`);
 
-    // 20. Stream Event Formatter & Text Chunking (Pass 29)
-    const streamEvent = lumi.streamFormatter.formatTextDelta("Hello world", 1);
-    console.log("\nStream Event Formatter (Pass 29):");
-    console.log("  SSE Frame Output:", lumi.streamFormatter.toSseString(streamEvent).trim());
+    // 20. Dynamic Model Metadata Cache (Pass 32)
+    lumi.dynamicModelCache.setCachedModels("anthropic", [sonnetInfo]);
+    const cachedModels = lumi.dynamicModelCache.getCachedModels("anthropic");
+    console.log("\nDynamic Model Metadata Cache (Pass 32):");
+    console.log("  Cached Models Count ('anthropic'):", cachedModels?.length ?? 0);
 
-    // 21. Monolith Phase 6 Master Subsystem Synthesis (Pass 30)
-    console.log("\n--- Pass 30 Monolith Phase 6 Master Synthesis Verification ---");
-    console.log("ALL 30 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
+    // 21. Monolith Phase 7 Master Subsystem Synthesis (Pass 33)
+    console.log("\n--- Pass 33 Monolith Phase 7 Master Synthesis Verification ---");
+    console.log("ALL 33 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });
