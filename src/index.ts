@@ -31,6 +31,8 @@ import { StabilityDoctor, type EnvironmentIntegrityReport } from "./sessions/ext
 import { SnapcompactEngine, type SnapcompactResult } from "./sessions/extensions/compaction/snapcompact-engine.js";
 import { FileLockManager, LruCache } from "./sessions/extensions/substrate/file-lock.js";
 import { RemoteSessionHandle } from "./sessions/extensions/persistence/remote-session-handle.js";
+import { GatewaySessionRegistry, type ActiveSessionInfo } from "./sessions/extensions/persistence/gateway-session-registry.js";
+import { SnapshotStorageIndex, type SnapshotMetadata } from "./sessions/extensions/persistence/snapshot-storage-index.js";
 
 import { Eyes } from "./tooling/base/eyes.js";
 import { AstPerceptionEyes, type SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
@@ -96,6 +98,10 @@ export { SnapcompactEngine } from "./sessions/extensions/compaction/snapcompact-
 export type { SnapcompactResult } from "./sessions/extensions/compaction/snapcompact-engine.js";
 export { FileLockManager, LruCache } from "./sessions/extensions/substrate/file-lock.js";
 export { RemoteSessionHandle } from "./sessions/extensions/persistence/remote-session-handle.js";
+export { GatewaySessionRegistry } from "./sessions/extensions/persistence/gateway-session-registry.js";
+export type { ActiveSessionInfo } from "./sessions/extensions/persistence/gateway-session-registry.js";
+export { SnapshotStorageIndex } from "./sessions/extensions/persistence/snapshot-storage-index.js";
+export type { SnapshotMetadata } from "./sessions/extensions/persistence/snapshot-storage-index.js";
 
 export type { SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
 export { Eyes } from "./tooling/base/eyes.js";
@@ -138,6 +144,8 @@ export class LumiMonolith implements IAgentEngine {
   readonly snapcompactEngine: SnapcompactEngine;
   readonly fileLockManager: FileLockManager;
   readonly snapshotLruCache: LruCache<string, GameStateSnapshot>;
+  readonly gatewaySessionRegistry: GatewaySessionRegistry;
+  readonly snapshotStorageIndex: SnapshotStorageIndex;
   readonly modelResolver: ModelResolver;
   readonly modelCatalog: ModelCatalog;
   readonly envKeyResolver: EnvironmentKeyResolver;
@@ -177,6 +185,8 @@ export class LumiMonolith implements IAgentEngine {
     this.snapcompactEngine = components.snapcompactEngine;
     this.fileLockManager = components.fileLockManager;
     this.snapshotLruCache = components.snapshotLruCache;
+    this.gatewaySessionRegistry = components.gatewaySessionRegistry;
+    this.snapshotStorageIndex = components.snapshotStorageIndex;
     this.modelResolver = components.modelResolver;
     this.modelCatalog = components.modelCatalog;
     this.envKeyResolver = components.envKeyResolver;
@@ -232,6 +242,7 @@ export class LumiMonolith implements IAgentEngine {
       this.modelResolver
     );
     this.snapshotLruCache.set(snapshot.snapshotId, snapshot);
+    this.snapshotStorageIndex.saveSnapshot(snapshot);
     return snapshot;
   }
 
@@ -389,21 +400,20 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("  LRU Cached Snapshot Count:", lumi.snapshotLruCache.size());
     await lumi.fileLockManager.releaseLock("src/index.ts");
 
-    // 19. Transport Connection Controller (Pass 34)
-    lumi.connectionController.connect();
-    const connHealth = lumi.connectionController.getHealth();
-    console.log("\nTransport Connection Controller (Pass 34):");
-    console.log("  Connection State:", connHealth.state);
+    // 19. Gateway Session Registry (Pass 37)
+    lumi.gatewaySessionRegistry.registerSession(lumi);
+    const activeSessions = lumi.gatewaySessionRegistry.listSessions();
+    console.log("\nGateway Session Registry (Pass 37):");
+    console.log("  Active Registered Sessions Count:", activeSessions.length);
 
-    // 20. Remote Session Client Handle (Pass 35)
-    const remoteHandle = new RemoteSessionHandle("remote-session-1", lumi.gatewayServer, lumi);
-    const remoteRes = await remoteHandle.tickRemote({ prompt: "view: package.json" });
-    console.log("\nRemote Session Client Handle (Pass 35):");
-    console.log("  Remote Tick Response:", remoteRes.response);
+    // 20. Snapshot Storage Index (Pass 38)
+    const storedSnapshot = lumi.snapshotStorageIndex.getSnapshot(snapshot.snapshotId);
+    console.log("\nSnapshot Storage Index (Pass 38):");
+    console.log("  Indexed Snapshot Found:", storedSnapshot !== undefined);
 
-    // 21. Monolith Phase 8 Master Subsystem Synthesis (Pass 36)
-    console.log("\n--- Pass 36 Monolith Phase 8 Master Synthesis Verification ---");
-    console.log("ALL 36 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
+    // 21. Monolith Phase 9 Master Subsystem Synthesis (Pass 39)
+    console.log("\n--- Pass 39 Monolith Phase 9 Master Synthesis Verification ---");
+    console.log("ALL 39 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });

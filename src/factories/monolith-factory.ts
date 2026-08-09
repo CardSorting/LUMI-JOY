@@ -22,8 +22,10 @@ import { SessionMemoryStore } from "../sessions/extensions/memory/session-memory
 import { StabilityDoctor } from "../sessions/extensions/integrity/stability-doctor.js";
 import { SnapcompactEngine } from "../sessions/extensions/compaction/snapcompact-engine.js";
 import { FileLockManager, LruCache } from "../sessions/extensions/substrate/file-lock.js";
-import { TransportConnectionController } from "../tooling/extensions/gateway/transport-connection-controller.js";
+import { GatewaySessionRegistry } from "../sessions/extensions/persistence/gateway-session-registry.js";
+import { SnapshotStorageIndex } from "../sessions/extensions/persistence/snapshot-storage-index.js";
 
+import { TransportConnectionController } from "../tooling/extensions/gateway/transport-connection-controller.js";
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
@@ -60,6 +62,8 @@ export class MonolithFactory {
     snapcompactEngine: SnapcompactEngine;
     fileLockManager: FileLockManager;
     snapshotLruCache: LruCache<string, GameStateSnapshot>;
+    gatewaySessionRegistry: GatewaySessionRegistry;
+    snapshotStorageIndex: SnapshotStorageIndex;
     modelResolver: ModelResolver;
     modelCatalog: ModelCatalog;
     envKeyResolver: EnvironmentKeyResolver;
@@ -102,6 +106,8 @@ export class MonolithFactory {
     const snapcompactEngine = new SnapcompactEngine();
     const fileLockManager = new FileLockManager();
     const snapshotLruCache = new LruCache<string, GameStateSnapshot>(50);
+    const gatewaySessionRegistry = new GatewaySessionRegistry();
+    const snapshotStorageIndex = new SnapshotStorageIndex();
 
     const modelResolver = new ModelResolver(
       config.modelName,
@@ -166,6 +172,8 @@ export class MonolithFactory {
       snapcompactEngine,
       fileLockManager,
       snapshotLruCache,
+      gatewaySessionRegistry,
+      snapshotStorageIndex,
       modelResolver,
       modelCatalog,
       envKeyResolver,
