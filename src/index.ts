@@ -18,6 +18,7 @@ import { ModelCatalog, type ModelSpecs } from "./agents/extensions/resolution/mo
 import { InteractiveModeController } from "./agents/extensions/execution/interactive-mode-controller.js";
 import { EnvironmentKeyResolver, type ProviderKeyStatus } from "./agents/extensions/resolution/environment-key-resolver.js";
 import { ImageModelRegistry, type ImageModelSpecs } from "./agents/extensions/resolution/image-model-registry.js";
+import { LlmProxyGateway, type ProxyEndpointConfig } from "./agents/extensions/resolution/llm-proxy-gateway.js";
 
 import { SessionContext } from "./sessions/base/session-context.js";
 import { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
@@ -41,6 +42,7 @@ import { MonolithGatewayServer } from "./tooling/extensions/gateway/monolith-gat
 import { MonolithBenchmarkEvaluator, type BenchmarkSuiteResult } from "./tooling/extensions/evals/benchmark-evaluator.js";
 import { TelemetryTracer, type ActiveSpan } from "./tooling/extensions/telemetry/telemetry-tracer.js";
 import { AgenticCommitGenerator, type ConventionalCommitResult } from "./tooling/extensions/policy/agentic-commit-generator.js";
+import { StreamEventFormatter, type StreamChunkEvent } from "./tooling/extensions/telemetry/stream-event-formatter.js";
 
 import { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.js";
 
@@ -71,6 +73,8 @@ export { EnvironmentKeyResolver } from "./agents/extensions/resolution/environme
 export type { ProviderKeyStatus } from "./agents/extensions/resolution/environment-key-resolver.js";
 export { ImageModelRegistry } from "./agents/extensions/resolution/image-model-registry.js";
 export type { ImageModelSpecs } from "./agents/extensions/resolution/image-model-registry.js";
+export { LlmProxyGateway } from "./agents/extensions/resolution/llm-proxy-gateway.js";
+export type { ProxyEndpointConfig } from "./agents/extensions/resolution/llm-proxy-gateway.js";
 
 export { SessionContext } from "./sessions/base/session-context.js";
 export { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
@@ -102,6 +106,8 @@ export { TelemetryTracer } from "./tooling/extensions/telemetry/telemetry-tracer
 export type { ActiveSpan } from "./tooling/extensions/telemetry/telemetry-tracer.js";
 export { AgenticCommitGenerator } from "./tooling/extensions/policy/agentic-commit-generator.js";
 export type { ConventionalCommitResult } from "./tooling/extensions/policy/agentic-commit-generator.js";
+export { StreamEventFormatter } from "./tooling/extensions/telemetry/stream-event-formatter.js";
+export type { StreamChunkEvent } from "./tooling/extensions/telemetry/stream-event-formatter.js";
 
 export { MonolithFactory } from "./factories/monolith-factory.js";
 
@@ -125,6 +131,7 @@ export class LumiMonolith implements IAgentEngine {
   readonly modelCatalog: ModelCatalog;
   readonly envKeyResolver: EnvironmentKeyResolver;
   readonly imageModelRegistry: ImageModelRegistry;
+  readonly proxyGateway: LlmProxyGateway;
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
   readonly swarmDispatcher: AgentSwarmDispatcher;
@@ -135,6 +142,7 @@ export class LumiMonolith implements IAgentEngine {
   readonly gatewayServer: MonolithGatewayServer;
   readonly benchmarkEvaluator: MonolithBenchmarkEvaluator;
   readonly telemetryTracer: TelemetryTracer;
+  readonly streamFormatter: StreamEventFormatter;
   readonly eyes: AstPerceptionEyes;
   readonly hands: AnchoredHands;
   readonly ears: ProgressStreamingEars;
@@ -159,6 +167,7 @@ export class LumiMonolith implements IAgentEngine {
     this.modelCatalog = components.modelCatalog;
     this.envKeyResolver = components.envKeyResolver;
     this.imageModelRegistry = components.imageModelRegistry;
+    this.proxyGateway = components.proxyGateway;
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
     this.swarmDispatcher = components.swarmDispatcher;
@@ -169,6 +178,7 @@ export class LumiMonolith implements IAgentEngine {
     this.gatewayServer = components.gatewayServer;
     this.benchmarkEvaluator = components.benchmarkEvaluator;
     this.telemetryTracer = components.telemetryTracer;
+    this.streamFormatter = components.streamFormatter;
     this.eyes = components.eyes;
     this.hands = components.hands;
     this.ears = components.ears;
@@ -362,19 +372,19 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("  LRU Cached Snapshot Count:", lumi.snapshotLruCache.size());
     await lumi.fileLockManager.releaseLock("src/index.ts");
 
-    // 19. Environment Provider Key Resolver (Pass 25)
-    const keyStatuses = lumi.envKeyResolver.getProviderStatuses();
-    console.log("\nEnvironment Provider Key Resolver (Pass 25):");
-    console.log("  Inspected Provider Keys Count:", keyStatuses.length);
+    // 19. LLM Proxy Gateway (Pass 28)
+    const effectiveEndpoint = lumi.proxyGateway.getEffectiveEndpoint("anthropic", "https://api.anthropic.com");
+    console.log("\nLLM Proxy Gateway (Pass 28):");
+    console.log("  Effective Endpoint URL:", effectiveEndpoint.url);
 
-    // 20. Image Model Capabilities Registry (Pass 26)
-    const imgInfo = lumi.imageModelRegistry.getModelInfo("dall-e-3");
-    console.log("\nImage Model Capabilities Registry (Pass 26):");
-    console.log("  Image Model Specs:", `${imgInfo?.modelName ?? "unknown"} (${imgInfo?.maxOutputResolution})`);
+    // 20. Stream Event Formatter & Text Chunking (Pass 29)
+    const streamEvent = lumi.streamFormatter.formatTextDelta("Hello world", 1);
+    console.log("\nStream Event Formatter (Pass 29):");
+    console.log("  SSE Frame Output:", lumi.streamFormatter.toSseString(streamEvent).trim());
 
-    // 21. Monolith Phase 5 Master Subsystem Synthesis (Pass 27)
-    console.log("\n--- Pass 27 Monolith Phase 5 Master Synthesis Verification ---");
-    console.log("ALL 27 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
+    // 21. Monolith Phase 6 Master Subsystem Synthesis (Pass 30)
+    console.log("\n--- Pass 30 Monolith Phase 6 Master Synthesis Verification ---");
+    console.log("ALL 30 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });

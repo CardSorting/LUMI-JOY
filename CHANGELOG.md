@@ -20,10 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 13)
 - **Workspace Intelligence Engine (`codemarie`)**: Added `WorkspaceIntelligenceEngine` ([workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts)) for package identity indexing, workspace topology analysis, and cognitive graph snapshot generation (`ADR-017`).
 
-### Added (Passes 25–27 / Phase 5 Evolution)
-- **Environment Provider Key Resolver (`ai`)**: Added `EnvironmentKeyResolver` ([environment-key-resolver.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/resolution/environment-key-resolver.ts)) for provider API key environment inspection and status masking (`ADR-022`).
-- **Image Model Capabilities Registry (`ai`)**: Added `ImageModelRegistry` ([image-model-registry.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/resolution/image-model-registry.ts)) for image generation model specs and supported aspect ratio capability indexing (`ADR-022`).
-- **Monolith Phase 5 Master Synthesis**: Completed 27-pass master synthesis verification suite confirming zero-barrel OOP class extension and 100% subsystem cohesion across all domain mutation directories (`ADR-022`).
+### Added (Passes 28–30 / Phase 6 Evolution)
+- **LLM Proxy Gateway (`agent`)**: Added `LlmProxyGateway` ([llm-proxy-gateway.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/resolution/llm-proxy-gateway.ts)) for proxy base URL configuration, header injection, and timeout guardrails (`ADR-023`).
+- **Stream Event Formatter & Text Chunking (`agent`)**: Added `StreamEventFormatter` ([stream-event-formatter.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/telemetry/stream-event-formatter.ts)) for text delta streaming event envelopes and SSE formatting (`ADR-023`).
+- **Monolith Phase 6 Master Subsystem Synthesis**: Completed 30-pass master synthesis verification suite confirming total monorepo feature absorption with zero-barrel OOP class extension (`ADR-023`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).

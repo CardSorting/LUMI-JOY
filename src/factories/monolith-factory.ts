@@ -10,6 +10,7 @@ import { ModelCatalog } from "../agents/extensions/resolution/model-catalog.js";
 import { InteractiveModeController } from "../agents/extensions/execution/interactive-mode-controller.js";
 import { EnvironmentKeyResolver } from "../agents/extensions/resolution/environment-key-resolver.js";
 import { ImageModelRegistry } from "../agents/extensions/resolution/image-model-registry.js";
+import { LlmProxyGateway } from "../agents/extensions/resolution/llm-proxy-gateway.js";
 
 import { SessionContext } from "../sessions/base/session-context.js";
 import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
@@ -32,6 +33,7 @@ import { MonolithGatewayServer } from "../tooling/extensions/gateway/monolith-ga
 import { MonolithBenchmarkEvaluator } from "../tooling/extensions/evals/benchmark-evaluator.js";
 import { TelemetryTracer } from "../tooling/extensions/telemetry/telemetry-tracer.js";
 import { AgenticCommitGenerator } from "../tooling/extensions/policy/agentic-commit-generator.js";
+import { StreamEventFormatter } from "../tooling/extensions/telemetry/stream-event-formatter.js";
 
 import type { GameStateSnapshot } from "../core/contracts/session.contracts.js";
 
@@ -59,6 +61,7 @@ export class MonolithFactory {
     modelCatalog: ModelCatalog;
     envKeyResolver: EnvironmentKeyResolver;
     imageModelRegistry: ImageModelRegistry;
+    proxyGateway: LlmProxyGateway;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -69,6 +72,7 @@ export class MonolithFactory {
     gatewayServer: MonolithGatewayServer;
     benchmarkEvaluator: MonolithBenchmarkEvaluator;
     telemetryTracer: TelemetryTracer;
+    streamFormatter: StreamEventFormatter;
     eyes: AstPerceptionEyes;
     hands: AnchoredHands;
     ears: ProgressStreamingEars;
@@ -100,6 +104,7 @@ export class MonolithFactory {
     const modelCatalog = new ModelCatalog();
     const envKeyResolver = new EnvironmentKeyResolver();
     const imageModelRegistry = new ImageModelRegistry();
+    const proxyGateway = new LlmProxyGateway();
     const slashRouter = new AgentSlashRouter();
     const mentionResolver = new MentionResolver();
     const swarmDispatcher = new AgentSwarmDispatcher();
@@ -111,6 +116,7 @@ export class MonolithFactory {
     const gatewayServer = new MonolithGatewayServer();
     const benchmarkEvaluator = new MonolithBenchmarkEvaluator();
     const telemetryTracer = new TelemetryTracer();
+    const streamFormatter = new StreamEventFormatter();
 
     const eyes = new AstPerceptionEyes();
     const hands = new AnchoredHands(permissionController);
@@ -155,6 +161,7 @@ export class MonolithFactory {
       modelCatalog,
       envKeyResolver,
       imageModelRegistry,
+      proxyGateway,
       slashRouter,
       mentionResolver,
       swarmDispatcher,
@@ -165,6 +172,7 @@ export class MonolithFactory {
       gatewayServer,
       benchmarkEvaluator,
       telemetryTracer,
+      streamFormatter,
       eyes,
       hands,
       ears,
