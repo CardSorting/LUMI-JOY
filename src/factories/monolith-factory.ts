@@ -5,6 +5,7 @@ import { ModelResolver } from "../agents/extensions/resolution/model-resolver.js
 import { AgentSlashRouter } from "../agents/extensions/resolution/agent-slash-router.js";
 import { MentionResolver } from "../agents/extensions/mentions/mention-resolver.js";
 import { AgentSwarmDispatcher } from "../agents/extensions/swarm/agent-swarm-dispatcher.js";
+import { WorkspaceIntelligenceEngine } from "../agents/extensions/intelligence/workspace-intelligence.js";
 import { SessionContext } from "../sessions/base/session-context.js";
 import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
 import { SessionCompactor } from "../sessions/extensions/compaction/session-compactor.js";
@@ -14,6 +15,7 @@ import { StabilityDoctor } from "../sessions/extensions/integrity/stability-doct
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
+import { CommandPermissionController } from "../tooling/extensions/permissions/command-permission-controller.js";
 import { ProtocolEars } from "../tooling/extensions/telemetry/ears.js";
 import { ProgressStreamingEars } from "../tooling/extensions/progress/progress-ears.js";
 import { SkillsIngestor } from "../tooling/extensions/registry/skills-ingestor.js";
@@ -41,6 +43,8 @@ export class MonolithFactory {
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
+    intelligenceEngine: WorkspaceIntelligenceEngine;
+    permissionController: CommandPermissionController;
     eyes: AstPerceptionEyes;
     hands: AnchoredHands;
     ears: ProgressStreamingEars;
@@ -68,9 +72,11 @@ export class MonolithFactory {
     const slashRouter = new AgentSlashRouter();
     const mentionResolver = new MentionResolver();
     const swarmDispatcher = new AgentSwarmDispatcher();
+    const intelligenceEngine = new WorkspaceIntelligenceEngine();
 
+    const permissionController = new CommandPermissionController();
     const eyes = new AstPerceptionEyes();
-    const hands = new AnchoredHands();
+    const hands = new AnchoredHands(permissionController);
     const ears = new ProgressStreamingEars();
     const skillsIngestor = new SkillsIngestor(eyes);
 
@@ -109,6 +115,8 @@ export class MonolithFactory {
       slashRouter,
       mentionResolver,
       swarmDispatcher,
+      intelligenceEngine,
+      permissionController,
       eyes,
       hands,
       ears,

@@ -9,7 +9,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 ```
   [DONE] Pass 1 ──► [DONE] Pass 2 ──► [DONE] Pass 3 ──► [DONE] Pass 4 ──► [DONE] Pass 5 ──► [DONE] AKD-DSO
                                                                                                │
-  [PLANNED] Pass 14 ◄── [ACTIVE NEXT] Pass 13 ◄── [DONE] Pass 12 ◄── [DONE] Pass 11 ◄── [DONE] Pass 10 ◄── [DONE] Pass 9 ◄── [DONE] Pass 8 ◄── [DONE] Pass 7 ◄── [DONE] Pass 6 ◄──┘
+  [DONE] Pass 14 ◄── [DONE] Pass 13 ◄── [DONE] Pass 12 ◄── [DONE] Pass 11 ◄── [DONE] Pass 10 ◄── [DONE] Pass 9 ◄── [DONE] Pass 8 ◄── [DONE] Pass 7 ◄── [DONE] Pass 6 ◄──┘
 ```
 
 | Pass Stage | Status | Target Package in Teacher (`pi-main`) | Student Implementation (`LUMI-NEW`) | Governance & Code Links |
@@ -27,8 +27,8 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Pass 10** | `[COMPLETE]` | `packages/codemarie/src/core/policy` | Zombie symbol detection & dependency analysis in `ModuleDecomposer` | [ADR-014](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-014-zombie-symbol-module-decomposition.md) |
 | **Pass 11** | `[COMPLETE]` | `packages/codemarie/src/core/swarm` | Subagent task delegation & snapshot sync in `AgentSwarmDispatcher` | [ADR-015](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-015-swarm-subagent-task-delegation.md) |
 | **Pass 12** | `[COMPLETE]` | `packages/codemarie/src/core/integrity` | Environment auditing & self-healing diagnostics in `StabilityDoctor` | [ADR-016](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-016-environment-integrity-forensic-healing.md) |
-| **Pass 13** | `[ACTIVE NEXT]` | `packages/codemarie/src/core/workspace-intelligence` | Workspace topology & symbol knowledge graph in `WorkspaceIntelligenceEngine` | [Pass 13 Blueprint](#pass-13-workspace-intelligence-engine) |
-| **Pass 14** | `[PLANNED]` | `packages/codemarie/src/core/permissions` | Command permission controller & execution guardrails in `CommandPermissionController` | [Pass 14 Blueprint](#pass-14-command-permission--security-guardrails) |
+| **Pass 13** | `[COMPLETE]` | `packages/codemarie/src/core/workspace-intelligence` | Workspace topology & symbol knowledge graph in `WorkspaceIntelligenceEngine` | [ADR-017](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-017-workspace-intelligence-engine.md) |
+| **Pass 14** | `[COMPLETE]` | `packages/codemarie/src/core/permissions` | Command permission controller & execution guardrails in `CommandPermissionController` | [ADR-018](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-018-command-permission-security-guardrails.md) |
 
 ---
 
@@ -92,14 +92,20 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
   - [src/tooling/extensions/registry/tool-registry.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/registry/tool-registry.ts): Register `audit_integrity` tool.
 
 ### Pass 13: Workspace Intelligence Engine (`packages/codemarie/src/core/workspace-intelligence`)
-- **Status**: `[ACTIVE NEXT]`
+- **Status**: `[COMPLETE]`
 - **Teacher Reference**: `/Users/bozoegg/Downloads/pi-main/packages/codemarie/src/core/workspace-intelligence/WorkspaceIntelligenceEngine.ts`
 - **Objective**: Maintain a persistent background knowledge graph of workspace file structure, import topology, and symbol relationships.
-- **Files to Modify/Create**:
-  - `src/agents/extensions/workspace-intelligence.ts`: Create `WorkspaceIntelligenceEngine`.
+- **Files Modified/Created**:
+  - [src/agents/extensions/intelligence/workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts): Implement `WorkspaceIntelligenceEngine` & `WorkspaceCognitiveModel`.
+  - [src/factories/monolith-factory.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/factories/monolith-factory.ts): Wire `WorkspaceIntelligenceEngine` into composition root.
 
 ### Pass 14: Command Permission & Security Guardrails (`packages/codemarie/src/core/permissions`)
-- **Status**: `[PLANNED]`
+- **Status**: `[COMPLETE]`
+- **Teacher Reference**: `/Users/bozoegg/Downloads/pi-main/packages/codemarie/src/core/permissions/CommandPermissionController.ts`
+- **Objective**: Enforce strict command execution policies, allowlists/denylists, and user confirmation requirements prior to executing shell commands in `AnchoredHands`.
+- **Files Modified/Created**:
+  - [src/tooling/extensions/permissions/command-permission-controller.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/permissions/command-permission-controller.ts): Implement `CommandPermissionController` & security guardrails.
+  - [src/tooling/extensions/hashline/hands.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/hashline/hands.ts): Integrate command permission validation into `AnchoredHands.runCommand()`.
 - **Teacher Reference**: `/Users/bozoegg/Downloads/pi-main/packages/codemarie/src/core/permissions/CommandPermissionController.ts`
 - **Objective**: Enforce strict command execution policies, allowlists/denylists, and user confirmation requirements prior to executing shell commands in `AnchoredHands`.
 - **Files to Modify/Create**:

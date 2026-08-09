@@ -1,8 +1,16 @@
 import * as fs from "node:fs/promises";
 import { AbstractHands } from "../../../core/abstracts/abstract-hands.js";
 import type { CommandResult, AnchoredEditResult } from "../../../core/contracts/tooling.contracts.js";
+import { CommandPermissionController } from "../permissions/command-permission-controller.js";
 
 export class AnchoredHands extends AbstractHands {
+  readonly permissionController: CommandPermissionController;
+
+  constructor(permissionController?: CommandPermissionController) {
+    super();
+    this.permissionController = permissionController ?? new CommandPermissionController();
+  }
+
   computeLineHash(content: string): string {
     let hash = 0;
     for (let i = 0; i < content.length; i++) {
@@ -53,6 +61,15 @@ export class AnchoredHands extends AbstractHands {
   }
 
   async runCommand(command: string, cwd?: string): Promise<CommandResult> {
+    const validation = this.permissionController.validateCommand(command);
+    if (!validation.allowed) {
+      return {
+        exitCode: 126,
+        stdout: "",
+        stderr: `Permission Controller Blocked Execution: ${validation.reason}`,
+      };
+    }
+
     const effectiveCwd = cwd ?? process.cwd();
     return this.runRawProcess(command, effectiveCwd);
   }

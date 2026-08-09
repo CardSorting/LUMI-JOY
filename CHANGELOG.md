@@ -17,8 +17,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 8)
 - **Terminal Progress Renderer (`tui` & `client`)**: Added `ProgressStreamingEars` and `TerminalProgressRenderer` ([progress-ears.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/progress/progress-ears.ts)) for streaming JSON-RPC `telemetry/progress` notifications and published `ADR-011`.
 
-### Added (Pass 12)
-- **Environment Integrity & Forensic Healing (`codemarie`)**: Added `StabilityDoctor` ([stability-doctor.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/integrity/stability-doctor.ts)) for machine-anchored SHA-256 environmental lease validation, system write-access auditing, and automated forensic self-healing via the `audit_integrity` tool (`ADR-016`).
+### Added (Pass 13)
+- **Workspace Intelligence Engine (`codemarie`)**: Added `WorkspaceIntelligenceEngine` ([workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts)) for package identity indexing, workspace topology analysis, and cognitive graph snapshot generation (`ADR-017`).
+
+### Added (Pass 14)
+- **Command Permission & Security Guardrails (`codemarie`)**: Added `CommandPermissionController` ([command-permission-controller.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/permissions/command-permission-controller.ts)) integrated into `AnchoredHands.runCommand()` for shell execution security guardrails, allowlists/denylists, and destructive operator blocking (`ADR-018`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).

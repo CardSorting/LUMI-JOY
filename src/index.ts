@@ -13,6 +13,7 @@ import { ModelResolver } from "./agents/extensions/resolution/model-resolver.js"
 import { AgentSlashRouter } from "./agents/extensions/resolution/agent-slash-router.js";
 import { MentionResolver } from "./agents/extensions/mentions/mention-resolver.js";
 import { AgentSwarmDispatcher, type SwarmSubagentTaskResult } from "./agents/extensions/swarm/agent-swarm-dispatcher.js";
+import { WorkspaceIntelligenceEngine, type WorkspaceCognitiveModel } from "./agents/extensions/intelligence/workspace-intelligence.js";
 import { SessionContext } from "./sessions/base/session-context.js";
 import { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
 import { SessionCompactor } from "./sessions/extensions/compaction/session-compactor.js";
@@ -22,6 +23,7 @@ import { StabilityDoctor, type EnvironmentIntegrityReport } from "./sessions/ext
 import { Eyes } from "./tooling/base/eyes.js";
 import { AstPerceptionEyes, type SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
+import { CommandPermissionController, type PermissionValidationResult } from "./tooling/extensions/permissions/command-permission-controller.js";
 import { ProtocolEars, Ears } from "./tooling/extensions/telemetry/ears.js";
 import { ProgressStreamingEars, TerminalProgressRenderer } from "./tooling/extensions/progress/progress-ears.js";
 import { SkillsIngestor } from "./tooling/extensions/registry/skills-ingestor.js";
@@ -48,6 +50,8 @@ export { AgentSlashRouter } from "./agents/extensions/resolution/agent-slash-rou
 export { MentionResolver } from "./agents/extensions/mentions/mention-resolver.js";
 export { AgentSwarmDispatcher } from "./agents/extensions/swarm/agent-swarm-dispatcher.js";
 export type { SwarmSubagentTaskResult } from "./agents/extensions/swarm/agent-swarm-dispatcher.js";
+export { WorkspaceIntelligenceEngine } from "./agents/extensions/intelligence/workspace-intelligence.js";
+export type { WorkspaceCognitiveModel } from "./agents/extensions/intelligence/workspace-intelligence.js";
 export { SessionContext } from "./sessions/base/session-context.js";
 export { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
 export { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.js";
@@ -60,6 +64,8 @@ export type { SymbolSearchResult } from "./tooling/extensions/perception/ast-eye
 export { Eyes } from "./tooling/base/eyes.js";
 export { AstPerceptionEyes } from "./tooling/extensions/perception/ast-eyes.js";
 export { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
+export { CommandPermissionController } from "./tooling/extensions/permissions/command-permission-controller.js";
+export type { PermissionValidationResult } from "./tooling/extensions/permissions/command-permission-controller.js";
 export { ProtocolEars, Ears } from "./tooling/extensions/telemetry/ears.js";
 export { ProgressStreamingEars, TerminalProgressRenderer } from "./tooling/extensions/progress/progress-ears.js";
 export { SkillsIngestor } from "./tooling/extensions/registry/skills-ingestor.js";
@@ -84,6 +90,8 @@ export class LumiMonolith implements IAgentEngine {
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
   readonly swarmDispatcher: AgentSwarmDispatcher;
+  readonly intelligenceEngine: WorkspaceIntelligenceEngine;
+  readonly permissionController: CommandPermissionController;
   readonly eyes: AstPerceptionEyes;
   readonly hands: AnchoredHands;
   readonly ears: ProgressStreamingEars;
@@ -105,6 +113,8 @@ export class LumiMonolith implements IAgentEngine {
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
     this.swarmDispatcher = components.swarmDispatcher;
+    this.intelligenceEngine = components.intelligenceEngine;
+    this.permissionController = components.permissionController;
     this.eyes = components.eyes;
     this.hands = components.hands;
     this.ears = components.ears;
@@ -231,6 +241,18 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("  Environmental Fingerprint:", integrityAudit.lease.fingerprint.substring(0, 16) + "...");
     console.log("  Integrity Score:", integrityAudit.integrityScore);
     console.log("  Detected Project Types:", integrityAudit.detectedProjectTypes);
+
+    // 11. Workspace Intelligence Engine (Pass 13)
+    const cognitiveModel = await lumi.intelligenceEngine.buildCognitiveModel(process.cwd(), lumi.eyes);
+    console.log("\nWorkspace Intelligence Engine Cognitive Model (Pass 13):");
+    console.log("  Package Identity:", `${cognitiveModel.packageName}@${cognitiveModel.packageVersion}`);
+    console.log("  Architectural Surfaces:", cognitiveModel.architecturalSurfaces);
+
+    // 12. Command Permission & Security Guardrails (Pass 14)
+    const permResult = lumi.permissionController.validateCommand("sudo rm -rf /");
+    console.log("\nCommand Permission & Security Guardrail Audit (Pass 14):");
+    console.log("  'sudo rm -rf /' Allowed:", permResult.allowed);
+    console.log("  Blocked Reason:", permResult.reason);
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });
