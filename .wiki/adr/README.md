@@ -38,6 +38,12 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-030](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-030-phase-13-terminal-text-sanitizer-and-loop-phase-controller.md) | Phase 13 Terminal Text Sanitizer & Loop Phase Controller (Passes 49–51) | Accepted | 2026-08-09 | Phase 13 Evolution |
 | [ADR-031](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-031-phase-14-fixed-ring-buffer-and-microsecond-timing-buffer.md) | Phase 14 Fixed Ring Buffer & Microsecond Timing Buffer (Passes 52–54) | Accepted | 2026-08-09 | Phase 14 Evolution |
 | [ADR-032](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-032-phase-15-tab-spacing-normalizer-and-semantic-version-comparator.md) | Phase 15 Tab Spacing Normalizer & Semantic Version Comparator (Passes 55–57) | Accepted | 2026-08-09 | Phase 15 Evolution |
+| [ADR-033](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-033-phase-16-context-budget-calculator-and-token-truncator.md) | Phase 16 Context Budget Calculator & Token Truncator (Passes 58–60) | Accepted | 2026-08-09 | Phase 16 Evolution |
+| [ADR-034](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-034-phase-17-tool-call-schema-validator-and-argument-coercer.md) | Phase 17 Tool Call Schema Validator & Argument Coercer (Passes 61–63) | Accepted | 2026-08-09 | Phase 17 Evolution |
+| [ADR-035](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-035-phase-18-multi-file-batch-edit-anchorer-and-diff-synthesizer.md) | Phase 18 Multi-File Batch Edit Anchorer & Diff Synthesizer (Passes 64–66) | Accepted | 2026-08-09 | Phase 18 Evolution |
+| [ADR-036](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-036-phase-19-workspace-git-ignore-filter-and-tree-walker.md) | Phase 19 Workspace Git Ignore Filter & Tree Walker (Passes 67–69) | Accepted | 2026-08-09 | Phase 19 Evolution |
+| [ADR-037](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-037-phase-20-system-prompt-template-engine-and-dynamic-variable-injector.md) | Phase 20 System Prompt Template Engine & Dynamic Variable Injector (Passes 70–72) | Accepted | 2026-08-09 | Phase 20 Evolution |
+| [ADR-038](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-038-phase-21-master-benchmark-orchestrator-and-grand-synthesis.md) | Phase 21 Master Benchmark Orchestrator & Grand Synthesis (Passes 73–75) | Accepted | 2026-08-09 | Phase 21 Evolution |
 
 ## Domain Grouping
 

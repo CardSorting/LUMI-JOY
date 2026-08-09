@@ -14,6 +14,10 @@ import { LlmProxyGateway } from "../agents/extensions/resolution/llm-proxy-gatew
 import { ReasoningEffortController } from "../agents/extensions/resolution/reasoning-effort-controller.js";
 import { DynamicModelCache } from "../agents/extensions/resolution/dynamic-model-cache.js";
 import { LoopPhaseController } from "../agents/extensions/execution/loop-phase-controller.js";
+import { ContextBudgetCalculator } from "../agents/extensions/compaction/context-budget-calculator.js";
+import { TokenTruncator } from "../agents/extensions/compaction/token-truncator.js";
+import { PromptTemplateEngine } from "../agents/extensions/compaction/prompt-template-engine.js";
+import { DynamicVariableInjector } from "../agents/extensions/compaction/dynamic-variable-injector.js";
 
 import { SessionContext } from "../sessions/base/session-context.js";
 import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
@@ -29,6 +33,8 @@ import { SnowflakeIdGenerator } from "../sessions/extensions/substrate/snowflake
 import { SystemDirectoryResolver } from "../sessions/extensions/substrate/system-directory-resolver.js";
 import { FixedRingBuffer } from "../sessions/extensions/substrate/ring-buffer.js";
 import { SemanticVersionComparator } from "../sessions/extensions/integrity/semantic-version-comparator.js";
+import { GitIgnoreFilter } from "../sessions/extensions/vfs/git-ignore-filter.js";
+import { WorkspaceTreeWalker } from "../sessions/extensions/vfs/workspace-tree-walker.js";
 
 import { TransportConnectionController } from "../tooling/extensions/gateway/transport-connection-controller.js";
 import { ResilientFetchClient } from "../tooling/extensions/telemetry/resilient-fetch-client.js";
@@ -38,6 +44,11 @@ import { CommandPathResolver } from "../tooling/extensions/permissions/command-p
 import { TerminalTextSanitizer } from "../tooling/extensions/telemetry/text-sanitizer.js";
 import { MicrosecondTimingBuffer } from "../tooling/extensions/telemetry/timing-buffer.js";
 import { TabSpacingNormalizer } from "../tooling/extensions/hashline/tab-spacing-normalizer.js";
+import { ToolCallSchemaValidator } from "../tooling/extensions/registry/tool-call-schema-validator.js";
+import { ArgumentCoercer } from "../tooling/extensions/registry/argument-coercer.js";
+import { BatchEditAnchorer } from "../tooling/extensions/hashline/batch-edit-anchorer.js";
+import { DiffSynthesizer } from "../tooling/extensions/hashline/diff-synthesizer.js";
+import { MasterBenchmarkOrchestrator } from "../tooling/extensions/evals/master-benchmark-orchestrator.js";
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
@@ -80,6 +91,8 @@ export class MonolithFactory {
     systemDirectoryResolver: SystemDirectoryResolver;
     ringBuffer: FixedRingBuffer<string>;
     semverComparator: SemanticVersionComparator;
+    gitIgnoreFilter: GitIgnoreFilter;
+    treeWalker: WorkspaceTreeWalker;
     modelResolver: ModelResolver;
     modelCatalog: ModelCatalog;
     envKeyResolver: EnvironmentKeyResolver;
@@ -88,6 +101,10 @@ export class MonolithFactory {
     reasoningEffortController: ReasoningEffortController;
     dynamicModelCache: DynamicModelCache;
     loopPhaseController: LoopPhaseController;
+    budgetCalculator: ContextBudgetCalculator;
+    tokenTruncator: TokenTruncator;
+    templateEngine: PromptTemplateEngine;
+    variableInjector: DynamicVariableInjector;
     connectionController: TransportConnectionController;
     resilientFetchClient: ResilientFetchClient;
     frontmatterParser: FrontmatterParser;
@@ -96,6 +113,11 @@ export class MonolithFactory {
     textSanitizer: TerminalTextSanitizer;
     timingBuffer: MicrosecondTimingBuffer;
     tabSpacingNormalizer: TabSpacingNormalizer;
+    schemaValidator: ToolCallSchemaValidator;
+    argumentCoercer: ArgumentCoercer;
+    batchAnchorer: BatchEditAnchorer;
+    diffSynthesizer: DiffSynthesizer;
+    masterBenchmarkOrchestrator: MasterBenchmarkOrchestrator;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -136,6 +158,8 @@ export class MonolithFactory {
     const systemDirectoryResolver = new SystemDirectoryResolver();
     const ringBuffer = new FixedRingBuffer<string>(100);
     const semverComparator = new SemanticVersionComparator();
+    const gitIgnoreFilter = new GitIgnoreFilter();
+    const treeWalker = new WorkspaceTreeWalker(gitIgnoreFilter);
 
     const modelResolver = new ModelResolver(
       config.modelName,
@@ -148,6 +172,11 @@ export class MonolithFactory {
     const reasoningEffortController = new ReasoningEffortController();
     const dynamicModelCache = new DynamicModelCache();
     const loopPhaseController = new LoopPhaseController();
+    const budgetCalculator = new ContextBudgetCalculator();
+    const tokenTruncator = new TokenTruncator();
+    const templateEngine = new PromptTemplateEngine();
+    const variableInjector = new DynamicVariableInjector();
+
     const connectionController = new TransportConnectionController();
     const resilientFetchClient = new ResilientFetchClient();
     const frontmatterParser = new FrontmatterParser();
@@ -156,23 +185,28 @@ export class MonolithFactory {
     const textSanitizer = new TerminalTextSanitizer();
     const timingBuffer = new MicrosecondTimingBuffer(100);
     const tabSpacingNormalizer = new TabSpacingNormalizer();
+    const schemaValidator = new ToolCallSchemaValidator();
+    const argumentCoercer = new ArgumentCoercer();
+
+    const permissionController = new CommandPermissionController();
+    const eyes = new AstPerceptionEyes();
+    const hands = new AnchoredHands(permissionController);
+    const batchAnchorer = new BatchEditAnchorer(hands);
+    const diffSynthesizer = new DiffSynthesizer();
+    const benchmarkEvaluator = new MonolithBenchmarkEvaluator();
+    const masterBenchmarkOrchestrator = new MasterBenchmarkOrchestrator(benchmarkEvaluator);
+
+    const ears = new ProgressStreamingEars();
+    const skillsIngestor = new SkillsIngestor(eyes);
     const slashRouter = new AgentSlashRouter();
     const mentionResolver = new MentionResolver();
     const swarmDispatcher = new AgentSwarmDispatcher();
     const intelligenceEngine = new WorkspaceIntelligenceEngine();
     const interactiveController = new InteractiveModeController();
-
-    const permissionController = new CommandPermissionController();
     const commitGenerator = new AgenticCommitGenerator();
     const gatewayServer = new MonolithGatewayServer();
-    const benchmarkEvaluator = new MonolithBenchmarkEvaluator();
     const telemetryTracer = new TelemetryTracer();
     const streamFormatter = new StreamEventFormatter();
-
-    const eyes = new AstPerceptionEyes();
-    const hands = new AnchoredHands(permissionController);
-    const ears = new ProgressStreamingEars();
-    const skillsIngestor = new SkillsIngestor(eyes);
 
     const toolRegistry = new ValidatingToolRegistry(
       eyes,
@@ -214,6 +248,8 @@ export class MonolithFactory {
       systemDirectoryResolver,
       ringBuffer,
       semverComparator,
+      gitIgnoreFilter,
+      treeWalker,
       modelResolver,
       modelCatalog,
       envKeyResolver,
@@ -222,6 +258,10 @@ export class MonolithFactory {
       reasoningEffortController,
       dynamicModelCache,
       loopPhaseController,
+      budgetCalculator,
+      tokenTruncator,
+      templateEngine,
+      variableInjector,
       connectionController,
       resilientFetchClient,
       frontmatterParser,
@@ -230,6 +270,11 @@ export class MonolithFactory {
       textSanitizer,
       timingBuffer,
       tabSpacingNormalizer,
+      schemaValidator,
+      argumentCoercer,
+      batchAnchorer,
+      diffSynthesizer,
+      masterBenchmarkOrchestrator,
       slashRouter,
       mentionResolver,
       swarmDispatcher,

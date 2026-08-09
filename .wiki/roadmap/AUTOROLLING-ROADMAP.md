@@ -23,6 +23,12 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
   [DONE] Passes 49–51 (Phase 13 Terminal Text Sanitizer & Loop Phase Controller)
   [DONE] Passes 52–54 (Phase 14 Fixed Ring Buffer & Microsecond Timing Buffer)
   [DONE] Passes 55–57 (Phase 15 Tab Spacing Normalizer & Semantic Version Comparator)
+  [DONE] Passes 58–60 (Phase 16 Context Budget Calculator & Token Truncator)
+  [DONE] Passes 61–63 (Phase 17 Tool Call Schema Validator & Argument Coercer)
+  [DONE] Passes 64–66 (Phase 18 Multi-File Batch Edit Anchorer & Diff Synthesizer)
+  [DONE] Passes 67–69 (Phase 19 Workspace Git Ignore Filter & Tree Walker)
+  [DONE] Passes 70–72 (Phase 20 System Prompt Template Engine & Dynamic Variable Injector)
+  [DONE] Passes 73–75 (Phase 21 Master Benchmark Orchestrator & Grand Synthesis)
 ```
 
 | Pass Stage | Status | Target Package in Teacher (`pi-main`) | Student Implementation (`LUMI-NEW`) | Governance & Code Links |
@@ -51,6 +57,12 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Passes 49–51** | `[COMPLETE]` | Phase 13 Utils | TerminalTextSanitizer, LoopPhaseController & Master Synthesis | [ADR-030](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-030-phase-13-terminal-text-sanitizer-and-loop-phase-controller.md) |
 | **Passes 52–54** | `[COMPLETE]` | Phase 14 Utils | FixedRingBuffer, MicrosecondTimingBuffer & Master Synthesis | [ADR-031](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-031-phase-14-fixed-ring-buffer-and-microsecond-timing-buffer.md) |
 | **Passes 55–57** | `[COMPLETE]` | Phase 15 Utils | TabSpacingNormalizer, SemanticVersionComparator & Master Synthesis | [ADR-032](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-032-phase-15-tab-spacing-normalizer-and-semantic-version-comparator.md) |
+| **Passes 58–60** | `[COMPLETE]` | Phase 16 Coding Agent | ContextBudgetCalculator, TokenTruncator & Master Synthesis | [ADR-033](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-033-phase-16-context-budget-calculator-and-token-truncator.md) |
+| **Passes 61–63** | `[COMPLETE]` | Phase 17 Tooling | ToolCallSchemaValidator, ArgumentCoercer & Master Synthesis | [ADR-034](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-034-phase-17-tool-call-schema-validator-and-argument-coercer.md) |
+| **Passes 64–66** | `[COMPLETE]` | Phase 18 Hashline | BatchEditAnchorer, DiffSynthesizer & Master Synthesis | [ADR-035](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-035-phase-18-multi-file-batch-edit-anchorer-and-diff-synthesizer.md) |
+| **Passes 67–69** | `[COMPLETE]` | Phase 19 VFS | GitIgnoreFilter, WorkspaceTreeWalker & Master Synthesis | [ADR-036](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-036-phase-19-workspace-git-ignore-filter-and-tree-walker.md) |
+| **Passes 70–72** | `[COMPLETE]` | Phase 20 Compaction | PromptTemplateEngine, DynamicVariableInjector & Master Synthesis | [ADR-037](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-037-phase-20-system-prompt-template-engine-and-dynamic-variable-injector.md) |
+| **Passes 73–75** | `[COMPLETE]` | Phase 21 Evals & Grand Monolith | MasterBenchmarkOrchestrator, GrandMonolithSynthesizer & Grand Synthesis | [ADR-038](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-038-phase-21-master-benchmark-orchestrator-and-grand-synthesis.md) |
 
 ---
 
