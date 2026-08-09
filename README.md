@@ -99,6 +99,42 @@ src/
 
 ---
 
+## 🛡️ Non-Destructive Osmosis Extension Strategy (`ADR-012`)
+
+To prevent code regression, file overwrites, and structural drift as new evolutionary passes are absorbed from `pi-main` / `packages/codemarie`, **LUMI-NEW** strictly enforces the **Non-Destructive Extension & Mutation Directory Strategy**:
+
+### 1. Core Architectural Tenets
+
+- **Base Class Immutability**: Base domain classes in `src/*/base/` (e.g. `Eyes`, `SessionContext`, `AgentConfig`) are foundational and immutable. They are never modified to absorb new pass features.
+- **Single-Responsibility Mutation Subdirectories**: Every evolutionary pass or feature mutation creates a dedicated, single-responsibility file in a domain-scoped subdirectory inside `src/*/extensions/<mutation-domain>/` (e.g. `perception/ast-eyes.ts`, `substrate/arena-allocator.ts`, `progress/progress-ears.ts`).
+- **Zero-Barrel Import Policy**: All intermediate `index.ts` barrel re-export files are prohibited. Imports across subsystems MUST target explicit, deep relative paths (e.g. `import { AstPerceptionEyes } from "./tooling/extensions/perception/ast-eyes.js"`).
+- **Dependency Inversion Monolith Composition**: Extension classes extend base abstractions (`AstPerceptionEyes extends Eyes`, `ProgressStreamingEars extends ProtocolEars`) and are composed at the composition root (`MonolithFactory` & `LumiMonolith`).
+
+### 2. Mutation Directory Responsibility Matrix
+
+| Subsystem Tier | Mutation Directory | Pass / Feature Responsibility | Extension Class |
+|---|---|---|---|
+| **Agents** (`src/agents/extensions/`) | `compaction/` | System prompt compilation & context assembly | `PromptComposer` |
+| | `resolution/` | Model fallback resolution & interactive slash routing | `ModelResolver`, `AgentSlashRouter` |
+| | `execution/` | Deterministic tick engine loop execution | `AgentEngine` |
+| | `mentions/` *(Pass 9)* | Prompt `@mention` context expansion | `MentionResolver` |
+| | `swarm/` *(Pass 11)* | Subagent task delegation & frame snapshot sync | `AgentSwarmDispatcher` |
+| **Sessions** (`src/sessions/extensions/`) | `substrate/` | Contiguous 16MB ArrayBuffer slab allocation | `ArenaAllocator` |
+| | `persistence/` | File persistence & frame-perfect snapshot rewind | `PersistentSessionStore` |
+| | `memory/` | Long-term fact store & KI persistence | `SessionMemoryStore` |
+| | `vfs/` | In-memory Virtual File System diff overlay | `SessionVfs` |
+| | `compaction/` | Sliding window turn history compaction | `SessionCompactor` |
+| | `integrity/` *(Pass 12)* | Environment auditing & forensic self-healing | `StabilityDoctor` |
+| **Tooling** (`src/tooling/extensions/`) | `perception/` | AST structural code symbol search | `AstPerceptionEyes` |
+| | `progress/` | Reactive CLI progress spinner & percent bar rendering | `ProgressStreamingEars`, `TerminalProgressRenderer` |
+| | `telemetry/` | Microsecond performance timers & JSON-RPC 2.0 formatting | `ProtocolEars` |
+| | `hashline/` | Line-anchored hash edit verification | `AnchoredHands` |
+| | `registry/` | Skill discovery & schema validation tool execution | `SkillsIngestor`, `ValidatingToolRegistry` |
+| | `policy/` *(Pass 10)* | Zombie symbol detection & dependency analysis | `ModuleDecomposer` |
+| | `permissions/` *(Pass 14)* | Command permission controller & execution guardrails | `CommandPermissionController` |
+
+---
+
 ## 📚 Roadmap & Documentation Index
 
 - 🚀 [Auto-Rolling Evolution Roadmap](.wiki/roadmap/AUTOROLLING-ROADMAP.md)
