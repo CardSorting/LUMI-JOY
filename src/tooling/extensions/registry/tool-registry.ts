@@ -8,11 +8,13 @@ import { SkillsIngestor } from "./skills-ingestor.js";
 import type { SessionMemoryStore } from "../../../sessions/extensions/memory/session-memory-store.js";
 
 import { ModuleDecomposer } from "../policy/module-decomposer.js";
+import { StabilityDoctor } from "../../../sessions/extensions/integrity/stability-doctor.js";
 
 export class ValidatingToolRegistry extends AbstractToolRegistry {
   readonly skillsIngestor: SkillsIngestor;
   readonly memoryStore?: SessionMemoryStore;
   readonly moduleDecomposer: ModuleDecomposer;
+  readonly stabilityDoctor: StabilityDoctor;
 
   constructor(
     eyes: Eyes,
@@ -25,6 +27,7 @@ export class ValidatingToolRegistry extends AbstractToolRegistry {
     this.skillsIngestor = skillsIngestor ?? new SkillsIngestor(eyes);
     this.memoryStore = memoryStore;
     this.moduleDecomposer = new ModuleDecomposer();
+    this.stabilityDoctor = new StabilityDoctor();
     this.registerBuiltins();
   }
 
@@ -191,6 +194,14 @@ export class ValidatingToolRegistry extends AbstractToolRegistry {
       description: "Audit workspace orphan zombie symbols and module coupling metrics (ModuleDecomposer)",
       execute: async (_args, cwd) => {
         return this.moduleDecomposer.auditZombieSymbols(cwd, this.eyes);
+      },
+    });
+
+    this.registerTool({
+      name: "audit_integrity",
+      description: "Audit workspace environmental leases, write access, and forensic healing (StabilityDoctor)",
+      execute: async (_args, cwd) => {
+        return this.stabilityDoctor.auditEnvironment(cwd, this.eyes);
       },
     });
   }

@@ -18,6 +18,7 @@ import { PersistentSessionStore, SessionStore } from "./sessions/extensions/pers
 import { SessionCompactor } from "./sessions/extensions/compaction/session-compactor.js";
 import { SessionVfs } from "./sessions/extensions/vfs/session-vfs.js";
 import { SessionMemoryStore } from "./sessions/extensions/memory/session-memory-store.js";
+import { StabilityDoctor, type EnvironmentIntegrityReport } from "./sessions/extensions/integrity/stability-doctor.js";
 import { Eyes } from "./tooling/base/eyes.js";
 import { AstPerceptionEyes, type SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
@@ -53,6 +54,8 @@ export { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.
 export { SessionCompactor } from "./sessions/extensions/compaction/session-compactor.js";
 export { SessionVfs } from "./sessions/extensions/vfs/session-vfs.js";
 export { SessionMemoryStore } from "./sessions/extensions/memory/session-memory-store.js";
+export { StabilityDoctor } from "./sessions/extensions/integrity/stability-doctor.js";
+export type { EnvironmentIntegrityReport } from "./sessions/extensions/integrity/stability-doctor.js";
 export type { SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
 export { Eyes } from "./tooling/base/eyes.js";
 export { AstPerceptionEyes } from "./tooling/extensions/perception/ast-eyes.js";
@@ -76,6 +79,7 @@ export class LumiMonolith implements IAgentEngine {
   readonly sessionCompactor: SessionCompactor;
   readonly sessionVfs: SessionVfs;
   readonly sessionMemoryStore: SessionMemoryStore;
+  readonly stabilityDoctor: StabilityDoctor;
   readonly modelResolver: ModelResolver;
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
@@ -96,6 +100,7 @@ export class LumiMonolith implements IAgentEngine {
     this.sessionCompactor = components.sessionCompactor;
     this.sessionVfs = components.sessionVfs;
     this.sessionMemoryStore = components.sessionMemoryStore;
+    this.stabilityDoctor = components.stabilityDoctor;
     this.modelResolver = components.modelResolver;
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
@@ -219,6 +224,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("  Task ID:", swarmTask.taskId);
     console.log("  Child Session ID:", swarmTask.childSessionId);
     console.log("  Subagent Response:", swarmTask.tickResult.response);
+
+    // 10. Environment Integrity & Forensic Healing (Pass 12)
+    const integrityAudit = await lumi.stabilityDoctor.auditEnvironment(process.cwd(), lumi.eyes);
+    console.log("\nEnvironment Integrity & Forensic Audit (Pass 12):");
+    console.log("  Environmental Fingerprint:", integrityAudit.lease.fingerprint.substring(0, 16) + "...");
+    console.log("  Integrity Score:", integrityAudit.integrityScore);
+    console.log("  Detected Project Types:", integrityAudit.detectedProjectTypes);
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });

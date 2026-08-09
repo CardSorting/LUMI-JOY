@@ -10,6 +10,7 @@ import { PersistentSessionStore } from "../sessions/extensions/persistence/sessi
 import { SessionCompactor } from "../sessions/extensions/compaction/session-compactor.js";
 import { SessionVfs } from "../sessions/extensions/vfs/session-vfs.js";
 import { SessionMemoryStore } from "../sessions/extensions/memory/session-memory-store.js";
+import { StabilityDoctor } from "../sessions/extensions/integrity/stability-doctor.js";
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
@@ -35,6 +36,7 @@ export class MonolithFactory {
     sessionCompactor: SessionCompactor;
     sessionVfs: SessionVfs;
     sessionMemoryStore: SessionMemoryStore;
+    stabilityDoctor: StabilityDoctor;
     modelResolver: ModelResolver;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
@@ -58,6 +60,7 @@ export class MonolithFactory {
     });
     const sessionVfs = new SessionVfs();
     const sessionMemoryStore = new SessionMemoryStore();
+    const stabilityDoctor = new StabilityDoctor();
     const modelResolver = new ModelResolver(
       config.modelName,
       options.fallbackModels
@@ -101,6 +104,7 @@ export class MonolithFactory {
       sessionCompactor,
       sessionVfs,
       sessionMemoryStore,
+      stabilityDoctor,
       modelResolver,
       slashRouter,
       mentionResolver,

@@ -21,6 +21,7 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-013](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-013-workspace-mention-resolution.md) | Workspace Mention Resolution (`codemarie`) | Accepted | 2026-08-09 | Context & Mention Resolution |
 | [ADR-014](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-014-zombie-symbol-module-decomposition.md) | Zombie Symbol & Module Decomposition (`codemarie`) | Accepted | 2026-08-09 | Policy & Symbol Audit |
 | [ADR-015](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-015-swarm-subagent-task-delegation.md) | Swarm Subagent Task Delegation (`codemarie`) | Accepted | 2026-08-09 | Agent Swarm Delegation |
+| [ADR-016](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-016-environment-integrity-forensic-healing.md) | Environment Integrity & Forensic Healing (`codemarie`) | Accepted | 2026-08-09 | Environment Integrity |
 
 ## Domain Grouping
 
