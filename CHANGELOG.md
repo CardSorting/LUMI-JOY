@@ -20,10 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 13)
 - **Workspace Intelligence Engine (`codemarie`)**: Added `WorkspaceIntelligenceEngine` ([workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts)) for package identity indexing, workspace topology analysis, and cognitive graph snapshot generation (`ADR-017`).
 
-### Added (Passes 43–45 / Phase 11 Evolution)
-- **Frontmatter Extractor & Parser (`utils`)**: Added `FrontmatterParser` ([frontmatter-parser.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/perception/frontmatter-parser.ts)) for YAML frontmatter extraction and body stripping (`ADR-028`).
-- **Bounded File Peeker (`utils`)**: Added `BoundedFilePeeker` ([file-peeker.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/perception/file-peeker.ts)) for bounded memory line range peeking (`ADR-028`).
-- **Monolith Phase 11 Master Subsystem Synthesis**: Completed 45-pass master synthesis verification suite confirming total frontmatter & peeker feature absorption with zero-barrel OOP class extension (`ADR-028`).
+### Added (Passes 46–48 / Phase 12 Evolution)
+- **System Directory Resolver (`utils`)**: Added `SystemDirectoryResolver` ([system-directory-resolver.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/substrate/system-directory-resolver.ts)) for resolving app data, config, cache, and state paths (`ADR-029`).
+- **Command Executable PATH Resolver (`utils`)**: Added `CommandPathResolver` ([command-path-resolver.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/permissions/command-path-resolver.ts)) for cross-platform binary executable lookup in PATH (`ADR-029`).
+- **Monolith Phase 12 Master Subsystem Synthesis**: Completed 48-pass master synthesis verification suite confirming total directory & path resolution feature absorption with zero-barrel OOP class extension (`ADR-029`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).

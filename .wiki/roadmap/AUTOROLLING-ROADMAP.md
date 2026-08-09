@@ -19,6 +19,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
   [DONE] Passes 37–39 (Phase 9 Gateway Session Registry & Snapshot Storage Index)
   [DONE] Passes 40–42 (Phase 10 Resilient Fetch Client & Snowflake ID Generator)
   [DONE] Passes 43–45 (Phase 11 Frontmatter Parser & Bounded File Peeker)
+  [DONE] Passes 46–48 (Phase 12 System Directory Resolver & Command Path Resolver)
 ```
 
 | Pass Stage | Status | Target Package in Teacher (`pi-main`) | Student Implementation (`LUMI-NEW`) | Governance & Code Links |
@@ -43,6 +44,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Passes 37–39** | `[COMPLETE]` | Phase 9 Server | GatewaySessionRegistry, SnapshotStorageIndex & Master Synthesis | [ADR-026](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-026-phase-9-gateway-session-registry-and-snapshot-storage-index.md) |
 | **Passes 40–42** | `[COMPLETE]` | Phase 10 Utils | ResilientFetchClient, SnowflakeIdGenerator & Master Synthesis | [ADR-027](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-027-phase-10-resilient-fetch-client-and-snowflake-id-generator.md) |
 | **Passes 43–45** | `[COMPLETE]` | Phase 11 Utils | FrontmatterParser, BoundedFilePeeker & Master Synthesis | [ADR-028](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-028-phase-11-frontmatter-parser-and-bounded-file-peeker.md) |
+| **Passes 46–48** | `[COMPLETE]` | Phase 12 Utils | SystemDirectoryResolver, CommandPathResolver & Master Synthesis | [ADR-029](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-029-phase-12-system-directory-resolver-and-command-path-resolver.md) |
 
 ---
 

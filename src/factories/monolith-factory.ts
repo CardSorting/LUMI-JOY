@@ -25,11 +25,13 @@ import { FileLockManager, LruCache } from "../sessions/extensions/substrate/file
 import { GatewaySessionRegistry } from "../sessions/extensions/persistence/gateway-session-registry.js";
 import { SnapshotStorageIndex } from "../sessions/extensions/persistence/snapshot-storage-index.js";
 import { SnowflakeIdGenerator } from "../sessions/extensions/substrate/snowflake-id-generator.js";
+import { SystemDirectoryResolver } from "../sessions/extensions/substrate/system-directory-resolver.js";
 
 import { TransportConnectionController } from "../tooling/extensions/gateway/transport-connection-controller.js";
 import { ResilientFetchClient } from "../tooling/extensions/telemetry/resilient-fetch-client.js";
 import { FrontmatterParser } from "../tooling/extensions/perception/frontmatter-parser.js";
 import { BoundedFilePeeker } from "../tooling/extensions/perception/file-peeker.js";
+import { CommandPathResolver } from "../tooling/extensions/permissions/command-path-resolver.js";
 import { Eyes } from "../tooling/base/eyes.js";
 import { AstPerceptionEyes } from "../tooling/extensions/perception/ast-eyes.js";
 import { AnchoredHands } from "../tooling/extensions/hashline/hands.js";
@@ -69,6 +71,7 @@ export class MonolithFactory {
     gatewaySessionRegistry: GatewaySessionRegistry;
     snapshotStorageIndex: SnapshotStorageIndex;
     snowflakeIdGenerator: SnowflakeIdGenerator;
+    systemDirectoryResolver: SystemDirectoryResolver;
     modelResolver: ModelResolver;
     modelCatalog: ModelCatalog;
     envKeyResolver: EnvironmentKeyResolver;
@@ -80,6 +83,7 @@ export class MonolithFactory {
     resilientFetchClient: ResilientFetchClient;
     frontmatterParser: FrontmatterParser;
     filePeeker: BoundedFilePeeker;
+    commandPathResolver: CommandPathResolver;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -117,6 +121,7 @@ export class MonolithFactory {
     const gatewaySessionRegistry = new GatewaySessionRegistry();
     const snapshotStorageIndex = new SnapshotStorageIndex();
     const snowflakeIdGenerator = new SnowflakeIdGenerator();
+    const systemDirectoryResolver = new SystemDirectoryResolver();
 
     const modelResolver = new ModelResolver(
       config.modelName,
@@ -132,6 +137,7 @@ export class MonolithFactory {
     const resilientFetchClient = new ResilientFetchClient();
     const frontmatterParser = new FrontmatterParser();
     const filePeeker = new BoundedFilePeeker();
+    const commandPathResolver = new CommandPathResolver();
     const slashRouter = new AgentSlashRouter();
     const mentionResolver = new MentionResolver();
     const swarmDispatcher = new AgentSwarmDispatcher();
@@ -187,6 +193,7 @@ export class MonolithFactory {
       gatewaySessionRegistry,
       snapshotStorageIndex,
       snowflakeIdGenerator,
+      systemDirectoryResolver,
       modelResolver,
       modelCatalog,
       envKeyResolver,
@@ -198,6 +205,7 @@ export class MonolithFactory {
       resilientFetchClient,
       frontmatterParser,
       filePeeker,
+      commandPathResolver,
       slashRouter,
       mentionResolver,
       swarmDispatcher,

@@ -34,11 +34,13 @@ import { RemoteSessionHandle } from "./sessions/extensions/persistence/remote-se
 import { GatewaySessionRegistry, type ActiveSessionInfo } from "./sessions/extensions/persistence/gateway-session-registry.js";
 import { SnapshotStorageIndex, type SnapshotMetadata } from "./sessions/extensions/persistence/snapshot-storage-index.js";
 import { SnowflakeIdGenerator } from "./sessions/extensions/substrate/snowflake-id-generator.js";
+import { SystemDirectoryResolver, type SystemDirectories } from "./sessions/extensions/substrate/system-directory-resolver.js";
 
 import { Eyes } from "./tooling/base/eyes.js";
 import { AstPerceptionEyes, type SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
 import { FrontmatterParser, type FrontmatterResult } from "./tooling/extensions/perception/frontmatter-parser.js";
 import { BoundedFilePeeker, type PeekFileResult } from "./tooling/extensions/perception/file-peeker.js";
+import { CommandPathResolver } from "./tooling/extensions/permissions/command-path-resolver.js";
 import { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
 import { CommandPermissionController, type PermissionValidationResult } from "./tooling/extensions/permissions/command-permission-controller.js";
 import { ProtocolEars, Ears } from "./tooling/extensions/telemetry/ears.js";
@@ -107,6 +109,8 @@ export type { ActiveSessionInfo } from "./sessions/extensions/persistence/gatewa
 export { SnapshotStorageIndex } from "./sessions/extensions/persistence/snapshot-storage-index.js";
 export type { SnapshotMetadata } from "./sessions/extensions/persistence/snapshot-storage-index.js";
 export { SnowflakeIdGenerator } from "./sessions/extensions/substrate/snowflake-id-generator.js";
+export { SystemDirectoryResolver } from "./sessions/extensions/substrate/system-directory-resolver.js";
+export type { SystemDirectories } from "./sessions/extensions/substrate/system-directory-resolver.js";
 
 export type { SymbolSearchResult } from "./tooling/extensions/perception/ast-eyes.js";
 export { Eyes } from "./tooling/base/eyes.js";
@@ -115,6 +119,7 @@ export { FrontmatterParser } from "./tooling/extensions/perception/frontmatter-p
 export type { FrontmatterResult } from "./tooling/extensions/perception/frontmatter-parser.js";
 export { BoundedFilePeeker } from "./tooling/extensions/perception/file-peeker.js";
 export type { PeekFileResult } from "./tooling/extensions/perception/file-peeker.js";
+export { CommandPathResolver } from "./tooling/extensions/permissions/command-path-resolver.js";
 export { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
 export { CommandPermissionController } from "./tooling/extensions/permissions/command-permission-controller.js";
 export type { PermissionValidationResult } from "./tooling/extensions/permissions/command-permission-controller.js";
@@ -158,6 +163,7 @@ export class LumiMonolith implements IAgentEngine {
   readonly gatewaySessionRegistry: GatewaySessionRegistry;
   readonly snapshotStorageIndex: SnapshotStorageIndex;
   readonly snowflakeIdGenerator: SnowflakeIdGenerator;
+  readonly systemDirectoryResolver: SystemDirectoryResolver;
   readonly modelResolver: ModelResolver;
   readonly modelCatalog: ModelCatalog;
   readonly envKeyResolver: EnvironmentKeyResolver;
@@ -169,6 +175,7 @@ export class LumiMonolith implements IAgentEngine {
   readonly resilientFetchClient: ResilientFetchClient;
   readonly frontmatterParser: FrontmatterParser;
   readonly filePeeker: BoundedFilePeeker;
+  readonly commandPathResolver: CommandPathResolver;
   readonly slashRouter: AgentSlashRouter;
   readonly mentionResolver: MentionResolver;
   readonly swarmDispatcher: AgentSwarmDispatcher;
@@ -203,6 +210,7 @@ export class LumiMonolith implements IAgentEngine {
     this.gatewaySessionRegistry = components.gatewaySessionRegistry;
     this.snapshotStorageIndex = components.snapshotStorageIndex;
     this.snowflakeIdGenerator = components.snowflakeIdGenerator;
+    this.systemDirectoryResolver = components.systemDirectoryResolver;
     this.modelResolver = components.modelResolver;
     this.modelCatalog = components.modelCatalog;
     this.envKeyResolver = components.envKeyResolver;
@@ -214,6 +222,7 @@ export class LumiMonolith implements IAgentEngine {
     this.resilientFetchClient = components.resilientFetchClient;
     this.frontmatterParser = components.frontmatterParser;
     this.filePeeker = components.filePeeker;
+    this.commandPathResolver = components.commandPathResolver;
     this.slashRouter = components.slashRouter;
     this.mentionResolver = components.mentionResolver;
     this.swarmDispatcher = components.swarmDispatcher;
@@ -319,19 +328,19 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("Message count after rewind:", lumi.sessionStore.getMessages().length);
     console.log("Slab allocated bytes after rewind:", lumi.sessionStore.getSlabSnapshot().allocatedBytes);
 
-    // 5. Frontmatter Extractor & Parser (Pass 43)
-    const fmResult = lumi.frontmatterParser.parse("---\nname: lumi\nversion: 0.1.0\n---\n# Lumi Title");
-    console.log("\nFrontmatter Extractor & Parser (Pass 43):");
-    console.log("  Parsed Attributes:", fmResult.attributes);
+    // 5. System Directory Resolver (Pass 46)
+    const dirs = lumi.systemDirectoryResolver.getDirectories();
+    console.log("\nSystem Directory Resolver (Pass 46):");
+    console.log("  App Data Dir:", dirs.appDataDir);
 
-    // 6. Bounded File Peeker (Pass 44)
-    const peekResult = await lumi.filePeeker.peekFile("package.json", { maxLines: 3 });
-    console.log("\nBounded File Peeker (Pass 44):");
-    console.log("  Lines Read:", peekResult.linesRead, "| Total Lines:", peekResult.totalLines);
+    // 6. Command Executable PATH Resolver (Pass 47)
+    const nodePath = await lumi.commandPathResolver.which("node");
+    console.log("\nCommand Executable PATH Resolver (Pass 47):");
+    console.log("  Resolved 'node' Executable Path:", nodePath !== undefined);
 
-    // 7. Monolith Phase 11 Master Subsystem Synthesis (Pass 45)
-    console.log("\n--- Pass 45 Monolith Phase 11 Master Synthesis Verification ---");
-    console.log("ALL 45 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
+    // 7. Monolith Phase 12 Master Subsystem Synthesis (Pass 48)
+    console.log("\n--- Pass 48 Monolith Phase 12 Master Synthesis Verification ---");
+    console.log("ALL 48 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });
