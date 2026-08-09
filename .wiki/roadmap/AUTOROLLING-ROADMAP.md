@@ -21,6 +21,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
   [DONE] Passes 43–45 (Phase 11 Frontmatter Parser & Bounded File Peeker)
   [DONE] Passes 46–48 (Phase 12 System Directory Resolver & Command Path Resolver)
   [DONE] Passes 49–51 (Phase 13 Terminal Text Sanitizer & Loop Phase Controller)
+  [DONE] Passes 52–54 (Phase 14 Fixed Ring Buffer & Microsecond Timing Buffer)
 ```
 
 | Pass Stage | Status | Target Package in Teacher (`pi-main`) | Student Implementation (`LUMI-NEW`) | Governance & Code Links |
@@ -47,6 +48,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Passes 43–45** | `[COMPLETE]` | Phase 11 Utils | FrontmatterParser, BoundedFilePeeker & Master Synthesis | [ADR-028](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-028-phase-11-frontmatter-parser-and-bounded-file-peeker.md) |
 | **Passes 46–48** | `[COMPLETE]` | Phase 12 Utils | SystemDirectoryResolver, CommandPathResolver & Master Synthesis | [ADR-029](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-029-phase-12-system-directory-resolver-and-command-path-resolver.md) |
 | **Passes 49–51** | `[COMPLETE]` | Phase 13 Utils | TerminalTextSanitizer, LoopPhaseController & Master Synthesis | [ADR-030](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-030-phase-13-terminal-text-sanitizer-and-loop-phase-controller.md) |
+| **Passes 52–54** | `[COMPLETE]` | Phase 14 Utils | FixedRingBuffer, MicrosecondTimingBuffer & Master Synthesis | [ADR-031](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-031-phase-14-fixed-ring-buffer-and-microsecond-timing-buffer.md) |
 
 ---
 
