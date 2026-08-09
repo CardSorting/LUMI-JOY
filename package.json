@@ -1,0 +1,15 @@
+{
+  "name": "lumi-new",
+  "version": "0.1.0",
+  "description": "Greenfield 3-tier monolithic agent framework",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "start": "node --import tsx/esm src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  }
+}
