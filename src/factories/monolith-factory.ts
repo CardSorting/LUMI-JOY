@@ -7,6 +7,7 @@ import { MentionResolver } from "../agents/extensions/mentions/mention-resolver.
 import { AgentSwarmDispatcher } from "../agents/extensions/swarm/agent-swarm-dispatcher.js";
 import { WorkspaceIntelligenceEngine } from "../agents/extensions/intelligence/workspace-intelligence.js";
 import { ModelCatalog } from "../agents/extensions/resolution/model-catalog.js";
+import { InteractiveModeController } from "../agents/extensions/execution/interactive-mode-controller.js";
 
 import { SessionContext } from "../sessions/base/session-context.js";
 import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
@@ -28,6 +29,7 @@ import { ValidatingToolRegistry } from "../tooling/extensions/registry/tool-regi
 import { MonolithGatewayServer } from "../tooling/extensions/gateway/monolith-gateway-server.js";
 import { MonolithBenchmarkEvaluator } from "../tooling/extensions/evals/benchmark-evaluator.js";
 import { TelemetryTracer } from "../tooling/extensions/telemetry/telemetry-tracer.js";
+import { AgenticCommitGenerator } from "../tooling/extensions/policy/agentic-commit-generator.js";
 
 import type { GameStateSnapshot } from "../core/contracts/session.contracts.js";
 
@@ -57,7 +59,9 @@ export class MonolithFactory {
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
     intelligenceEngine: WorkspaceIntelligenceEngine;
+    interactiveController: InteractiveModeController;
     permissionController: CommandPermissionController;
+    commitGenerator: AgenticCommitGenerator;
     gatewayServer: MonolithGatewayServer;
     benchmarkEvaluator: MonolithBenchmarkEvaluator;
     telemetryTracer: TelemetryTracer;
@@ -94,8 +98,10 @@ export class MonolithFactory {
     const mentionResolver = new MentionResolver();
     const swarmDispatcher = new AgentSwarmDispatcher();
     const intelligenceEngine = new WorkspaceIntelligenceEngine();
+    const interactiveController = new InteractiveModeController();
 
     const permissionController = new CommandPermissionController();
+    const commitGenerator = new AgenticCommitGenerator();
     const gatewayServer = new MonolithGatewayServer();
     const benchmarkEvaluator = new MonolithBenchmarkEvaluator();
     const telemetryTracer = new TelemetryTracer();
@@ -145,7 +151,9 @@ export class MonolithFactory {
       mentionResolver,
       swarmDispatcher,
       intelligenceEngine,
+      interactiveController,
       permissionController,
+      commitGenerator,
       gatewayServer,
       benchmarkEvaluator,
       telemetryTracer,

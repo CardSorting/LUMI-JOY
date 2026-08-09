@@ -26,6 +26,7 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-018](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-018-command-permission-security-guardrails.md) | Command Permission & Security Guardrails (`codemarie`) | Accepted | 2026-08-09 | Security & Guardrails |
 | [ADR-019](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-019-phase-2-extended-package-osmosis.md) | Phase 2 Extended Package Osmosis (Passes 15–18) | Accepted | 2026-08-09 | Phase 2 Evolution |
 | [ADR-020](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-020-phase-3-master-subsystem-orchestration.md) | Phase 3 Master Subsystem Orchestration (Passes 19–21) | Accepted | 2026-08-09 | Phase 3 Evolution |
+| [ADR-021](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-021-phase-4-agentic-commit-interactive-cli-controller.md) | Phase 4 Agentic Commit & Interactive CLI Controller (Passes 22–24) | Accepted | 2026-08-09 | Phase 4 Evolution |
 
 ## Domain Grouping
 

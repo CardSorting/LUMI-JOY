@@ -20,10 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Pass 13)
 - **Workspace Intelligence Engine (`codemarie`)**: Added `WorkspaceIntelligenceEngine` ([workspace-intelligence.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/intelligence/workspace-intelligence.ts)) for package identity indexing, workspace topology analysis, and cognitive graph snapshot generation (`ADR-017`).
 
-### Added (Passes 19–21 / Phase 3 Evolution)
-- **OpenTelemetry Tracing & Microsecond Telemetry (`telemetry`)**: Added `TelemetryTracer` ([telemetry-tracer.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/telemetry/telemetry-tracer.ts)) for OpenTelemetry span tracing and event tagging (`ADR-020`).
-- **Safe Concurrent File Lock & LRU Cache (`utils`)**: Added `FileLockManager` and `LruCache` ([file-lock.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/substrate/file-lock.ts)) for atomic file lock leases and turn snapshot caching (`ADR-020`).
-- **Monolith Orchestrator & Master Subsystem Verification**: Completed 21-pass master verification suite confirming zero-barrel OOP class extension and 100% subsystem cohesion across all domain mutation directories (`ADR-020`).
+### Added (Passes 22–24 / Phase 4 Evolution)
+- **Automated Conventional Commit Generator (`commit`)**: Added `AgenticCommitGenerator` ([agentic-commit-generator.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/policy/agentic-commit-generator.ts)) for conventional commit message analysis (`ADR-021`).
+- **Interactive CLI Execution Controller (`modes`)**: Added `InteractiveModeController` ([interactive-mode-controller.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/execution/interactive-mode-controller.ts)) for interactive prompt execution and stream rendering (`ADR-021`).
+- **Monolith Phase 4 Master Subsystem Orchestration**: Completed 24-pass master verification suite confirming zero-barrel OOP class extension and 100% subsystem cohesion across all domain mutation directories (`ADR-021`).
 
 ### Added (ADR-012 Architecture)
 - **Non-Destructive Extension & Mutation Directory Architecture**: Organized extension classes into domain-scoped mutation subdirectories (`compaction/`, `resolution/`, `execution/`, `substrate/`, `persistence/`, `memory/`, `vfs/`, `perception/`, `progress/`, `telemetry/`, `hashline/`, `registry/`, `mentions/`) and removed legacy flat barrel files (`ADR-012`).

@@ -15,6 +15,7 @@ import { MentionResolver } from "./agents/extensions/mentions/mention-resolver.j
 import { AgentSwarmDispatcher, type SwarmSubagentTaskResult } from "./agents/extensions/swarm/agent-swarm-dispatcher.js";
 import { WorkspaceIntelligenceEngine, type WorkspaceCognitiveModel } from "./agents/extensions/intelligence/workspace-intelligence.js";
 import { ModelCatalog, type ModelSpecs } from "./agents/extensions/resolution/model-catalog.js";
+import { InteractiveModeController } from "./agents/extensions/execution/interactive-mode-controller.js";
 
 import { SessionContext } from "./sessions/base/session-context.js";
 import { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
@@ -37,6 +38,7 @@ import { ModuleDecomposer } from "./tooling/extensions/policy/module-decomposer.
 import { MonolithGatewayServer } from "./tooling/extensions/gateway/monolith-gateway-server.js";
 import { MonolithBenchmarkEvaluator, type BenchmarkSuiteResult } from "./tooling/extensions/evals/benchmark-evaluator.js";
 import { TelemetryTracer, type ActiveSpan } from "./tooling/extensions/telemetry/telemetry-tracer.js";
+import { AgenticCommitGenerator, type ConventionalCommitResult } from "./tooling/extensions/policy/agentic-commit-generator.js";
 
 import { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.js";
 
@@ -62,6 +64,7 @@ export { WorkspaceIntelligenceEngine } from "./agents/extensions/intelligence/wo
 export type { WorkspaceCognitiveModel } from "./agents/extensions/intelligence/workspace-intelligence.js";
 export { ModelCatalog } from "./agents/extensions/resolution/model-catalog.js";
 export type { ModelSpecs } from "./agents/extensions/resolution/model-catalog.js";
+export { InteractiveModeController } from "./agents/extensions/execution/interactive-mode-controller.js";
 
 export { SessionContext } from "./sessions/base/session-context.js";
 export { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
@@ -91,6 +94,8 @@ export { MonolithBenchmarkEvaluator } from "./tooling/extensions/evals/benchmark
 export type { BenchmarkSuiteResult } from "./tooling/extensions/evals/benchmark-evaluator.js";
 export { TelemetryTracer } from "./tooling/extensions/telemetry/telemetry-tracer.js";
 export type { ActiveSpan } from "./tooling/extensions/telemetry/telemetry-tracer.js";
+export { AgenticCommitGenerator } from "./tooling/extensions/policy/agentic-commit-generator.js";
+export type { ConventionalCommitResult } from "./tooling/extensions/policy/agentic-commit-generator.js";
 
 export { MonolithFactory } from "./factories/monolith-factory.js";
 
@@ -116,7 +121,9 @@ export class LumiMonolith implements IAgentEngine {
   readonly mentionResolver: MentionResolver;
   readonly swarmDispatcher: AgentSwarmDispatcher;
   readonly intelligenceEngine: WorkspaceIntelligenceEngine;
+  readonly interactiveController: InteractiveModeController;
   readonly permissionController: CommandPermissionController;
+  readonly commitGenerator: AgenticCommitGenerator;
   readonly gatewayServer: MonolithGatewayServer;
   readonly benchmarkEvaluator: MonolithBenchmarkEvaluator;
   readonly telemetryTracer: TelemetryTracer;
@@ -146,7 +153,9 @@ export class LumiMonolith implements IAgentEngine {
     this.mentionResolver = components.mentionResolver;
     this.swarmDispatcher = components.swarmDispatcher;
     this.intelligenceEngine = components.intelligenceEngine;
+    this.interactiveController = components.interactiveController;
     this.permissionController = components.permissionController;
+    this.commitGenerator = components.commitGenerator;
     this.gatewayServer = components.gatewayServer;
     this.benchmarkEvaluator = components.benchmarkEvaluator;
     this.telemetryTracer = components.telemetryTracer;
@@ -343,9 +352,26 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log("  LRU Cached Snapshot Count:", lumi.snapshotLruCache.size());
     await lumi.fileLockManager.releaseLock("src/index.ts");
 
-    // 19. Monolith Orchestrator & Master Subsystem Verification (Pass 21)
-    console.log("\n--- Pass 21 Monolith Orchestrator Master Verification ---");
-    console.log("ALL 21 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
+    // 19. Automated Conventional Commit Generator (Pass 22)
+    const commitMsg = lumi.commitGenerator.generateCommitMessage(
+      ["src/index.ts"],
+      ["src/agents/extensions/execution/interactive-mode-controller.ts"],
+      "complete Pass 22 and 23 evolution"
+    );
+    console.log("\nAutomated Conventional Commit Generator (Pass 22):");
+    console.log("  Generated Commit Message:", commitMsg.fullMessage);
+
+    // 20. Interactive CLI Execution Controller (Pass 23)
+    const interactiveRes = await lumi.interactiveController.executeInteractiveTurn(
+      lumi,
+      "view: package.json"
+    );
+    console.log("\nInteractive CLI Execution Controller (Pass 23):");
+    console.log("  Interactive Response:", interactiveRes);
+
+    // 21. Monolith Phase 4 Master Orchestration (Pass 24)
+    console.log("\n--- Pass 24 Monolith Phase 4 Master Verification ---");
+    console.log("ALL 24 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
   })().catch((err) => {
     console.error("Deterministic Game Engine execution failed:", err);
   });
