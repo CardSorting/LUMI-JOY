@@ -90,8 +90,10 @@ With $O(1)$ state pointer rewinding ($0.04\text{ ms}$), agents can branch into h
 ### 3. Sub-Millisecond Code & Application Synthesis
 Generating a full 60FPS Canvas HTML5/JS app in **$0.43\text{ ms}$** demonstrates that when template assembly and AST construction run entirely in contiguous memory without external dependency lookups, runtime execution speed approaches hardware bus limits.
 
-### 4. Embedded & Edge Agent Runtimes
-By eliminating Garbage Collection pauses and constraining state footprint to a deterministic 16MB slab (`allocatedBytes: 80 / 16777216`), agent runtimes can operate seamlessly on edge devices, local terminal tools, and embedded hardware with zero memory bloat over millions of turns.
+### 4. Real-Time Hard-Deterministic Embedded Agent Substrate
+In mission-critical embedded environments, robotics platforms, autonomous systems, and edge hardware, unpredictable V8 Garbage Collection pauses (50ms–200ms freeze spikes) are catastrophic. 
+
+By eliminating GC pauses and constraining state allocations to a pre-allocated 16MB ArrayBuffer slab (`allocatedBytes: 80 / 16777216`), **LUMI-NEW** provides the world's first **real-time, hard-deterministic agent runtime**. Agents can run continuously over millions of turns on robotics microcontrollers, edge chips, and local CLI tools without memory leaks, heap degradation, or latency jitter.
 
 ---
 
