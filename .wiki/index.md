@@ -18,7 +18,11 @@ Welcome to the central documentation wiki for **LUMI-NEW** (`/Users/bozoegg/Desk
 - 📄 [Whitepaper: The Osmosis Paradigm & Self-Mutating Substrate](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/whitepaper/OSMOSIS-WHITEPAPER.md)
   - Executive Brief, Foundational Philosophy, and Self-Mutation Principles.
 
-### 3. Field Notes & Performance Benchmark Reports
+### 3. IP Prior Art & Patent Licensing Specification
+- 📜 [IP Prior Art & Invention Disclosure Specification](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/ip/INVENTION-DISCLOSURE-AND-PRIOR-ART.md)
+  - Public prior art timestamping (August 9, 2026), Apache 2.0 perpetual patent grant, defensive patent termination clause, and invention disclosure details.
+
+### 4. Field Notes & Performance Benchmark Reports
 - 📊 [Field Note: Benchmark Performance & Execution Throughput Evaluation](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/field-notes/BENCHMARK-PERFORMANCE-FIELD-NOTE.md)
   - Empirical evaluation results, mathematical throughput equations, mean turn latency ($0.24\text{ ms}$), and reproducibility guide.
 

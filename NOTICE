@@ -1,0 +1,16 @@
+========================================================================
+LUMI-NEW Agent Framework & AKD-DSO Substrate
+Copyright (c) 2026 CardSorting / bozoegg and LUMI-NEW Contributors
+========================================================================
+
+This product includes software developed by CardSorting / bozoegg and contributors
+as part of the LUMI-NEW project (https://github.com/CardSorting/LUMI-NEW).
+
+Primary Architectural & Mathematical Innovations:
+- Architectural Knowledge Distillation & Deterministic Substrate Optimization (AKD-DSO)
+- Zero-GC Contiguous 16MB ArrayBuffer Slab State Management (ArenaAllocator)
+- O(1) Atomic State Pointer Rewind Mechanism (rewindToSnapshot)
+- Sub-Millisecond Synchronous Function Dispatch Game Engine Architecture (tick)
+
+Public Prior Art Disclosure Date: August 9, 2026
+License: Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
