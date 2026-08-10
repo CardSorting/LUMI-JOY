@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import * as readline from "node:readline";
 import { MonolithFactory, type MonolithFactoryOptions } from "./factories/monolith-factory.js";
 import { GrandMonolithSynthesizer } from "./factories/grand-monolith-synthesizer.js";

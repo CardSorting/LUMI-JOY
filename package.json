@@ -3,12 +3,26 @@
   "version": "0.1.0",
   "description": "Greenfield 3-tier monolithic agent framework",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "lumi": "dist/index.js",
+    "lumi-new": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "PATENT-NON-AGGRESSION-PLEDGE.md"
+  ],
   "scripts": {
     "check": "tsc --noEmit",
+    "build": "tsc",
     "test": "npx tsx scripts/validate-repo.ts",
     "guardrail": "npx tsx scripts/validate-repo.ts",
-    "start": "npx tsx src/index.ts"
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run check && npm test && npm run build"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
