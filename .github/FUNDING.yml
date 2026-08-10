@@ -1,6 +1,5 @@
 # GitHub Sponsors & Open Source Funding Configuration
-# Support William Andrew Cruz (bozoegg) and LUMI-NEW Open Science
+# Support William Andrew Cruz (CardSorting / bozoegg) and LUMI-NEW Open Science
 
-github: [bozoegg]
-open_collective: cardsorting
-custom: ["https://github.com/sponsors/bozoegg"]
+github: [CardSorting, bozoegg]
+custom: ["https://github.com/sponsors/CardSorting"]
