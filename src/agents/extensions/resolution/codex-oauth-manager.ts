@@ -1,4 +1,7 @@
 import * as crypto from "node:crypto";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as os from "node:os";
 import type { AuthStorageVault } from "./auth-storage-vault.js";
 
 export interface OpenAiCodexCredentials {
@@ -216,6 +219,45 @@ export class CodexOAuthManager {
     if (this.authVault) {
       this.authVault.setToken("openai-codex", credentials.access_token);
     }
+  }
+
+  loadFromDisk(authPath?: string): boolean {
+    const defaultPaths = [
+      authPath,
+      path.join(os.homedir(), ".codex", "auth.json"),
+      path.join(os.homedir(), ".pi", "auth.json"),
+    ].filter((p): p is string => Boolean(p));
+
+    for (const p of defaultPaths) {
+      if (fs.existsSync(p)) {
+        try {
+          const raw = fs.readFileSync(p, "utf-8");
+          const data = JSON.parse(raw) as {
+            tokens?: {
+              access_token?: string;
+              refresh_token?: string;
+              account_id?: string;
+              expires_in?: number;
+            };
+            OPENAI_API_KEY?: string;
+          };
+          if (data.tokens?.access_token && data.tokens?.refresh_token) {
+            const creds: OpenAiCodexCredentials = {
+              type: "openai-codex",
+              access_token: data.tokens.access_token,
+              refresh_token: data.tokens.refresh_token,
+              expires: Date.now() + (data.tokens.expires_in ?? 3600) * 1000,
+              accountId: data.tokens.account_id,
+            };
+            this.saveCredentials(creds);
+            return true;
+          }
+        } catch {
+          // Ignore parse errors and try next path
+        }
+      }
+    }
+    return false;
   }
 
   getChatGPTAccountId(): string | undefined {

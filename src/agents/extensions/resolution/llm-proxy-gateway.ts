@@ -1,5 +1,6 @@
 export interface ProxyEndpointConfig {
   baseUrl: string;
+  apiKey?: string;
   customHeaders?: Record<string, string>;
   timeoutMs?: number;
 }
@@ -13,8 +14,12 @@ export interface ProxyEndpointConfig {
 export class LlmProxyGateway {
   private config: ProxyEndpointConfig | null = null;
 
-  configureProxy(config: ProxyEndpointConfig): void {
+  configureProxy(config: ProxyEndpointConfig | null): void {
     this.config = config;
+  }
+
+  getProxyConfig(): ProxyEndpointConfig | null {
+    return this.config;
   }
 
   getEffectiveEndpoint(provider: string, defaultUrl: string): { url: string; headers: Record<string, string>; timeoutMs: number } {
@@ -26,10 +31,16 @@ export class LlmProxyGateway {
       };
     }
 
+    const headers: Record<string, string> = { ...(this.config.customHeaders ?? {}) };
+    if (this.config.apiKey) {
+      headers["Authorization"] = `Bearer ${this.config.apiKey}`;
+    }
+
     return {
       url: this.config.baseUrl,
-      headers: this.config.customHeaders ?? {},
+      headers,
       timeoutMs: this.config.timeoutMs ?? 30_000,
     };
   }
 }
+

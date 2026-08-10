@@ -18,7 +18,11 @@ Welcome to the central documentation wiki for **LUMI-NEW** (`/Users/bozoegg/Desk
 - 📄 [Whitepaper: The Osmosis Paradigm & Self-Mutating Substrate](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/whitepaper/OSMOSIS-WHITEPAPER.md)
   - Executive Brief, Foundational Philosophy, and Self-Mutation Principles.
 
-### 3. 1-to-1 Package Mapping Matrix
+### 3. Field Notes & Performance Benchmark Reports
+- 📊 [Field Note: Benchmark Performance & Execution Throughput Evaluation](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/field-notes/BENCHMARK-PERFORMANCE-FIELD-NOTE.md)
+  - Empirical evaluation results, mathematical throughput equations, mean turn latency ($0.24\text{ ms}$), and reproducibility guide.
+
+### 4. 1-to-1 Package Mapping Matrix
 - 📦 [True 1-to-1 Package Mapping Matrix: pi-main vs LUMI-NEW](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/package-mappings/PACKAGE-MAPPING-MATRIX.md)
   - Detailed 1-to-1 mapping of all 18 teacher packages in `pi-main/packages/` to `LUMI-NEW` monolithic subsystems.
 

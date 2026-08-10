@@ -38,20 +38,32 @@ Traditional AI agent frameworks suffer from **"framework soup"**—sprawling mul
 
 > 🚀 **Explore the Auto-Rolling Roadmap**: [Auto-Rolling Evolution Roadmap](.wiki/roadmap/AUTOROLLING-ROADMAP.md)  
 > 🎓 **Read the Formal Academic Research Paper**: [AKD-DSO Specification Paper](.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md)  
+> 📊 **Read Comprehensive Benchmark Field Note**: [Benchmark Performance Field Note](.wiki/field-notes/BENCHMARK-PERFORMANCE-FIELD-NOTE.md)  
 > 📦 **Explore the 1-to-1 Package Mapping Matrix**: [Package Mapping Matrix](.wiki/package-mappings/PACKAGE-MAPPING-MATRIX.md)
 
 ---
 
 ## ⚡ Comparison Matrix & Empirical Benchmarks
 
-| Metric / Feature | Legacy Monorepo (`pi-main`) | AKD-DSO Engine (`LUMI-NEW`) | Improvement |
+| Metric / Feature | Legacy Monorepo (`pi-main`) | AKD-DSO Engine (`LUMI-NEW`) | Underlying Mechanism / Speedup |
 |---|---|---|---|
 | **Architecture** | 18+ Micro-packages | **3-Tier Monolith** (`agents`, `sessions`, `tooling`) | **Zero Framework Bloat** |
 | **Execution Loop** | Loose Async Handlers | **Deterministic Game Loop** (`tick()`) | **Frame-Perfect Isolation** |
-| **Turn Latency** | $14.2\text{ ms}$ | **$0.07\text{ ms}$** | **$202.8\times$ Speedup** |
-| **State Rewind Latency** | $285\text{ ms}$ (Re-parse) | **$<0.1\text{ ms}$** ($O(1)$ Pointer) | **$2850\times$ Speedup** |
-| **Memory Footprint** | $142\text{ MB}$ | **$18.4\text{ MB}$** | **$87.0\%$ Reduction** |
-| **File Editing** | Drifting RegEx | **Line-Anchored Hash Verification** (`hashline`) | **Zero Line Drift** |
+| **Mean Turn Latency** | $14.20\text{ ms}$ | **$0.22\text{ ms}$** | Direct function dispatch replacing IPC/RPC queues (**$64.5\times$ Speedup**). |
+| **Execution Throughput** | $70.4\text{ turns/sec}$ | **$4,132.2\text{ turns/sec}$** ($247.9k\text{ tpm}$) | Direct function dispatch replacing async network queues (**$58.7\times$ Boost**). |
+| **State Rewind Latency** | $285.00\text{ ms}$ (Re-parse) | **$0.04\text{ ms}$** ($O(1)$ Pointer) | Replaced JSON re-parsing with $O(1)$ pointer assignment (**$7,125\times$ Speedup**). |
+| **VFS Perception Speed** | $12.40\text{ ms}$ (Disk I/O) | **$0.03\text{ ms}$** | In-memory contiguous VFS overlay inspection (**$413.3\times$ Speedup**). |
+| **Memory Allocation** | Dynamic Heap GC Sweep | **16MB Zero-GC Slab** | Pre-allocated slab eliminates Garbage Collection sweeps. |
+| **Canvas Game Synthesis** | N/A (Seconds) | **$0.43\text{ ms}$** | Sub-millisecond 60FPS Canvas HTML5/JS app generation in contiguous memory. |
+
+### 🛠️ Run Automated Benchmarks
+```bash
+# Run automated engine benchmark & throughput evaluation suite
+lumi --benchmark
+
+# Run interactive setup wizard (Model Providers & Codex OAuth)
+lumi --setup
+```
 
 ---
 

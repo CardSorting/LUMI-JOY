@@ -54,6 +54,8 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-046](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-046-phase-29-auth-storage-vault-and-ttsr-coordinator.md) | Phase 29 Auth Storage Vault & TTSR Coordinator (Passes 97–99) | Accepted | 2026-08-09 | Phase 29 Evolution |
 | [ADR-047](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-047-phase-30-centennial-pass-marker-and-system-health-aggregator.md) | Phase 30 Centennial Milestone & System Health Aggregator (Passes 100–102) | Accepted | 2026-08-09 | Phase 30 Evolution |
 | [ADR-048](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-048-phase-31-openai-codex-oauth-and-provider-bridge.md) | Phase 31 OpenAI Codex OAuth Integration & Provider Bridge (Passes 103–105) | Accepted | 2026-08-09 | Phase 31 Evolution |
+| [ADR-049](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-049-interactive-setup-wizard-and-provider-bridge.md) | Interactive Setup Wizard, Model Provider Resolution & OpenAI Codex OAuth | Accepted | 2026-08-09 | Setup & Auth |
+| [ADR-050](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-050-automated-benchmark-and-throughput-evaluation.md) | Automated Engine Benchmark & Throughput Evaluation Suite | Accepted | 2026-08-09 | Evals & Benchmarks |
 
 ## Domain Grouping
 

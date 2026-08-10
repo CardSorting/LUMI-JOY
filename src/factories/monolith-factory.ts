@@ -24,6 +24,7 @@ import { HttpDispatcherOverlay } from "../agents/extensions/resolution/http-disp
 import { AuthStorageVault } from "../agents/extensions/resolution/auth-storage-vault.js";
 import { CodexOAuthManager } from "../agents/extensions/resolution/codex-oauth-manager.js";
 import { CodexProviderBridge } from "../agents/extensions/resolution/codex-provider-bridge.js";
+import { SetupWizard } from "../agents/extensions/setup/setup-wizard.js";
 
 import { SessionContext } from "../sessions/base/session-context.js";
 import { PersistentSessionStore } from "../sessions/extensions/persistence/session-store.js";
@@ -158,6 +159,7 @@ export class MonolithFactory {
     systemHealthAggregator: SystemHealthAggregator;
     codexOAuthManager: CodexOAuthManager;
     codexProviderBridge: CodexProviderBridge;
+    setupWizard: SetupWizard;
     slashRouter: AgentSlashRouter;
     mentionResolver: MentionResolver;
     swarmDispatcher: AgentSwarmDispatcher;
@@ -246,7 +248,15 @@ export class MonolithFactory {
     const centennialPassMarker = new CentennialPassMarker();
     const systemHealthAggregator = new SystemHealthAggregator();
     const codexOAuthManager = new CodexOAuthManager(authStorageVault);
+    codexOAuthManager.loadFromDisk();
     const codexProviderBridge = new CodexProviderBridge(codexOAuthManager, authStorageVault);
+    const setupWizard = new SetupWizard({
+      envKeyResolver,
+      authStorageVault,
+      codexOAuthManager,
+      codexProviderBridge,
+      proxyGateway,
+    });
 
 
 
@@ -294,7 +304,9 @@ export class MonolithFactory {
       modelResolver,
       sessionVfs,
       sessionMemoryStore,
-      slashRouter
+      slashRouter,
+      codexProviderBridge,
+      proxyGateway
     );
 
     return {
@@ -361,6 +373,7 @@ export class MonolithFactory {
       systemHealthAggregator,
       codexOAuthManager,
       codexProviderBridge,
+      setupWizard,
       slashRouter,
       mentionResolver,
       swarmDispatcher,

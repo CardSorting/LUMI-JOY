@@ -26,21 +26,31 @@ Tiers expand organically as needed to support specialized subsystem features, wi
   - `src/factories/monolith-factory.ts`: MonolithFactory
   - `src/index.ts`: LumiMonolith (`IAgentEngine`)
 
-## Validation Commands
+## Validation & Execution Commands
 
 ```bash
 # Type-check code without emitting JS
 npm run check
 
-# Execute monolithic agent turn loop smoke test
-npx tsx src/index.ts
+# Launch interactive Setup Wizard (Model Providers & Codex OAuth)
+lumi --setup
+
+# Run automated engine benchmark & throughput evaluation suite
+lumi --benchmark
+
+# Execute 105-pass monolithic agent smoke test suite
+lumi --smoke
+
+# Run interactive REPL session
+lumi
 ```
 
 ## Key Documentation & Strategy Links
 
+- [Benchmark Performance Field Note](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/field-notes/BENCHMARK-PERFORMANCE-FIELD-NOTE.md)
 - [The Osmosis Learning Methodology & Strategy Guide](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/osmosis-methodology.md)
 - [ADR-001: 3-Tier Monolithic Agent Architecture](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-001-3-tier-monolithic-agent-architecture.md)
-- [ADR-007: Explicit OOP Class Extension Hierarchy](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-007-oop-class-extension-hierarchy.md)
-- [ADR-008: Deterministic Game Engine Architecture](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-008-deterministic-game-engine-architecture.md)
+- [ADR-049: Interactive Setup Wizard & Provider Bridge](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-049-interactive-setup-wizard-and-provider-bridge.md)
+- [ADR-050: Automated Benchmark & Throughput Evaluation](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-050-automated-benchmark-and-throughput-evaluation.md)
 - [API Reference](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/api-reference.md)
 - [Agent Memory & Constraints](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/agent-memory.md)
