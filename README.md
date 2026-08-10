@@ -39,6 +39,7 @@ Traditional AI agent frameworks suffer from **"framework soup"**—sprawling mul
 > 🚀 **Explore the Auto-Rolling Roadmap**: [Auto-Rolling Evolution Roadmap](.wiki/roadmap/AUTOROLLING-ROADMAP.md)  
 > 🎓 **Read the Formal Academic Research Paper**: [AKD-DSO Specification Paper](.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md)  
 > 📊 **Read Comprehensive Benchmark Field Note**: [Benchmark Performance Field Note](.wiki/field-notes/BENCHMARK-PERFORMANCE-FIELD-NOTE.md)  
+> 🛡️ **Anti-Patent-Troll Pledge & Prior-Art Specification**: [Defensive Patent Pledge](PATENT-NON-AGGRESSION-PLEDGE.md) | [Prior-Art Claims](.wiki/ip/DEFENSIVE-PRIOR-ART-CLAIMS.md)  
 > 📦 **Explore the 1-to-1 Package Mapping Matrix**: [Package Mapping Matrix](.wiki/package-mappings/PACKAGE-MAPPING-MATRIX.md)
 
 ---
