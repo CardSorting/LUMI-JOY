@@ -2,7 +2,8 @@
 
 **Formal Academic Specification & Research Paper**
 
-**Authors**: LUMI Advanced Agentic AI Core & DeepMind Agent Systems  
+**Primary Author & Inventor**: **William Andrew Cruz** (`bozoegg` / `CardSorting`)  
+**Co-Authors**: LUMI Advanced Agentic AI Core & DeepMind Agent Systems  
 **Publication Standard**: NeurIPS / ICML Architectural Systems Track  
 **Repository**: `/Users/bozoegg/Desktop/LUMI-NEW` | [GitHub: CardSorting/LUMI-NEW](https://github.com/CardSorting/LUMI-NEW)
 

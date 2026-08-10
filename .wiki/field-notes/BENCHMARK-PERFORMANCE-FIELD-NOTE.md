@@ -116,7 +116,7 @@ To independently reproduce and verify these performance metrics on any machine:
 
 ## 📌 Document Metadata & Sign-off
 
-- **Author**: Antigravity AI Pair Programming Agent
-- **Co-Author & Reviewer**: bozoegg
+- **Primary Inventor & Author**: **William Andrew Cruz** (`bozoegg` / `CardSorting`)
+- **Co-Author & Assistant**: Antigravity AI Pair Programming Agent
 - **Subsystem Component Count**: 82 active monolithic subsystems
 - **Verification Status**: **100% EMPIRICAL PASS (5/5)**
