@@ -15,6 +15,8 @@ Welcome to the central documentation wiki for **LUMI-NEW** (`/Users/bozoegg/Desk
 ### 2. Academic Whitepapers & Research
 - 🎓 [Academic Research Paper: AKD-DSO Architecture Specification](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md)
   - Abstract, Mathematical Formalisms ($\mathcal{L}_{\text{AKD}}$, $\mathbf{Step}_t$, $\mathcal{R}$), Empirical Benchmarks, and Theorem Proofs.
+- 🌅 [Philosophy Brief: The Next Step Forward — Reframing Agent Architecture](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/philosophy/THE-NEXT-STEP-PHILOSOPHY.md)
+  - Reframing agent runtimes as deterministic game engine kernels, the 4 tenets of zero-friction execution, and future outlook.
 - 📄 [Whitepaper: The Osmosis Paradigm & Self-Mutating Substrate](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/whitepaper/OSMOSIS-WHITEPAPER.md)
   - Executive Brief, Foundational Philosophy, and Self-Mutation Principles.
 
