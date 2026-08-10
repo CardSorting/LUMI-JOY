@@ -56,6 +56,7 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-048](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-048-phase-31-openai-codex-oauth-and-provider-bridge.md) | Phase 31 OpenAI Codex OAuth Integration & Provider Bridge (Passes 103–105) | Accepted | 2026-08-09 | Phase 31 Evolution |
 | [ADR-049](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-049-interactive-setup-wizard-and-provider-bridge.md) | Interactive Setup Wizard, Model Provider Resolution & OpenAI Codex OAuth | Accepted | 2026-08-09 | Setup & Auth |
 | [ADR-050](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-050-automated-benchmark-and-throughput-evaluation.md) | Automated Engine Benchmark & Throughput Evaluation Suite | Accepted | 2026-08-09 | Evals & Benchmarks |
+| [ADR-051](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-051-contributor-security-and-performance-guardrail-gate.md) | Contributor Security & Performance Guardrail Protection Gate | Accepted | 2026-08-09 | Governance & Security |
 
 ## Domain Grouping
 

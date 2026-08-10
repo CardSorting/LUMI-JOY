@@ -6,6 +6,8 @@
   "main": "src/index.ts",
   "scripts": {
     "check": "tsc --noEmit",
+    "test": "npx tsx scripts/validate-repo.ts",
+    "guardrail": "npx tsx scripts/validate-repo.ts",
     "start": "npx tsx src/index.ts"
   },
   "devDependencies": {

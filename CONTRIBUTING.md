@@ -19,10 +19,11 @@ Thank you for your interest in contributing to **LUMI-NEW**! We welcome contribu
 - Pure base parent contracts reside in `src/core/contracts/` and `src/core/abstracts/` (`AbstractAgentEngine`, `AbstractSessionStore`, `AbstractHands`, `AbstractEars`, `AbstractToolRegistry`).
 - Specialized capabilities inherit downward (`class Child extends Parent`) in `src/*/extensions/`.
 
-### 4. Erasable TypeScript Syntax (Node Strip-Only Mode)
-- **Forbidden**: `enum`, `namespace`, parameter properties in constructors (`constructor(public x: string)`), `import =`, `export =`.
-- **Imports**: Use explicit `import type { ... }` for interface and type imports under `verbatimModuleSyntax`.
-- **No Dynamic Inline Imports**: Use top-level imports only (`import ... from "..."`).
+### 4. Mandatory Performance SLAs & Security Guardrails (`ADR-051`)
+- **Sub-Millisecond Latency SLA**: Mean turn tick latency MUST remain **$< 1.0\text{ ms}$** (current baseline: **$0.22\text{ ms}$**).
+- **Zero-GC Slab Memory Invariant**: `PersistentSessionStore` slab allocation MUST remain fixed at **$16\text{ MB}$** (`16,777,216 bytes`).
+- **Zero-Barrel Imports (`ADR-012`)**: Intermediate `index.ts` re-export barrel files inside `src/*/extensions/` are strictly prohibited.
+- **Erasable TypeScript Syntax**: Forbidden syntax includes `enum`, `namespace`, parameter properties in constructors (`constructor(public x: string)`), `import =`, `export =`. Use `verbatimModuleSyntax` with top-level explicit type imports.
 
 ---
 
@@ -42,12 +43,25 @@ Run full TypeScript compilation check without emitting JS files:
 npm run check
 ```
 
-### 3. Run Deterministic Engine Test
+### 3. Run Automated Repository Guardrail Audit & Performance Test
 
-Execute the runtime smoke test verifying deterministic tick execution, snapshot capture, and frame rewind:
+Execute the mandatory pre-commit protection audit verifying type safety, performance SLAs ($< 1.0\text{ ms}$ latency), zero-GC slab memory invariants, and zero-barrel import compliance:
 
 ```bash
-npx tsx src/index.ts
+npm test
+```
+
+### 4. Interactive Tools & Benchmarks
+
+```bash
+# Launch interactive setup wizard (Model Providers & Codex OAuth)
+lumi --setup
+
+# Run engine benchmark & throughput evaluation suite
+lumi --benchmark
+
+# Execute 105-pass empirical smoke test suite
+lumi --smoke
 ```
 
 ---
