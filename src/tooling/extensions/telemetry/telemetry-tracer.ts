@@ -1,3 +1,5 @@
+import { BroccoliExecutionTraceRecorder } from "./broccolidb-execution-trace.js";
+
 export interface ActiveSpan {
   name: string;
   startTime: number;
@@ -15,6 +17,7 @@ export interface ActiveSpan {
  */
 export class TelemetryTracer {
   private readonly activeSpans: ActiveSpan[] = [];
+  readonly traceRecorder = new BroccoliExecutionTraceRecorder();
 
   async startSpan<T>(
     spanName: string,

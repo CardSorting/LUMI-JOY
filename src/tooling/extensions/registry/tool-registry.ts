@@ -7,14 +7,18 @@ import type { ProtocolEars } from "../telemetry/ears.js";
 import { SkillsIngestor } from "./skills-ingestor.js";
 import type { SessionMemoryStore } from "../../../sessions/extensions/memory/session-memory-store.js";
 
+import { BroccoliCircuitBreaker } from "../policy/broccoli-circuit-breaker.js";
 import { ModuleDecomposer } from "../policy/module-decomposer.js";
 import { StabilityDoctor } from "../../../sessions/extensions/integrity/stability-doctor.js";
+import { BroccoliStreamingToolExecutor } from "./broccolidb-streaming-tool-executor.js";
 
 export class ValidatingToolRegistry extends AbstractToolRegistry {
   readonly skillsIngestor: SkillsIngestor;
   readonly memoryStore?: SessionMemoryStore;
   readonly moduleDecomposer: ModuleDecomposer;
   readonly stabilityDoctor: StabilityDoctor;
+  readonly circuitBreaker: BroccoliCircuitBreaker;
+  readonly streamingExecutor: BroccoliStreamingToolExecutor;
 
   constructor(
     eyes: Eyes,
@@ -28,6 +32,8 @@ export class ValidatingToolRegistry extends AbstractToolRegistry {
     this.memoryStore = memoryStore;
     this.moduleDecomposer = new ModuleDecomposer();
     this.stabilityDoctor = new StabilityDoctor();
+    this.circuitBreaker = new BroccoliCircuitBreaker();
+    this.streamingExecutor = new BroccoliStreamingToolExecutor();
     this.registerBuiltins();
   }
 
@@ -67,11 +73,24 @@ export class ValidatingToolRegistry extends AbstractToolRegistry {
     args: Record<string, unknown>,
     cwd: string
   ): Promise<unknown> {
+    if (!this.circuitBreaker.canExecute(name)) {
+      throw new Error(`Circuit Breaker OPEN: Execution of tool '${name}' is temporarily blocked due to repeated failures.`);
+    }
+
     const validation = this.validateToolArgs(name, args);
     if (!validation.valid) {
+      this.circuitBreaker.recordFailure(name);
       throw new Error(`Tool '${name}' argument schema validation failed: ${validation.errors.join("; ")}`);
     }
-    return super.executeTool(name, args, cwd);
+
+    try {
+      const result = await super.executeTool(name, args, cwd);
+      this.circuitBreaker.recordSuccess(name);
+      return result;
+    } catch (err) {
+      this.circuitBreaker.recordFailure(name);
+      throw err;
+    }
   }
 
   protected registerBuiltins(): void {

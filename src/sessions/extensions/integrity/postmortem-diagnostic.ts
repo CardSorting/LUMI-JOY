@@ -1,3 +1,6 @@
+import { BroccoliVerificationPipeline } from "../../../agents/extensions/intelligence/broccolidb-verification-pipeline.js";
+import { BroccoliContextDiagnosisService } from "./broccolidb-context-diagnosis.js";
+
 export interface ExceptionRecord {
   id: string;
   timestamp: number;
@@ -22,6 +25,8 @@ export interface PostmortemReport {
 export class PostmortemDiagnostic {
   private records: ExceptionRecord[];
   private fatalCount: number;
+  readonly verificationPipeline = new BroccoliVerificationPipeline();
+  readonly contextDiagnosis = new BroccoliContextDiagnosisService();
 
   constructor() {
     this.records = [];

@@ -1,6 +1,8 @@
 import * as crypto from "node:crypto";
 import * as os from "node:os";
 import type { Eyes } from "../../../tooling/base/eyes.js";
+import { BroccoliSystemInvariantEngine } from "./broccolidb-system-invariant.js";
+import { BroccoliRetentionCleanupService } from "./broccolidb-retention-cleanup.js";
 
 export interface EnvironmentLease {
   fingerprint: string;
@@ -33,6 +35,13 @@ export interface EnvironmentIntegrityReport {
 export class StabilityDoctor {
   private activeLease: EnvironmentLease | null = null;
   private readonly LEASE_DURATION_MS = 60 * 60 * 1000; // 1 hour
+  readonly invariantEngine: BroccoliSystemInvariantEngine;
+  readonly cleanupService: BroccoliRetentionCleanupService;
+
+  constructor(workspaceRoot: string = process.cwd()) {
+    this.invariantEngine = new BroccoliSystemInvariantEngine(workspaceRoot);
+    this.cleanupService = new BroccoliRetentionCleanupService(workspaceRoot);
+  }
 
   /**
    * Calculates a machine-anchored SHA-256 fingerprint of the execution environment.

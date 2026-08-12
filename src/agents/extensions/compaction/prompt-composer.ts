@@ -1,6 +1,7 @@
 import type { AgentConfig } from "../../base/agent-config.js";
 import type { SessionContext } from "../../../sessions/base/session-context.js";
 import type { SessionMessage } from "../../../core/contracts/session.contracts.js";
+import { BroccoliCognitiveSuggestionEngine } from "../intelligence/broccolidb-cognitive-suggestion.js";
 
 export interface PromptComposerInput {
   config: AgentConfig;
@@ -11,6 +12,7 @@ export interface PromptComposerInput {
 }
 
 export class PromptComposer {
+  readonly suggestionEngine = new BroccoliCognitiveSuggestionEngine();
   composeSystemPrompt(config: AgentConfig, skillsContext?: string, memoryContext?: string): string {
     let prompt = `You are LUMI, an intelligent AI pair programmer operating inside deterministic game engine monolith runtime.
 Working directory: ${config.modelName}

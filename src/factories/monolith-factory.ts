@@ -6,6 +6,7 @@ import { AgentSlashRouter } from "../agents/extensions/resolution/agent-slash-ro
 import { MentionResolver } from "../agents/extensions/mentions/mention-resolver.js";
 import { AgentSwarmDispatcher } from "../agents/extensions/swarm/agent-swarm-dispatcher.js";
 import { WorkspaceIntelligenceEngine } from "../agents/extensions/intelligence/workspace-intelligence.js";
+import { KnowledgeGraphSubstrate } from "../agents/extensions/intelligence/knowledge-graph-substrate.js";
 import { ModelCatalog } from "../agents/extensions/resolution/model-catalog.js";
 import { InteractiveModeController } from "../agents/extensions/execution/interactive-mode-controller.js";
 import { EnvironmentKeyResolver } from "../agents/extensions/resolution/environment-key-resolver.js";
@@ -31,6 +32,7 @@ import { PersistentSessionStore } from "../sessions/extensions/persistence/sessi
 import { SessionCompactor } from "../sessions/extensions/compaction/session-compactor.js";
 import { SessionVfs } from "../sessions/extensions/vfs/session-vfs.js";
 import { SessionMemoryStore } from "../sessions/extensions/memory/session-memory-store.js";
+import { ContextStalenessTracker, CognitiveFreshnessGuard } from "../sessions/extensions/memory/context-staleness-tracker.js";
 import { StabilityDoctor } from "../sessions/extensions/integrity/stability-doctor.js";
 import { PostmortemDiagnostic } from "../sessions/extensions/integrity/postmortem-diagnostic.js";
 import { SystemHealthAggregator } from "../sessions/extensions/integrity/system-health-aggregator.js";
@@ -44,7 +46,64 @@ import { FixedRingBuffer } from "../sessions/extensions/substrate/ring-buffer.js
 import { SemanticVersionComparator } from "../sessions/extensions/integrity/semantic-version-comparator.js";
 import { GitIgnoreFilter } from "../sessions/extensions/vfs/git-ignore-filter.js";
 import { WorkspaceTreeWalker } from "../sessions/extensions/vfs/workspace-tree-walker.js";
+import { LockAuthorityEngine } from "../sessions/extensions/substrate/lock-authority.js";
+import { NativeMutationTransactionSubstrate } from "../sessions/extensions/substrate/native-mutation-substrate.js";
+import { WriteCoalescerSubstrate } from "../sessions/extensions/substrate/write-coalescer.js";
+import { BroccoliSubstrateStore } from "../sessions/extensions/substrate/broccoli-substrate-store.js";
+import { BroccoliCasCompactor } from "../sessions/extensions/compaction/broccolidb-cas-compactor.js";
+import { ConvergenceEngineSubstrate } from "../agents/extensions/swarm/convergence-engine.js";
+import { BroccoliTaskDagScheduler } from "../agents/extensions/swarm/broccoli-task-dag-scheduler.js";
+import { BroccoliSpiderAuditEngine } from "../agents/extensions/intelligence/broccolidb-spider-audit.js";
+import { BroccoliEpistemicReasoningEngine } from "../agents/extensions/intelligence/broccolidb-epistemic-reasoning.js";
+import { BroccoliBlastRadiusCalculator } from "../agents/extensions/intelligence/broccolidb-blast-radius.js";
+import { BroccoliCognitiveSuggestionEngine } from "../agents/extensions/intelligence/broccolidb-cognitive-suggestion.js";
+import { BroccoliVerificationPipeline } from "../agents/extensions/intelligence/broccolidb-verification-pipeline.js";
+import { BroccoliRepairMutationExecutor } from "../agents/extensions/execution/broccolidb-repair-executor.js";
+import { BroccoliSystemInvariantEngine } from "../sessions/extensions/integrity/broccolidb-system-invariant.js";
+import { BroccoliTaskStateEngine } from "../sessions/extensions/persistence/broccolidb-task-state.js";
+import { BroccoliFencingMutexEngine } from "../sessions/extensions/substrate/broccolidb-fencing-mutex.js";
+import { BroccoliRollbackCoordinator } from "../sessions/extensions/substrate/broccolidb-rollback-coordinator.js";
+import { BroccoliInterAgentMailbox } from "../agents/extensions/swarm/broccolidb-inter-agent-mailbox.js";
+import { BroccoliApprovalPolicyEngine } from "../tooling/extensions/permissions/broccolidb-approval-policy.js";
+import { BroccoliMutationPlanner } from "../agents/extensions/execution/broccolidb-mutation-planner.js";
+import { BroccoliExecutionTraceRecorder } from "../tooling/extensions/telemetry/broccolidb-execution-trace.js";
+import { BroccoliIntentTracer } from "../agents/extensions/intelligence/broccolidb-intent-tracer.js";
+import { BroccoliCASScratchpadService } from "../sessions/extensions/persistence/broccolidb-cas-scratchpad.js";
+import { BroccoliContextDiagnosisService } from "../sessions/extensions/integrity/broccolidb-context-diagnosis.js";
+import { BroccoliRetentionCleanupService } from "../sessions/extensions/integrity/broccolidb-retention-cleanup.js";
+import { BroccoliTaskCoordinator } from "../agents/extensions/swarm/broccolidb-task-coordinator.js";
+import { BroccoliSideQueryService } from "../agents/extensions/execution/broccolidb-side-query.js";
+import { BroccoliTokenEstimator } from "../tooling/extensions/policy/broccolidb-token-estimator.js";
+import { BroccoliQueryLoopOrchestrator } from "../agents/extensions/execution/broccolidb-query-loop.js";
+import { BroccoliStructuralDiscoveryService } from "../tooling/extensions/perception/broccolidb-structural-discovery.js";
+import { BroccoliAxiomVerifier } from "../tooling/extensions/permissions/broccolidb-axiom-verifier.js";
+import { BroccoliPlanModeEnforcer } from "../agents/extensions/execution/broccolidb-plan-enforcer.js";
+import { BroccoliJoyZoningEngine } from "../tooling/extensions/permissions/broccolidb-joy-zoning.js";
+import { BroccoliJoyZoningGuard } from "../tooling/extensions/permissions/broccolidb-joy-zoning-guard.js";
+import { BroccoliWorkspaceArchitectureProfiler } from "../tooling/extensions/permissions/broccolidb-architecture-profiler.js";
+import { BroccoliJoyZoningModuleDecomposer } from "../tooling/extensions/permissions/broccolidb-module-decomposer.js";
+import { BroccoliTspPolicyPlugin } from "../tooling/extensions/permissions/broccolidb-tsp-policy.js";
+import { BroccoliJoyRideDiagnostics } from "../tooling/extensions/cache/broccolidb-joyride-diagnostics.js";
+import { BroccoliJoyRideContractVerifier } from "../tooling/extensions/cache/broccolidb-joyride-contract.js";
+import { BroccoliReactivePolicyObserver } from "../tooling/extensions/permissions/broccolidb-reactive-policy.js";
+import { BroccoliUniversalGuard } from "../tooling/extensions/permissions/broccolidb-universal-guard.js";
+import { BroccoliJoyRideDecisionLog } from "../tooling/extensions/cache/broccolidb-joyride-decision-log.js";
+import { BroccoliIntegrityProtocol } from "../tooling/extensions/permissions/broccolidb-integrity-protocol.js";
+import { BroccoliAutomatedModeController } from "../agents/extensions/execution/broccolidb-mode-controller.js";
+import { BroccoliIntegrityOptimizer } from "../tooling/extensions/permissions/broccolidb-integrity-optimizer.js";
+import { BroccoliStabilityForensics } from "../tooling/extensions/permissions/broccolidb-stability-forensics.js";
+import { BroccoliSemanticAxiomEngine } from "../tooling/extensions/permissions/broccolidb-semantic-axiom.js";
+import { BroccoliSimulationEngine } from "../tooling/extensions/permissions/broccolidb-simulation-engine.js";
+import { BroccoliCommandSanitizer } from "../tooling/extensions/permissions/broccolidb-command-sanitizer.js";
+import { BroccoliShellEnvironmentResolver } from "../tooling/extensions/permissions/broccolidb-shell-resolver.js";
+import { BroccoliCommandDiagnostics } from "../tooling/extensions/permissions/broccolidb-command-diagnostics.js";
+import { BroccoliCommandOutputBuffer } from "../tooling/extensions/telemetry/broccolidb-output-buffer.js";
 
+import { JoyRideHotPathCache, HotPathCommandClassifier } from "../tooling/extensions/cache/joyride-cache.js";
+import { LumiIgnorePolicyController } from "../tooling/extensions/permissions/lumi-ignore-controller.js";
+import { BroccoliCircuitBreaker, TokenBucketRateGovernor } from "../tooling/extensions/policy/broccoli-circuit-breaker.js";
+import { BroccoliStreamingToolExecutor } from "../tooling/extensions/registry/broccolidb-streaming-tool-executor.js";
+import { BroccoliLspProtocolBridge } from "../tooling/extensions/perception/broccolidb-lsp-bridge.js";
 import { TransportConnectionController } from "../tooling/extensions/gateway/transport-connection-controller.js";
 import { ResilientFetchClient } from "../tooling/extensions/telemetry/resilient-fetch-client.js";
 import { FrontmatterParser } from "../tooling/extensions/perception/frontmatter-parser.js";
@@ -114,6 +173,66 @@ export class MonolithFactory {
     semverComparator: SemanticVersionComparator;
     gitIgnoreFilter: GitIgnoreFilter;
     treeWalker: WorkspaceTreeWalker;
+    lockAuthorityEngine: LockAuthorityEngine;
+    joyrideCache: JoyRideHotPathCache;
+    stalenessTracker: ContextStalenessTracker;
+    knowledgeGraph: KnowledgeGraphSubstrate;
+    ignoreController: LumiIgnorePolicyController;
+    mutationSubstrate: NativeMutationTransactionSubstrate;
+    writeCoalescer: WriteCoalescerSubstrate;
+    convergenceEngine: ConvergenceEngineSubstrate;
+    broccoliSubstrateStore: BroccoliSubstrateStore;
+    broccoliTaskDagScheduler: BroccoliTaskDagScheduler;
+    broccoliCircuitBreaker: BroccoliCircuitBreaker;
+    tokenBucketRateGovernor: TokenBucketRateGovernor;
+    broccoliCasCompactor: BroccoliCasCompactor;
+    broccoliSpiderAuditEngine: BroccoliSpiderAuditEngine;
+    broccoliEpistemicReasoningEngine: BroccoliEpistemicReasoningEngine;
+    broccoliSystemInvariantEngine: BroccoliSystemInvariantEngine;
+    broccoliStreamingToolExecutor: BroccoliStreamingToolExecutor;
+    broccoliTaskStateEngine: BroccoliTaskStateEngine;
+    broccoliLspBridge: BroccoliLspProtocolBridge;
+    broccoliBlastRadiusCalculator: BroccoliBlastRadiusCalculator;
+    broccoliCognitiveSuggestionEngine: BroccoliCognitiveSuggestionEngine;
+    broccoliFencingMutexEngine: BroccoliFencingMutexEngine;
+    broccoliRepairMutationExecutor: BroccoliRepairMutationExecutor;
+    broccoliVerificationPipeline: BroccoliVerificationPipeline;
+    broccoliRollbackCoordinator: BroccoliRollbackCoordinator;
+    broccoliInterAgentMailbox: BroccoliInterAgentMailbox;
+    broccoliApprovalPolicyEngine: BroccoliApprovalPolicyEngine;
+    broccoliMutationPlanner: BroccoliMutationPlanner;
+    broccoliExecutionTraceRecorder: BroccoliExecutionTraceRecorder;
+    broccoliIntentTracer: BroccoliIntentTracer;
+    broccoliCASScratchpad: BroccoliCASScratchpadService;
+    broccoliContextDiagnosis: BroccoliContextDiagnosisService;
+    broccoliRetentionCleanup: BroccoliRetentionCleanupService;
+    broccoliTaskCoordinator: BroccoliTaskCoordinator;
+    broccoliSideQuery: BroccoliSideQueryService;
+    broccoliTokenEstimator: BroccoliTokenEstimator;
+    broccoliQueryLoop: BroccoliQueryLoopOrchestrator;
+    broccoliStructuralDiscovery: BroccoliStructuralDiscoveryService;
+    broccoliAxiomVerifier: BroccoliAxiomVerifier;
+    broccoliPlanEnforcer: BroccoliPlanModeEnforcer;
+    broccoliJoyZoningEngine: BroccoliJoyZoningEngine;
+    broccoliJoyZoningGuard: BroccoliJoyZoningGuard;
+    broccoliArchitectureProfiler: BroccoliWorkspaceArchitectureProfiler;
+    broccoliModuleDecomposer: BroccoliJoyZoningModuleDecomposer;
+    broccoliTspPolicy: BroccoliTspPolicyPlugin;
+    broccoliJoyRideDiagnostics: BroccoliJoyRideDiagnostics;
+    broccoliContractVerifier: BroccoliJoyRideContractVerifier;
+    broccoliReactiveObserver: BroccoliReactivePolicyObserver;
+    broccoliUniversalGuard: BroccoliUniversalGuard;
+    broccoliDecisionLog: BroccoliJoyRideDecisionLog;
+    broccoliIntegrityProtocol: BroccoliIntegrityProtocol;
+    broccoliModeController: BroccoliAutomatedModeController;
+    broccoliIntegrityOptimizer: BroccoliIntegrityOptimizer;
+    broccoliStabilityForensics: BroccoliStabilityForensics;
+    broccoliSemanticAxiom: BroccoliSemanticAxiomEngine;
+    broccoliSimulation: BroccoliSimulationEngine;
+    broccoliCommandSanitizer: BroccoliCommandSanitizer;
+    broccoliShellResolver: BroccoliShellEnvironmentResolver;
+    broccoliCommandDiagnostics: BroccoliCommandDiagnostics;
+    broccoliOutputBuffer: BroccoliCommandOutputBuffer;
     modelResolver: ModelResolver;
     modelCatalog: ModelCatalog;
     envKeyResolver: EnvironmentKeyResolver;
@@ -202,6 +321,66 @@ export class MonolithFactory {
     const semverComparator = new SemanticVersionComparator();
     const gitIgnoreFilter = new GitIgnoreFilter();
     const treeWalker = new WorkspaceTreeWalker(gitIgnoreFilter);
+    const lockAuthorityEngine = new LockAuthorityEngine();
+    const joyrideCache = new JoyRideHotPathCache();
+    const stalenessTracker = new ContextStalenessTracker(cwd);
+    const knowledgeGraph = new KnowledgeGraphSubstrate();
+    const ignoreController = new LumiIgnorePolicyController(cwd);
+    const mutationSubstrate = new NativeMutationTransactionSubstrate(cwd);
+    const writeCoalescer = new WriteCoalescerSubstrate();
+    const convergenceEngine = new ConvergenceEngineSubstrate();
+    const broccoliSubstrateStore = new BroccoliSubstrateStore();
+    const broccoliTaskDagScheduler = new BroccoliTaskDagScheduler();
+    const broccoliCircuitBreaker = new BroccoliCircuitBreaker();
+    const tokenBucketRateGovernor = new TokenBucketRateGovernor();
+    const broccoliCasCompactor = new BroccoliCasCompactor();
+    const broccoliSpiderAuditEngine = new BroccoliSpiderAuditEngine(cwd);
+    const broccoliEpistemicReasoningEngine = new BroccoliEpistemicReasoningEngine();
+    const broccoliSystemInvariantEngine = new BroccoliSystemInvariantEngine(cwd);
+    const broccoliStreamingToolExecutor = new BroccoliStreamingToolExecutor();
+    const broccoliTaskStateEngine = new BroccoliTaskStateEngine(cwd);
+    const broccoliLspBridge = new BroccoliLspProtocolBridge(cwd);
+    const broccoliBlastRadiusCalculator = new BroccoliBlastRadiusCalculator(cwd);
+    const broccoliCognitiveSuggestionEngine = new BroccoliCognitiveSuggestionEngine();
+    const broccoliFencingMutexEngine = new BroccoliFencingMutexEngine();
+    const broccoliRepairMutationExecutor = new BroccoliRepairMutationExecutor(cwd);
+    const broccoliVerificationPipeline = new BroccoliVerificationPipeline();
+    const broccoliRollbackCoordinator = new BroccoliRollbackCoordinator(cwd);
+    const broccoliInterAgentMailbox = new BroccoliInterAgentMailbox();
+    const broccoliApprovalPolicyEngine = new BroccoliApprovalPolicyEngine();
+    const broccoliMutationPlanner = new BroccoliMutationPlanner(broccoliApprovalPolicyEngine);
+    const broccoliExecutionTraceRecorder = new BroccoliExecutionTraceRecorder();
+    const broccoliIntentTracer = new BroccoliIntentTracer();
+    const broccoliCASScratchpad = new BroccoliCASScratchpadService(cwd);
+    const broccoliContextDiagnosis = new BroccoliContextDiagnosisService();
+    const broccoliRetentionCleanup = new BroccoliRetentionCleanupService(cwd);
+    const broccoliTaskCoordinator = new BroccoliTaskCoordinator();
+    const broccoliSideQuery = new BroccoliSideQueryService();
+    const broccoliTokenEstimator = new BroccoliTokenEstimator();
+    const broccoliQueryLoop = new BroccoliQueryLoopOrchestrator();
+    const broccoliStructuralDiscovery = new BroccoliStructuralDiscoveryService(cwd);
+    const broccoliAxiomVerifier = new BroccoliAxiomVerifier();
+    const broccoliPlanEnforcer = new BroccoliPlanModeEnforcer(cwd);
+    const broccoliJoyZoningEngine = new BroccoliJoyZoningEngine();
+    const broccoliJoyZoningGuard = new BroccoliJoyZoningGuard(broccoliJoyZoningEngine);
+    const broccoliArchitectureProfiler = new BroccoliWorkspaceArchitectureProfiler(broccoliJoyZoningEngine);
+    const broccoliModuleDecomposer = new BroccoliJoyZoningModuleDecomposer(broccoliJoyZoningEngine);
+    const broccoliTspPolicy = new BroccoliTspPolicyPlugin();
+    const broccoliJoyRideDiagnostics = new BroccoliJoyRideDiagnostics();
+    const broccoliContractVerifier = new BroccoliJoyRideContractVerifier();
+    const broccoliReactiveObserver = new BroccoliReactivePolicyObserver(broccoliJoyZoningEngine);
+    const broccoliUniversalGuard = new BroccoliUniversalGuard(broccoliJoyZoningEngine);
+    const broccoliDecisionLog = new BroccoliJoyRideDecisionLog();
+    const broccoliIntegrityProtocol = new BroccoliIntegrityProtocol();
+    const broccoliModeController = new BroccoliAutomatedModeController();
+    const broccoliIntegrityOptimizer = new BroccoliIntegrityOptimizer(broccoliJoyZoningEngine);
+    const broccoliStabilityForensics = new BroccoliStabilityForensics(cwd);
+    const broccoliSemanticAxiom = new BroccoliSemanticAxiomEngine(broccoliJoyZoningEngine);
+    const broccoliSimulation = new BroccoliSimulationEngine(cwd, broccoliJoyZoningEngine);
+    const broccoliCommandSanitizer = new BroccoliCommandSanitizer();
+    const broccoliShellResolver = new BroccoliShellEnvironmentResolver();
+    const broccoliCommandDiagnostics = new BroccoliCommandDiagnostics();
+    const broccoliOutputBuffer = new BroccoliCommandOutputBuffer();
 
     const modelResolver = new ModelResolver(
       config.modelName,
@@ -328,6 +507,66 @@ export class MonolithFactory {
       semverComparator,
       gitIgnoreFilter,
       treeWalker,
+      lockAuthorityEngine,
+      joyrideCache,
+      stalenessTracker,
+      knowledgeGraph,
+      ignoreController,
+      mutationSubstrate,
+      writeCoalescer,
+      convergenceEngine,
+      broccoliSubstrateStore,
+      broccoliTaskDagScheduler,
+      broccoliCircuitBreaker,
+      tokenBucketRateGovernor,
+      broccoliCasCompactor,
+      broccoliSpiderAuditEngine,
+      broccoliEpistemicReasoningEngine,
+      broccoliSystemInvariantEngine,
+      broccoliStreamingToolExecutor,
+      broccoliTaskStateEngine,
+      broccoliLspBridge,
+      broccoliBlastRadiusCalculator,
+      broccoliCognitiveSuggestionEngine,
+      broccoliFencingMutexEngine,
+      broccoliRepairMutationExecutor,
+      broccoliVerificationPipeline,
+      broccoliRollbackCoordinator,
+      broccoliInterAgentMailbox,
+      broccoliApprovalPolicyEngine,
+      broccoliMutationPlanner,
+      broccoliExecutionTraceRecorder,
+      broccoliIntentTracer,
+      broccoliCASScratchpad,
+      broccoliContextDiagnosis,
+      broccoliRetentionCleanup,
+      broccoliTaskCoordinator,
+      broccoliSideQuery,
+      broccoliTokenEstimator,
+      broccoliQueryLoop,
+      broccoliStructuralDiscovery,
+      broccoliAxiomVerifier,
+      broccoliPlanEnforcer,
+      broccoliJoyZoningEngine,
+      broccoliJoyZoningGuard,
+      broccoliArchitectureProfiler,
+      broccoliModuleDecomposer,
+      broccoliTspPolicy,
+      broccoliJoyRideDiagnostics,
+      broccoliContractVerifier,
+      broccoliReactiveObserver,
+      broccoliUniversalGuard,
+      broccoliDecisionLog,
+      broccoliIntegrityProtocol,
+      broccoliModeController,
+      broccoliIntegrityOptimizer,
+      broccoliStabilityForensics,
+      broccoliSemanticAxiom,
+      broccoliSimulation,
+      broccoliCommandSanitizer,
+      broccoliShellResolver,
+      broccoliCommandDiagnostics,
+      broccoliOutputBuffer,
       modelResolver,
       modelCatalog,
       envKeyResolver,

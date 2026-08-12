@@ -2,6 +2,11 @@ import type { LumiMonolith } from "../../../index.js";
 import type { EngineTickResult } from "../../../core/contracts/agent.contracts.js";
 import type { GameStateSnapshot } from "../../../core/contracts/session.contracts.js";
 
+import { ConvergenceEngineSubstrate, type AgentRefinement, type ResolvedDecision, type ConflictResolution } from "./convergence-engine.js";
+import { BroccoliTaskDagScheduler } from "./broccoli-task-dag-scheduler.js";
+import { BroccoliInterAgentMailbox } from "./broccolidb-inter-agent-mailbox.js";
+import { BroccoliTaskCoordinator } from "./broccolidb-task-coordinator.js";
+
 export interface SwarmLease {
   lockId: string;
   resourceKey: string;
@@ -28,6 +33,20 @@ export interface SwarmSubagentTaskResult {
 export class AgentSwarmDispatcher {
   private activeLocks: Map<string, SwarmLease> = new Map();
   private lockCounter = 0;
+  private readonly convergenceEngine = new ConvergenceEngineSubstrate();
+  readonly dagScheduler = new BroccoliTaskDagScheduler();
+  readonly mailbox = new BroccoliInterAgentMailbox();
+  readonly taskCoordinator = new BroccoliTaskCoordinator();
+
+  /**
+   * Reconciles conflicting subagent refinement outputs using multi-role priority lattice consensus.
+   */
+  convergeSwarmOutputs(refinements: AgentRefinement[]): {
+    decisions: ResolvedDecision[];
+    resolvedConflicts: ConflictResolution[];
+  } {
+    return this.convergenceEngine.converge(refinements);
+  }
 
   /**
    * Acquires a fencing lock for subagent workspace access.

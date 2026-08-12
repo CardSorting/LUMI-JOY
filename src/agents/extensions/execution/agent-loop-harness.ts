@@ -1,3 +1,5 @@
+import { BroccoliRepairMutationExecutor } from "./broccolidb-repair-executor.js";
+
 export interface HarnessStepEvent {
   stepIndex: number;
   type: "user_input" | "model_thought" | "tool_call" | "tool_result" | "final_response";
@@ -20,9 +22,11 @@ export interface HarnessExecutionResult {
  */
 export class AgentLoopHarness {
   private events: HarnessStepEvent[];
+  readonly repairExecutor: BroccoliRepairMutationExecutor;
 
-  constructor() {
+  constructor(workspaceRoot: string = process.cwd()) {
     this.events = [];
+    this.repairExecutor = new BroccoliRepairMutationExecutor(workspaceRoot);
   }
 
   async runHarnessTurn(

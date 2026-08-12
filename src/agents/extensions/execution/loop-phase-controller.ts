@@ -1,3 +1,5 @@
+import { BroccoliQueryLoopOrchestrator } from "./broccolidb-query-loop.js";
+
 export type LoopPhase = "idle" | "thinking" | "tool_execution" | "response_generation" | "compacting" | "failed";
 
 export interface PhaseTransitionEvent {
@@ -15,6 +17,7 @@ export interface PhaseTransitionEvent {
 export class LoopPhaseController {
   private currentPhase: LoopPhase = "idle";
   private readonly history: PhaseTransitionEvent[] = [];
+  readonly queryLoop = new BroccoliQueryLoopOrchestrator();
 
   setPhase(nextPhase: LoopPhase): void {
     if (this.currentPhase === nextPhase) return;

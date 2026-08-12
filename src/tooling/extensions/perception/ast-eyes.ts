@@ -1,6 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { Eyes } from "../../base/eyes.js";
+import { BroccoliLspProtocolBridge } from "./broccolidb-lsp-bridge.js";
 
 export interface SymbolSearchResult {
   path: string;
@@ -15,6 +16,12 @@ export interface SymbolSearchResult {
  * Absorbed from packages/codemarie via Non-Destructive Extension Pattern (Pass 7 / ADR-012).
  */
 export class AstPerceptionEyes extends Eyes {
+  readonly lspBridge: BroccoliLspProtocolBridge;
+
+  constructor(workspaceRoot: string = process.cwd()) {
+    super();
+    this.lspBridge = new BroccoliLspProtocolBridge(workspaceRoot);
+  }
   /**
    * Fast structural AST symbol indexing without heavy LSP daemon overhead.
    */

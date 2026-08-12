@@ -1,5 +1,7 @@
 import * as path from "node:path";
 import * as fs from "node:fs/promises";
+import { BroccoliCommandSanitizer } from "./broccolidb-command-sanitizer.js";
+import { BroccoliShellEnvironmentResolver } from "./broccolidb-shell-resolver.js";
 
 /**
  * CommandPathResolver.
@@ -8,6 +10,8 @@ import * as fs from "node:fs/promises";
  * Resolves binary executable paths within the environment PATH variable cross-platform.
  */
 export class CommandPathResolver {
+  readonly sanitizer = new BroccoliCommandSanitizer();
+  readonly shellResolver = new BroccoliShellEnvironmentResolver();
   async which(commandName: string): Promise<string | undefined> {
     if (path.isAbsolute(commandName)) {
       try {

@@ -1,4 +1,5 @@
 import type { SessionMessage } from "../../../core/contracts/session.contracts.js";
+import { BroccoliCasCompactor } from "./broccolidb-cas-compactor.js";
 
 export interface CompactorOptions {
   maxTurnHistory?: number;
@@ -8,10 +9,12 @@ export interface CompactorOptions {
 export class SessionCompactor {
   private readonly maxTurnHistory: number;
   private readonly preserveSystemPrompt: boolean;
+  readonly casCompactor: BroccoliCasCompactor;
 
   constructor(options: CompactorOptions = {}) {
     this.maxTurnHistory = options.maxTurnHistory ?? 20;
     this.preserveSystemPrompt = options.preserveSystemPrompt ?? true;
+    this.casCompactor = new BroccoliCasCompactor();
   }
 
   compact(messages: SessionMessage[]): SessionMessage[] {

@@ -8,12 +8,19 @@ import type { SessionVfs } from "../vfs/session-vfs.js";
 import type { SessionMemoryStore } from "../memory/session-memory-store.js";
 import type { ModelResolver } from "../../../agents/extensions/resolution/model-resolver.js";
 
+import { WriteCoalescerSubstrate } from "../substrate/write-coalescer.js";
+import { BroccoliTaskStateEngine } from "./broccolidb-task-state.js";
+
 export class PersistentSessionStore extends AbstractSessionStore {
   private readonly arena: ArenaAllocator;
+  private readonly coalescer: WriteCoalescerSubstrate;
+  readonly taskStateEngine: BroccoliTaskStateEngine;
 
   constructor(initialMessages: SessionMessage[] = [], arenaCapacityBytes?: number) {
     super(initialMessages);
     this.arena = new ArenaAllocator(arenaCapacityBytes ?? 16 * 1024 * 1024);
+    this.coalescer = new WriteCoalescerSubstrate();
+    this.taskStateEngine = new BroccoliTaskStateEngine();
     for (const msg of this.messages) {
       if (msg.content) {
         this.arena.allocateString(msg.content);
@@ -70,6 +77,14 @@ export class PersistentSessionStore extends AbstractSessionStore {
     const parentDir = path.dirname(filePath);
     await fs.mkdir(parentDir, { recursive: true });
     await fs.writeFile(filePath, this.exportJsonl(), "utf-8");
+  }
+
+  coalesceSaveToFile(filePath: string, debounceMs: number = 300): void {
+    this.coalescer.coalesceWrite(filePath, () => this.exportJsonl(), debounceMs);
+  }
+
+  async flushSaveToFile(filePath: string): Promise<boolean> {
+    return this.coalescer.flushFileNow(filePath);
   }
 
   async loadFromFile(filePath: string): Promise<void> {
