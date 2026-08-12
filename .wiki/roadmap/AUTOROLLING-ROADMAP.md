@@ -68,6 +68,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
   [DONE] Passes 184–186 (Phase 58 Broccoli Semantic Axiom Engine & Simulation Engine)
   [DONE] Passes 187–189 (Phase 59 Broccoli Command Sanitizer & Shell Environment Resolver)
   [DONE] Passes 190–192 (Phase 60 Broccoli Command Diagnostics & Output Buffer)
+  [DONE] Runtime Hardening (Structured Agent Activity Streaming & Codex SDK Dispatch)
 ```
 
 | Pass Stage | Status | Target Package in Teacher (`pi-main`) | Student Implementation (`LUMI-NEW`) | Governance & Code Links |
@@ -78,9 +79,9 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Pass 4** | `[COMPLETE]` | `memory/`, KIs | `SessionMemoryStore`, memory tools | [ADR-005](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-005-osmosis-evolution-memory-store-tool-chaining-knowledge-persistence.md) |
 | **Pass 5** | `[COMPLETE]` | `hashline`, `omptype` | `applyAnchoredEdit()`, `validateToolArgs()` | [ADR-006](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-006-osmosis-evolution-monorepo-package-absorption.md) |
 | **AKD-DSO** | `[COMPLETE]` | Monolithic Subsystem Refactor | `AbstractAgentEngine`, `tick()`, `createSnapshot()` | [ADR-008](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-008-deterministic-game-engine-architecture.md) |
-| **Pass 6** | `[COMPLETE]` | `broccolidb` | Slab pre-allocation array caching in `ArenaAllocator` | [ADR-009](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-009-zero-gc-substrate-memory-allocation.md) |
-| **Pass 7** | `[COMPLETE]` | `codemarie` | AST structural symbol perception in `AstPerceptionEyes` | [ADR-010](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-010-ast-symbol-perception.md) |
-| **Pass 8** | `[COMPLETE]` | `tui` & `client` | Terminal progress renderer in `ProgressStreamingEars` | [ADR-011](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-011-terminal-progress-renderer.md) |
+| **Pass 6** | `[COMPLETE]` | `broccolidb` | Slab pre-allocation array caching in `ArenaAllocator` | ADR-009 *(record unavailable)* |
+| **Pass 7** | `[COMPLETE]` | `codemarie` | AST structural symbol perception in `AstPerceptionEyes` | ADR-010 *(record unavailable)* |
+| **Pass 8** | `[COMPLETE]` | `tui` & `client` | Terminal progress renderer in `ProgressStreamingEars` | ADR-011 *(record unavailable)* |
 | **Passes 9–14** | `[COMPLETE]` | `codemarie` | Mentions, Swarm, Integrity, Intelligence & Guardrails | [ADR-013](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-013-workspace-mention-resolution.md)–[ADR-018](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-018-command-permission-security-guardrails.md) |
 | **Passes 15–18** | `[COMPLETE]` | Phase 2 Extensions | Snapcompact, Catalog, Gateway Server & Benchmark Suite | [ADR-019](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-019-phase-2-extended-package-osmosis.md) |
 | **Passes 19–21** | `[COMPLETE]` | Phase 3 Telemetry | TelemetryTracer, FileLockManager & Master Orchestration | [ADR-020](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-020-phase-3-master-subsystem-orchestration.md) |
@@ -141,6 +142,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Passes 184–186** | `[COMPLETE]` | Phase 58 Broccoli Semantic Axiom Engine & Simulation Engine | BroccoliSemanticAxiomEngine, BroccoliSimulationEngine & Master Synthesis | [ADR-079](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-079-phase-58-broccolidb-semantic-axiom-and-simulation-engine.md) |
 | **Passes 187–189** | `[COMPLETE]` | Phase 59 Broccoli Command Sanitizer & Shell Environment Resolver | BroccoliCommandSanitizer, BroccoliShellEnvironmentResolver & Master Synthesis | [ADR-080](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-080-phase-59-broccolidb-command-sanitizer-and-shell-resolver.md) |
 | **Passes 190–192** | `[COMPLETE]` | Phase 60 Broccoli Command Diagnostics & Output Buffer | BroccoliCommandDiagnostics, BroccoliCommandOutputBuffer & Master Synthesis | [ADR-081](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-081-phase-60-broccolidb-command-diagnostics-and-output-buffer.md) |
+| **Runtime Hardening** | `[COMPLETE]` | Codex SDK and terminal activity UX | `CodexProgressAdapter`, `AgentActivityTimeline`, structured progress contract, cancellation, timeouts, redaction | [ADR-082](../adr/ADR-082-structured-agent-activity-streaming.md) |
 
 
 ---
@@ -160,6 +162,7 @@ When an AI agent completes Pass $N$, it MUST execute the following **Auto-Rollin
 3. **Update Evolution Roadmap & Changelog**:
    - Update `.wiki/roadmap/AUTOROLLING-ROADMAP.md`.
    - Log entries in `CHANGELOG.md`.
+   - If the change affects provider dispatch or progress UX, update the [Agent Activity Streaming Strategy](../agent/streaming-activity-strategy.md), API reference, troubleshooting guide, and contributor regression checklist.
 
 4. **Git Commit & Push**:
    - Stage explicit files: `git add <files>`.

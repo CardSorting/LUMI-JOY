@@ -25,6 +25,10 @@ export class ModelResolver {
     return this.currentActiveModel;
   }
 
+  setActiveModel(modelName: string): void {
+    this.currentActiveModel = modelName;
+  }
+
   recordTurnExecution(promptLength: number, responseLength: number): void {
     this.totalTurnsExecuted += 1;
     this.estimatedTokensConsumed += Math.ceil((promptLength + responseLength) / 4);

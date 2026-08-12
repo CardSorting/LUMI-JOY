@@ -15,6 +15,7 @@ We implemented an automated, multi-layer repository protection gate centered aro
 2. **Zero-GC Contiguous Slab Invariant**: Pre-allocated 16MB ArrayBuffer slab capacity must remain intact (`16,777,216 bytes`).
 3. **Zero-Barrel Import Enforcement**: Prohibition of intermediate `index.ts` re-export files (`ADR-012`).
 4. **Base Class Immutability**: Prohibition of destructive mutations in `src/*/base/`.
+5. **Agent Activity Security Boundary**: Stable lifecycle identity, explicit terminal settlement, bounded sanitization, secret/output exclusion, and process-local cancellation controls according to `ADR-082`.
 
 ## Consequences
 
@@ -25,3 +26,7 @@ We implemented an automated, multi-layer repository protection gate centered aro
 
 ### Negative
 - PR authors must fix any latency regressions or forbidden barrel imports before code can be merged.
+
+## Current Refinement: Streaming Regression Gate
+
+Changes to provider dispatch, `EngineProgressEvent`, the Codex adapter, cancellation, or terminal activity rendering require interactive authenticated completion and cancellation coverage in addition to `npm run check`, `npm test`, and `npm run build`. See [ADR-082](ADR-082-structured-agent-activity-streaming.md) and the [streaming strategy](../agent/streaming-activity-strategy.md).

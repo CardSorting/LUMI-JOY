@@ -21,8 +21,8 @@ Consolidating into a 3-tier monolithic framework (`agents`, `sessions`, `tooling
 
 By running 5 passes of the **Osmosis Learning Methodology** against `/Users/bozoegg/Downloads/pi-main`, we isolated key production capabilities and discarded framework complexity:
 
-- **Pass 1 (Context Compaction)**: Compacts turn history dynamically when turn threshold is exceeded ([SessionCompactor](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/session-compactor.ts#L8)).
-- **Pass 2 (Model Resolution & Branching)**: Fallback model resolution chain (`gemini-3.6-flash` $\rightarrow$ `gemini-1.5-pro`) and isolated session branching (`fork()`) ([ModelResolver](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/model-resolver.ts#L13)).
+- **Pass 1 (Context Compaction)**: Compacts turn history dynamically when turn threshold is exceeded ([SessionCompactor](../../src/sessions/extensions/compaction/session-compactor.ts)).
+- **Pass 2 (Model Resolution & Branching)**: Fallback model resolution chain (`gemini-3.6-flash` $\rightarrow$ `gemini-1.5-pro`) and isolated session branching (`fork()`) ([ModelResolver](../../src/agents/extensions/resolution/model-resolver.ts)).
 - **Pass 3 (VFS & Slash Router)**: In-memory Virtual File System staging overlays (`SessionVfs`) and sub-millisecond slash command routing (`AgentSlashRouter`).
 - **Pass 4 (Long-Term Memory & KIs)**: Persistent memory fact storage and Knowledge Item indexing (`SessionMemoryStore`).
 - **Pass 5 (Monorepo Package Absorption)**: Line-anchored hash verification (`hashline`), type-safe schema validation (`omptype`), file storage (`session-backends`), and JSON-RPC telemetry (`protocol`).
@@ -35,3 +35,21 @@ Capturing agent turns as frame steps (`tick()`) and session states as immutable 
 
 - **Predictable Execution**: Every tick follows the invariant lifecycle: `preTick() -> executeTick() -> postTick()`.
 - **Zero-Drift Rewind**: `rewindToSnapshot()` allows instantaneous time-travel to any previous frame without side-effect leakage.
+
+---
+
+## 4. Why a Single “Thinking” Spinner Failed
+
+A transient spinner label hid the difference between authentication, connection, planning, tool execution, file mutation, response generation, timeout, and cancellation. When a provider paused between events, the interface looked frozen even though the turn was still live. When dispatch failed before response generation, the same generic label concealed the actual failure boundary.
+
+The durable solution is an identity-based activity lifecycle:
+
+- Provider item IDs become stable `activityId` values.
+- `started`, `in_progress`, and terminal events update one persistent row.
+- A per-turn `sequence` prevents late updates from rolling the UI backward.
+- Turn-level completion, failure, and cancellation settle all visible work.
+- The final response remains separate from the progress channel.
+
+This provides useful visibility without exposing raw command output, tool data, credentials, or hidden reasoning. It also keeps provider fidelity honest: Codex SDK dispatch can show item-level work, while basic HTTP dispatch reports only request-level status.
+
+See [Agent Activity Streaming Strategy](streaming-activity-strategy.md) and [ADR-082](../adr/ADR-082-structured-agent-activity-streaming.md).

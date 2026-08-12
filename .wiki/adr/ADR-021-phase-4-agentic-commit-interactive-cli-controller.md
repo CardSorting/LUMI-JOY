@@ -31,3 +31,9 @@ Following **ADR-012**:
 
 - **Type Verification**: `npm run check` passed clean with 0 type errors.
 - **Engine Integration**: `npm start` (`npx tsx src/index.ts`) verified clean execution of all 24 passes in the deterministic monolith composition root.
+
+---
+
+## Current Refinement: Structured Activity Rendering
+
+ADR-082 supersedes the original generic “progress stream updates” presentation. `InteractiveModeController` now creates one `AbortController` and one persistent `AgentActivityTimeline` per turn, passes `signal` and `onProgress` into the engine, and clears timers/controller references in `finally`. `Esc` or `Ctrl+C` cancels active work before exiting the shell. See [ADR-082](ADR-082-structured-agent-activity-streaming.md).

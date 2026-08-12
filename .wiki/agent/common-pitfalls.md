@@ -27,3 +27,30 @@ This document highlights common pitfalls and non-negotiable rules for AI agents 
 
 5. **Always Preserve Single Composition Root**:
    - `src/index.ts` ([LumiMonolith](file:///Users/bozoegg/Desktop/LUMI-NEW/src/index.ts#L57)) backed by `MonolithFactory` in `src/factories/monolith-factory.ts` MUST remain the single parent composition root.
+
+6. **Do Not Flatten Agent Work into One Spinner String**:
+   - Emit `EngineProgressEvent` values with a stable `activityId`, explicit `phase` and `status`, a timestamp, and a monotonically increasing per-turn `sequence`.
+   - Update the existing activity when the same ID is received. Appending every SDK update creates duplicate and misleading rows.
+   - Never infer a terminal outcome from silence. Every turn must end as `completed`, `failed`, or `cancelled`.
+
+7. **Do Not Leak Provider Payloads Through Progress**:
+   - Progress is a safe status surface, not a debug dump or response transport.
+   - Never emit credentials, authorization headers, environment values, raw command output, tool arguments/results, full assistant output, or hidden chain-of-thought.
+   - Route all user-visible status text through `sanitizeProgressText()` and keep it bounded.
+
+8. **Keep the Three Streaming Layers Separate**:
+   - `EngineProgressEvent` represents provider/turn activity for users.
+   - `ToolExecutionProgress` represents one local tool execution lifecycle.
+   - `ProtocolEars` and `StreamEventFormatter` represent telemetry/transport envelopes.
+   - Bridge between these layers deliberately; do not make their event shapes interchangeable.
+
+9. **Do Not Serialize Local Turn Controls**:
+   - `AbortSignal` and `onProgress` are process-local controls on `EngineTickInput`.
+   - Remote session transports must serialize the prompt and supported data fields only, then establish cancellation and event subscriptions through their transport protocol.
+
+10. **Do Not Claim More Provider Fidelity Than Exists**:
+    - Codex OAuth uses the Codex SDK and exposes thread, turn, and item events.
+    - API-key HTTP dispatch currently exposes coarse request lifecycle states.
+    - Render honest provider-specific detail and supply a local terminal event when the route has no native item lifecycle.
+
+For the normative rules, see [Agent Activity Streaming Strategy](streaming-activity-strategy.md) and [ADR-082](../adr/ADR-082-structured-agent-activity-streaming.md).

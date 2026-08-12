@@ -35,3 +35,9 @@ These capabilities are absorbed into single-responsibility monolithic extension 
 
 - **TypeScript Type Safety**: Verified with `npm run check` (0 errors).
 - **Runtime Execution**: Verified via `npx tsx src/index.ts` (105 passes verified cleanly).
+
+---
+
+## Current Refinement: Authenticated Codex Dispatch
+
+Credential resolution remains the bridge's responsibility. Once it resolves `codex-oauth`, live turns use `@openai/codex-sdk`: `AgentEngine` creates/reuses a model-and-workspace-specific thread and calls `runStreamed(prompt, { signal })`. `CodexProgressAdapter` maps official thread, turn, and item events into the public safe lifecycle. Failed or cancelled threads are discarded before the next turn. See [ADR-082](ADR-082-structured-agent-activity-streaming.md) and the [streaming strategy](../agent/streaming-activity-strategy.md).

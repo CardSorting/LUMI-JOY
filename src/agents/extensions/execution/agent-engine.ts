@@ -1,7 +1,12 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { Codex, type Thread } from "@openai/codex-sdk";
 import { AbstractAgentEngine } from "../../../core/abstracts/abstract-agent-engine.js";
-import type { EngineTickInput, EngineTickResult } from "../../../core/contracts/agent.contracts.js";
+import type {
+  EngineProgressEvent,
+  EngineTickInput,
+  EngineTickResult,
+} from "../../../core/contracts/agent.contracts.js";
 import type { AgentConfig } from "../../base/agent-config.js";
 import type { SessionContext } from "../../../sessions/base/session-context.js";
 import type { PersistentSessionStore } from "../../../sessions/extensions/persistence/session-store.js";
@@ -14,6 +19,10 @@ import type { SessionMemoryStore } from "../../../sessions/extensions/memory/ses
 import type { AgentSlashRouter } from "../resolution/agent-slash-router.js";
 import type { CodexProviderBridge } from "../resolution/codex-provider-bridge.js";
 import type { LlmProxyGateway } from "../resolution/llm-proxy-gateway.js";
+import { CodexProgressAdapter } from "./codex-progress-adapter.js";
+import { sanitizeProgressText } from "../../../core/utilities/progress-sanitizer.js";
+
+const CODEX_TURN_TIMEOUT_MS = 10 * 60 * 1000;
 
 export class AgentEngine extends AbstractAgentEngine {
   readonly promptComposer: PromptComposer;
@@ -24,6 +33,10 @@ export class AgentEngine extends AbstractAgentEngine {
   readonly slashRouter: AgentSlashRouter;
   readonly codexProviderBridge?: CodexProviderBridge;
   readonly proxyGateway?: LlmProxyGateway;
+  private readonly codex: Codex;
+  private codexThread: Thread | null = null;
+  private codexThreadModel: string | null = null;
+  private codexThreadCwd: string | null = null;
 
   constructor(
     config: AgentConfig,
@@ -37,7 +50,8 @@ export class AgentEngine extends AbstractAgentEngine {
     sessionMemoryStore: SessionMemoryStore,
     slashRouter: AgentSlashRouter,
     codexProviderBridge?: CodexProviderBridge,
-    proxyGateway?: LlmProxyGateway
+    proxyGateway?: LlmProxyGateway,
+    codex: Codex = new Codex()
   ) {
     super(config, sessionContext, sessionStore, toolRegistry);
     this.promptComposer = promptComposer;
@@ -48,6 +62,7 @@ export class AgentEngine extends AbstractAgentEngine {
     this.slashRouter = slashRouter;
     this.codexProviderBridge = codexProviderBridge;
     this.proxyGateway = proxyGateway;
+    this.codex = codex;
   }
 
   protected async preTick(input: EngineTickInput): Promise<void> {
@@ -99,9 +114,9 @@ export class AgentEngine extends AbstractAgentEngine {
     // 4. Response Resolution & Action Dispatch
     let responseText = "";
 
-    // Check if prompt requests creating Frogger or a game/app
+    // Keep the built-in Frogger demo available without hijacking other game requests.
     const lowerPrompt = promptText.toLowerCase();
-    if (lowerPrompt.includes("frogger") || (lowerPrompt.includes("create") && lowerPrompt.includes("game"))) {
+    if (lowerPrompt.includes("frogger")) {
       const gameFilePath = path.join(this.sessionContext.cwd, "index.html");
       const froggerHtml = this.generateFroggerHtml();
       fs.writeFileSync(gameFilePath, froggerHtml, "utf-8");
@@ -122,10 +137,45 @@ export class AgentEngine extends AbstractAgentEngine {
     } else {
       // Attempt live LLM Dispatch if provider auth is available
       let liveResponse: string | null = null;
+      let liveError: string | null = null;
+      let liveFailureKind: "cancelled" | "timeout" | "provider" | null = null;
+      let liveProgressActivityId = "provider:turn";
+      let liveProgressSequence = 0;
+      const liveStartedAt = Date.now();
+      let progressManagedByCodex = false;
+      let providerTimeoutSignal: AbortSignal | null = null;
       if (this.codexProviderBridge) {
         try {
-          const auth = await this.codexProviderBridge.resolveProviderAuth(this.modelResolver.getActiveModel());
-          if (auth.authType !== "none") {
+          const activeModel = this.modelResolver.getActiveModel();
+          const auth = await this.codexProviderBridge.resolveProviderAuth(activeModel);
+          if (auth.authType === "codex-oauth") {
+            progressManagedByCodex = true;
+            liveResponse = await this.dispatchCodexTurn(
+              promptText,
+              activeModel,
+              input.signal,
+              input.onProgress
+            );
+          } else if (auth.authType === "api-key") {
+            liveProgressActivityId = "openai:turn";
+            const requestStartedAt = Date.now();
+            const timeoutSignal = AbortSignal.timeout(
+              this.proxyGateway?.getEffectiveEndpoint("openai", "https://api.openai.com/v1/chat/completions").timeoutMs ?? 30000
+            );
+            providerTimeoutSignal = timeoutSignal;
+            const requestSignal = input.signal
+              ? AbortSignal.any([input.signal, timeoutSignal])
+              : timeoutSignal;
+            this.reportProgress(input.onProgress, {
+              activityId: liveProgressActivityId,
+              phase: "connecting",
+              status: "started",
+              message: `Connecting to ${activeModel}`,
+              detail: "Sending authenticated model request",
+              timestamp: requestStartedAt,
+              sequence: ++liveProgressSequence,
+              metadata: { source: "openai-api" },
+            });
             const endpoint = this.proxyGateway?.getEffectiveEndpoint("openai", "https://api.openai.com/v1/chat/completions") ?? {
               url: "https://api.openai.com/v1/chat/completions",
               headers: {},
@@ -133,7 +183,7 @@ export class AgentEngine extends AbstractAgentEngine {
             };
 
             const payload = {
-              model: this.modelResolver.getActiveModel(),
+              model: activeModel,
               messages: sessionStore.getMessages().map((m) => ({ role: m.role, content: m.content })),
               max_tokens: 2048,
             };
@@ -146,20 +196,82 @@ export class AgentEngine extends AbstractAgentEngine {
                 ...auth.headers,
               },
               body: JSON.stringify(payload),
+              signal: requestSignal,
             });
 
-            if (res.ok) {
-              const data = (await res.json()) as any;
-              liveResponse = data?.choices?.[0]?.message?.content ?? null;
+            if (!res.ok) {
+              const errorBody = await res.text();
+              throw new Error(`HTTP ${res.status}: ${errorBody.slice(0, 500)}`);
             }
+
+            const data = (await res.json()) as {
+              choices?: Array<{ message?: { content?: string } }>;
+            };
+            liveResponse = data.choices?.[0]?.message?.content?.trim() || null;
+            this.reportProgress(input.onProgress, {
+              activityId: liveProgressActivityId,
+              phase: "completed",
+              status: "completed",
+              message: "Model response received",
+              detail: activeModel,
+              timestamp: Date.now(),
+              elapsedMs: Date.now() - requestStartedAt,
+              sequence: ++liveProgressSequence,
+              metadata: { source: "openai-api" },
+            });
+          } else {
+            this.reportProgress(input.onProgress, {
+              activityId: liveProgressActivityId,
+              phase: "failed",
+              status: "failed",
+              message: "Live model is not connected",
+              detail: `No credentials are available for ${activeModel}`,
+              timestamp: Date.now(),
+              elapsedMs: Date.now() - liveStartedAt,
+              sequence: ++liveProgressSequence,
+              metadata: { source: "lumi" },
+            });
           }
-        } catch {
-          // Fall through to fallback
+        } catch (error) {
+          liveError = this.formatLiveDispatchError(error);
+          liveFailureKind = input.signal?.aborted
+            ? "cancelled"
+            : providerTimeoutSignal?.aborted || liveError.toLowerCase().includes("timed out after")
+              ? "timeout"
+              : "provider";
+          if (liveFailureKind === "timeout" && !liveError.toLowerCase().includes("timed out")) {
+            liveError = "Provider request timed out before a response was received";
+          }
+          if (!progressManagedByCodex) {
+            const terminalStatus = liveFailureKind === "cancelled" ? "cancelled" : "failed";
+            this.reportProgress(input.onProgress, {
+              activityId: liveProgressActivityId,
+              phase: terminalStatus,
+              status: terminalStatus,
+              message: terminalStatus === "cancelled"
+                ? "Agent turn cancelled"
+                : liveFailureKind === "timeout"
+                  ? "Model request timed out"
+                  : "Model request failed",
+              detail: liveError,
+              timestamp: Date.now(),
+              elapsedMs: Date.now() - liveStartedAt,
+              sequence: ++liveProgressSequence,
+              metadata: { source: "openai-api" },
+            });
+          }
         }
       }
 
       if (liveResponse) {
         responseText = liveResponse;
+      } else if (liveFailureKind === "cancelled") {
+        responseText = "[Cancelled] Agent turn cancelled by user.";
+      } else if (liveFailureKind === "timeout") {
+        responseText = `[Timed out] ${liveError}. You can retry with a narrower request.`;
+      } else if (liveError) {
+        responseText = `Live model request failed for ${this.modelResolver.getActiveModel()}: ${liveError}\n` +
+          `[Authentication is configured. Run \x1b[33m/health\x1b[0m for diagnostics or \x1b[33m/setup\x1b[0m to reconnect.]`;
       } else {
         responseText = `Processed turn prompt: "${promptText}".\n` +
           `[Note: Run \x1b[33mlumi --setup\x1b[0m or \x1b[33m/setup\x1b[0m to connect API keys or OpenAI Codex OAuth for full live AI responses.]`;
@@ -190,6 +302,103 @@ export class AgentEngine extends AbstractAgentEngine {
 
   protected async postTick(_result: EngineTickResult): Promise<void> {
     // Post-tick state audit hook
+  }
+
+  private async dispatchCodexTurn(
+    promptText: string,
+    activeModel: string,
+    signal?: AbortSignal,
+    onProgress?: (event: EngineProgressEvent) => void
+  ): Promise<string> {
+    const cwd = this.sessionContext.cwd;
+    if (
+      !this.codexThread ||
+      this.codexThreadModel !== activeModel ||
+      this.codexThreadCwd !== cwd
+    ) {
+      this.codexThread = this.codex.startThread({
+        model: activeModel,
+        workingDirectory: cwd,
+        skipGitRepoCheck: true,
+        sandboxMode: "workspace-write",
+        approvalPolicy: "never",
+      });
+      this.codexThreadModel = activeModel;
+      this.codexThreadCwd = cwd;
+    }
+
+    const timeoutSignal = AbortSignal.timeout(CODEX_TURN_TIMEOUT_MS);
+    const turnSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+    const progress = new CodexProgressAdapter({
+      cwd,
+      model: activeModel,
+      onProgress,
+    });
+    progress.start();
+
+    try {
+      const { events } = await this.codexThread.runStreamed(promptText, { signal: turnSignal });
+      let finalResponse = "";
+
+      for await (const event of events) {
+        progress.handle(event);
+
+        if (event.type === "item.completed" && event.item.type === "agent_message") {
+          finalResponse = event.item.text;
+        } else if (event.type === "turn.failed") {
+          throw new Error(event.error.message);
+        } else if (event.type === "error") {
+          throw new Error(event.message);
+        }
+      }
+
+      const response = finalResponse.trim();
+      if (!response) {
+        throw new Error("Codex completed the turn without a final response");
+      }
+      return response;
+    } catch (error) {
+      // A failed or cancelled child should never be reused as the next turn's
+      // conversation transport.
+      this.codexThread = null;
+      this.codexThreadModel = null;
+      this.codexThreadCwd = null;
+
+      if (signal?.aborted) {
+        progress.cancel();
+        throw new Error("Turn cancelled by user");
+      }
+      if (timeoutSignal.aborted) {
+        progress.timeout();
+        throw new Error("Codex turn timed out after 10 minutes");
+      }
+      progress.fail("Agent turn failed", this.formatLiveDispatchError(error));
+      throw error;
+    }
+  }
+
+  private reportProgress(
+    onProgress: ((event: EngineProgressEvent) => void) | undefined,
+    event: EngineProgressEvent
+  ): void {
+    try {
+      onProgress?.({
+        ...event,
+        message: sanitizeProgressText(event.message, 160),
+        ...(event.detail
+          ? {
+              detail: sanitizeProgressText(event.detail, 240),
+            }
+          : {}),
+      });
+    } catch {
+      // Rendering progress is best-effort and must not interrupt the model turn.
+    }
+  }
+
+  private formatLiveDispatchError(error: unknown): string {
+    const message = error instanceof Error ? error.message : String(error);
+    return sanitizeProgressText(message, 700) || "Unknown provider error";
   }
 
   private generateFroggerHtml(): string {

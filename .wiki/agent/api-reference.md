@@ -1,110 +1,187 @@
 # API Reference
 
-Comprehensive class and interface reference for the LUMI-NEW Deterministic Game Engine Framework.
+Public contracts and operational entry points for the LUMI-NEW deterministic agent runtime.
 
----
+## Composition root
 
-## Composition Root (`src/index.ts`)
+### `LumiMonolith`
 
-### [LumiMonolith](file:///Users/bozoegg/Desktop/LUMI-NEW/src/index.ts#L57)
-Deterministic Game Engine Monolith Composition Root implementing `IAgentEngine`.
+Source: [`src/index.ts`](../../src/index.ts)
 
-- `tick(input: EngineTickInput): Promise<EngineTickResult>` [Primary Engine Tick Loop]
-- `runTurn(prompt: string): Promise<EngineTickResult>` [Backward-compatible alias]
-- `createSnapshot(): GameStateSnapshot` [Frame-perfect state snapshot capture]
-- `rewindToSnapshot(snapshot: GameStateSnapshot): void` [State rewind/replay engine]
-- `forkSession(newSessionId?: string): LumiMonolith` [Isolated engine instance forking]
-- Properties: `config`, `sessionContext`, `sessionStore`, `sessionCompactor`, `sessionVfs`, `sessionMemoryStore`, `modelResolver`, `slashRouter`, `eyes`, `hands`, `ears`, `skillsIngestor`, `toolRegistry`, `promptComposer`, `agentEngine`.
+- `tick(input: EngineTickInput): Promise<EngineTickResult>` executes one deterministic frame.
+- `runTurn(prompt: string): Promise<EngineTickResult>` is the compatibility alias for a text-only turn.
+- `setModel(modelName: string): void` changes the active model and persists it to `~/.lumi/config.json`.
+- `createSnapshot(): GameStateSnapshot` captures a rewindable state snapshot.
+- `rewindToSnapshot(snapshot: GameStateSnapshot): void` restores a snapshot.
+- `forkSession(newSessionId?: string): LumiMonolith` creates an isolated engine instance.
 
----
+## Turn and progress contracts
 
-## Core Contracts & Abstract Subsystems (`src/core/`)
+Source: [`src/core/contracts/agent.contracts.ts`](../../src/core/contracts/agent.contracts.ts)
 
-### [AbstractAgentEngine](file:///Users/bozoegg/Desktop/LUMI-NEW/src/core/abstracts/abstract-agent-engine.ts#L12)
-Template Method Abstract Base Class enforcing the deterministic frame tick lifecycle:
-`tick() -> preTick() -> executeTick() -> postTick() -> renderTelemetry() -> EngineTickResult`
+```ts
+type EngineProgressPhase =
+  | "connecting"
+  | "thinking"
+  | "planning"
+  | "tool"
+  | "writing"
+  | "verifying"
+  | "responding"
+  | "completed"
+  | "failed"
+  | "cancelled";
 
-### [AbstractSessionStore](file:///Users/bozoegg/Desktop/LUMI-NEW/src/core/abstracts/abstract-session-store.ts#L7)
-Abstract Base Class for session state stores with `createSnapshot()` and `rewindToSnapshot()` requirements.
+type EngineProgressStatus =
+  | "started"
+  | "in_progress"
+  | "completed"
+  | "failed"
+  | "cancelled";
 
-### [AbstractHands](file:///Users/bozoegg/Desktop/LUMI-NEW/src/core/abstracts/abstract-hands.ts#L9)
-Abstract Base Class for physics and mutation operations.
+interface EngineTickInput {
+  prompt: string;
+  signal?: AbortSignal;
+  onProgress?: (event: EngineProgressEvent) => void;
+}
 
-### [AbstractEars](file:///Users/bozoegg/Desktop/LUMI-NEW/src/core/abstracts/abstract-ears.ts#L4)
-Abstract Base Class for audio and telemetry event outputs.
+interface EngineProgressEvent {
+  activityId: string;
+  phase: EngineProgressPhase;
+  status: EngineProgressStatus;
+  message: string;
+  detail?: string;
+  timestamp: number;
+  elapsedMs?: number;
+  sequence: number;
+  metadata?: EngineProgressMetadata;
+}
+```
 
-### [AbstractToolRegistry](file:///Users/bozoegg/Desktop/LUMI-NEW/src/core/abstracts/abstract-tool-registry.ts#L6)
-Abstract Base Class for tool parameter validation and action dispatchers.
+`activityId` is stable for one logical activity. Consumers must update an existing row when that ID reappears, not append a duplicate. `sequence` increases within one turn and allows consumers to ignore stale updates. `phase` describes the kind of work; `status` describes its lifecycle state.
 
----
+`metadata` may include `source`, `itemType`, safe workspace-relative `files`, `exitCode`, plan counts, and token usage. It must not contain credentials, raw command output, tool payloads, full model output, or hidden chain-of-thought.
 
-## Tier Subsystems (`src/agents/`, `src/sessions/`, `src/tooling/`)
+```ts
+const controller = new AbortController();
+const activities = new Map<string, EngineProgressEvent>();
 
-### Agents (`src/agents/`)
-- [AgentConfig](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/base/agent-config.ts#L8): Model configuration.
-- [AgentEngine](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/agent-engine.ts#L18): Subclass of `AbstractAgentEngine`.
-- [PromptComposer](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/prompt-composer.ts#L14): System prompt composer.
-- [ModelResolver](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/model-resolver.ts#L13): Fallback model resolver.
-- [AgentSlashRouter](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/agent-slash-router.ts#L24): Interactive slash router.
+const result = await lumi.tick({
+  prompt: "make a racing game",
+  signal: controller.signal,
+  onProgress(event) {
+    const current = activities.get(event.activityId);
+    if (!current || event.sequence >= current.sequence) {
+      activities.set(event.activityId, event);
+    }
+  },
+});
+```
 
-### Sessions (`src/sessions/`)
-- [SessionContext](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/base/session-context.ts#L7): Active session environment context.
-- [PersistentSessionStore](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/session-store.ts#L14): Subclass of `AbstractSessionStore`.
-- [SessionCompactor](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/session-compactor.ts#L8): History compactor.
-- [SessionVfs](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/session-vfs.ts#L10): Virtual File System overlay manager.
-- [SessionMemoryStore](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/session-memory-store.ts#L8): Long-term memory store.
+The callback is observational and best-effort. The engine contains callback exceptions so a renderer cannot terminate a model turn. The caller owns the `AbortController`; aborting the signal cancels the active local provider turn.
 
-### Tooling (`src/tooling/`)
-- [Eyes](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/base/eyes.ts#L14): Perception subsystem.
-- [AnchoredHands](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/hands.ts#L10): Subclass of `AbstractHands` with line-anchored edit support.
-- [ProtocolEars](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/ears.ts#L4): Subclass of `AbstractEars` with JSON-RPC telemetry support.
-- [SkillsIngestor](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/skills-ingestor.ts#L11): Skill discoverer.
-- [ValidatingToolRegistry](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/tool-registry.ts#L9): Subclass of `AbstractToolRegistry` with schema parameter validation.
-- [MonolithBenchmarkEvaluator](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/evals/benchmark-evaluator.ts#L31): Automated evaluation suite runner measuring turn tick latency and pass rates.
-- [MasterBenchmarkOrchestrator](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/evals/master-benchmark-orchestrator.ts#L10): Orchestrates multi-phase benchmark suites across memory, VFS, and game synthesis.
+See [Agent Activity Streaming Strategy](streaming-activity-strategy.md) and [ADR-082](../adr/ADR-082-structured-agent-activity-streaming.md) for the complete lifecycle, security, and provider-fidelity rules.
 
----
+## Provider activity adapter
 
-## Setup & Resolution Subsystems (`src/agents/extensions/`)
+### `CodexProgressAdapter`
 
-### [SetupWizard](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/setup/setup-wizard.ts#L33)
-Interactive setup wizard for LLM Provider API Keys & OpenAI Codex OAuth PKCE flow.
-- `auditStatus(): ProviderAuditStatus[]`: Audits active API keys and OAuth tokens.
-- `runInteractiveWizard(rl?: readline.Interface): Promise<void>`: Launches terminal setup menu.
-- `configureApiKeys(rl): Promise<void>`: Prompts for Anthropic, OpenAI, Gemini, DeepSeek keys.
-- `configureCodexOAuth(rl): Promise<void>`: Generates PKCE challenge, launches local HTTP callback server on port `1455`, exchanges code for tokens, and extracts `ChatGPT-Account-Id`.
-- `testConnections(): Promise<void>`: Evaluates header resolution across modern models.
+Source: [`src/agents/extensions/execution/codex-progress-adapter.ts`](../../src/agents/extensions/execution/codex-progress-adapter.ts)
 
-### [CodexOAuthManager](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/resolution/codex-oauth-manager.ts#L66)
-OpenAI Codex OAuth PKCE flow manager.
-- `generateAuthUrl(): CodexAuthUrlDetails`: Constructs S256 PKCE authorization URL.
-- `exchangeCodeForTokens(code, verifier): Promise<OpenAiCodexCredentials>`: Exchanges code for access/refresh tokens.
-- `refreshAccessToken(): Promise<OpenAiCodexCredentials>`: Refreshes access tokens automatically.
+Converts `@openai/codex-sdk` thread events into `EngineProgressEvent` values.
 
-### [CodexProviderBridge](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/resolution/codex-provider-bridge.ts#L23)
-Identifies Codex model families (`gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.6-sol`, `codex`) and injects OAuth Bearer tokens and `ChatGPT-Account-Id` headers.
+- `start()` emits the initial connection activity.
+- `handle(event: ThreadEvent)` maps thread, turn, and item lifecycle events.
+- `cancel(message?)`, `timeout(message?)`, and `fail(message, detail?)` emit explicit terminal outcomes.
 
----
+SDK item IDs become stable activity IDs. Started, updated, and completed events therefore occupy one timeline row. Supported item types include reasoning summaries, todo lists, commands, file changes, MCP tool calls, web searches, agent messages, and errors.
 
-## CLI & REPL Commands Reference
+The adapter sanitizes and bounds all displayed text, reduces paths to workspace-relative names, deduplicates identical updates, and treats `item.completed` as authoritative. It never forwards command output or model response bodies through progress events.
 
-| Command / Flag | Environment | Purpose |
+## Interactive activity timeline
+
+### `AgentActivityTimeline`
+
+Source: [`src/tui/components/agent-activity-timeline.ts`](../../src/tui/components/agent-activity-timeline.ts)
+
+The fullscreen terminal UI renders a persistent activity card rather than a single transient spinner.
+
+- `update(event)` upserts by `activityId` and rejects lower-sequence stale events.
+- `setElapsed(elapsedMs)` refreshes the visible duration while work is active.
+- `completeIfNeeded(elapsedMs)` supplies a local completion terminal if a provider has no native lifecycle.
+- `failIfNeeded(message, elapsedMs)` supplies a safe failure terminal.
+- `isTerminal()` reports whether the turn has completed, failed, or been cancelled.
+
+The timeline keeps a bounded number of visible rows, preserves terminal history, and settles any still-running rows after cancellation or failure.
+
+## Provider dispatch behavior
+
+Source: [`src/agents/extensions/execution/agent-engine.ts`](../../src/agents/extensions/execution/agent-engine.ts)
+
+| Authentication route | Dispatch | Activity fidelity |
 |---|---|---|
-| `lumi` | CLI | Launches interactive REPL prompt session (`lumi > `) |
-| `lumi --setup` | CLI | Launches interactive Setup Wizard (Model Providers & Codex OAuth) |
-| `lumi --benchmark` (`-b`) | CLI | Runs Automated Engine Benchmark & Throughput Test Suite |
-| `lumi --smoke` (`-s`) | CLI | Runs full 105-pass empirical smoke test suite |
-| `lumi "your prompt"` | CLI | Executes single turn prompt and prints response |
-| `/setup` | REPL | Launches Setup Wizard directly inside REPL session |
-| `/stats` | REPL | Displays engine telemetry stats, active model, and slab memory usage |
-| `/vfs` | REPL | Displays staged Virtual File System overlay files |
-| `/memory` | REPL | Lists long-term memory facts and Knowledge Items |
-| `/compact` | REPL | Manually triggers sliding window turn compaction |
-| `/clear` | REPL | Resets turn history, clears VFS, and resets frame index |
+| OpenAI Codex OAuth | `@openai/codex-sdk` thread `runStreamed()` | Full thread, turn, item, usage, failure, and cancellation lifecycle |
+| Provider API key | Provider HTTP endpoint | Coarse request started/completed/failed lifecycle |
+| No matching credentials | No live provider call | Setup guidance is returned immediately |
 
----
+The built-in Frogger generator is an explicit demo shortcut only: it activates when the prompt contains `frogger`. It is not the generic unauthenticated fallback for other creation prompts.
 
-## Game Engine Container Factory (`src/factories/`)
+## Setup and model selection
 
-### [MonolithFactory](file:///Users/bozoegg/Desktop/LUMI-NEW/src/factories/monolith-factory.ts#L18)
-Factory pattern container for game engine initialization and snapshot restoration.
+### `SetupWizard`
+
+Source: [`src/agents/extensions/setup/setup-wizard.ts`](../../src/agents/extensions/setup/setup-wizard.ts)
+
+- `auditStatus()` reports environment, vault, OAuth-disk, proxy, or unconfigured status.
+- `configureProviderApiKey(provider, apiKey)` validates and persists a provider key.
+- `setSavedModel(modelName)` persists the selected model.
+- `beginCodexOAuthFlow()` creates PKCE data and starts the `localhost:1455` callback listener.
+- `openCodexOAuthLogin(url)` launches only validated `https://auth.openai.com` URLs with the operating-system browser command.
+- `completeCodexOAuthFlow(response, verifier)` accepts either an authorization code or a full callback URL, exchanges it, and persists LUMI credentials.
+- `testConnections()` verifies auth resolution without exposing credential contents.
+
+In the fullscreen guided setup, choosing Codex OAuth starts the callback listener, displays a clickable Markdown link and copyable URL, and attempts to open the system browser. Press `O` to retry. If the callback cannot be captured, paste the authorization code or full callback URL. If valid Codex credentials already exist, submit an empty field to keep them, select Codex, and persist its default model.
+
+The standalone `lumi --setup` flow always prints the authorization URL and accepts either automatic callback capture or manual paste. Existing Codex CLI auth at `~/.codex/auth.json` is read when available and is never overwritten by LUMI setup; LUMI-managed configuration is stored in `~/.lumi/config.json`.
+
+## Authentication resolution
+
+### `CodexOAuthManager`
+
+Source: [`src/agents/extensions/resolution/codex-oauth-manager.ts`](../../src/agents/extensions/resolution/codex-oauth-manager.ts)
+
+- Generates S256 PKCE authorization URLs.
+- Exchanges and refreshes access tokens.
+- extracts `ChatGPT-Account-Id` from supported JWT claims.
+- Loads credentials from explicit paths, `~/.codex/auth.json`, `~/.pi/auth.json`, and LUMI configuration.
+
+### `CodexProviderBridge`
+
+Source: [`src/agents/extensions/resolution/codex-provider-bridge.ts`](../../src/agents/extensions/resolution/codex-provider-bridge.ts)
+
+Resolves OAuth, API-key, or unauthenticated mode for the selected model. Codex model families use the OAuth path when valid credentials are available.
+
+## CLI and interactive commands
+
+| Command | Purpose |
+|---|---|
+| `lumi` | Launch the fullscreen interactive shell; falls back to readline when necessary |
+| `lumi --setup` | Launch standalone provider and OAuth setup |
+| `lumi --benchmark` / `-b` | Run the benchmark suite |
+| `lumi --smoke` / `-s` | Run the empirical smoke suite |
+| `lumi "prompt"` | Execute a single prompt turn |
+| `/setup` | Open guided provider setup in the interactive shell |
+| `/settings` | Open settings and model selection |
+| `/health` or `/status` | Audit runtime and provider health |
+| `/clear` | Reset interactive history and frame state |
+| `Esc` during a turn | Cancel the active fullscreen request |
+| `Ctrl+C` | Cancel active work first; exit when no turn is active |
+
+## Other core subsystems
+
+- [`AbstractAgentEngine`](../../src/core/abstracts/abstract-agent-engine.ts) enforces `preTick -> executeTick -> postTick`.
+- [`PersistentSessionStore`](../../src/sessions/extensions/persistence/session-store.ts) owns snapshot-compatible session persistence.
+- [`SessionVfs`](../../src/sessions/extensions/vfs/session-vfs.ts) owns staged workspace overlays.
+- [`ProtocolEars`](../../src/tooling/extensions/telemetry/ears.ts) owns protocol telemetry; it does not replace the user-facing progress contract.
+- [`BroccoliStreamingToolExecutor`](../../src/tooling/extensions/registry/broccolidb-streaming-tool-executor.ts) owns an individual tool execution lifecycle; it is a separate layer from provider turn activity.
+- [`MonolithFactory`](../../src/factories/monolith-factory.ts) is the composition factory.

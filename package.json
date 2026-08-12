@@ -24,6 +24,11 @@
     "start": "node dist/index.js",
     "prepublishOnly": "npm run check && npm test && npm run build"
   },
+  "dependencies": {
+    "@openai/codex-sdk": "0.147.0",
+    "get-east-asian-width": "1.6.0",
+    "marked": "18.0.5"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.5.0"

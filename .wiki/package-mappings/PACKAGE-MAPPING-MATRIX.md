@@ -15,8 +15,9 @@ This document provides a formal, industry-standard 1-to-1 technical mapping betw
    packages/protocol         ───────────►          ProtocolEars.formatJsonRpcEvent() (src/tooling)
    packages/snapcompact       ───────────►          SessionCompactor.compact() (src/sessions)
    packages/telemetry         ───────────►          ProtocolEars.startTimer() / endTimer() (src/tooling)
-   packages/coding-agent      ───────────►          AgentEngine & LumiMonolith (src/agents & src/index.ts)
-   packages/ai                ───────────►          ModelResolver (src/agents)
+   packages/coding-agent      ───────────►          AgentEngine, InteractiveModeController & LumiMonolith
+   packages/ai                ───────────►          ModelResolver & CodexProgressAdapter (src/agents)
+   packages/tui               ───────────►          TuiAltScreen & AgentActivityTimeline (src/tui)
    packages/broccolidb        ───────────►          [Pass 6 Blueprint] Zero-GC Slab Caching
    packages/codemarie         ───────────►          [Pass 7 Blueprint] Symbol Search in Eyes
 ```
@@ -29,7 +30,7 @@ This document provides a formal, industry-standard 1-to-1 technical mapping betw
 
 - **Teacher Package Path**: `/Users/bozoegg/Downloads/pi-main/packages/hashline`
 - **Teacher Signature**: `applyLineDelta(filePath: string, line: number, expectedHash: string, newContent: string)`
-- **Student Implementation**: [AnchoredHands.applyAnchoredEdit()](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/hands.ts#L30) in `src/tooling/extensions/hands.ts`
+- **Student Implementation**: [AnchoredHands.applyAnchoredEdit()](../../src/tooling/extensions/hashline/hands.ts) in `src/tooling/extensions/hashline/hands.ts`
 - **Code-Level Comparison**:
 
 ```typescript
@@ -37,7 +38,7 @@ This document provides a formal, industry-standard 1-to-1 technical mapping betw
 import { xxhash3 } from "xxhash-wasm";
 export async function applyLineDelta(file, line, hash, content) { ... }
 
-// Student (LUMI-NEW/src/tooling/extensions/hands.ts): Clean, zero-dependency bitwise line hash
+// Student (LUMI-NEW/src/tooling/extensions/hashline/hands.ts): Clean, zero-dependency bitwise line hash
 static computeLineHash(lineContent: string): string {
   let hash = 0;
   const str = lineContent.trim();
@@ -57,14 +58,14 @@ static computeLineHash(lineContent: string): string {
 
 - **Teacher Package Path**: `/Users/bozoegg/Downloads/pi-main/packages/omptype`
 - **Teacher Signature**: `parseAndValidateSchema(schema: OmpSchema, data: unknown): ValidationResult`
-- **Student Implementation**: [ValidatingToolRegistry.validateToolArgs()](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/tool-registry.ts#L22) in `src/tooling/extensions/tool-registry.ts`
+- **Student Implementation**: [ValidatingToolRegistry.validateToolArgs()](../../src/tooling/extensions/registry/tool-registry.ts) in `src/tooling/extensions/registry/tool-registry.ts`
 - **Code-Level Comparison**:
 
 ```typescript
 // Teacher (pi-main/packages/omptype): Multi-file JSON Schema validator with complex error formatters
 export function validate(schema, args) { /* 300+ lines across 4 files */ }
 
-// Student (LUMI-NEW/src/tooling/extensions/tool-registry.ts): Direct runtime schema validator
+// Student (LUMI-NEW/src/tooling/extensions/registry/tool-registry.ts): Direct runtime schema validator
 validateToolArgs(name: string, args: Record<string, unknown>): SchemaValidationResult {
   const tool = this.tools.get(name);
   if (!tool || !tool.parameters) return { valid: true, errors: [] };
@@ -87,11 +88,11 @@ validateToolArgs(name: string, args: Record<string, unknown>): SchemaValidationR
 
 - **Teacher Package Path**: `/Users/bozoegg/Downloads/pi-main/packages/session-backends`
 - **Teacher Signature**: `JsonlSessionBackend.save(session: SessionData): Promise<void>`
-- **Student Implementation**: [PersistentSessionStore.saveToFile()](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/session-store.ts#L30) in `src/sessions/extensions/session-store.ts`
+- **Student Implementation**: [PersistentSessionStore.saveToFile()](../../src/sessions/extensions/persistence/session-store.ts) in `src/sessions/extensions/persistence/session-store.ts`
 - **Code-Level Comparison**:
 
 ```typescript
-// Student (LUMI-NEW/src/sessions/extensions/session-store.ts):
+// Student (LUMI-NEW/src/sessions/extensions/persistence/session-store.ts):
 export class PersistentSessionStore extends AbstractSessionStore {
   exportJsonl(): string {
     return this.messages.map((msg) => JSON.stringify(msg)).join("\n");
@@ -111,11 +112,11 @@ export class PersistentSessionStore extends AbstractSessionStore {
 
 - **Teacher Package Path**: `/Users/bozoegg/Downloads/pi-main/packages/protocol`
 - **Teacher Signature**: `createNotification(method: string, params: object): JsonRpcNotification`
-- **Student Implementation**: [ProtocolEars.formatJsonRpcEvent()](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/ears.ts#L24) in `src/tooling/extensions/ears.ts`
+- **Student Implementation**: [ProtocolEars.formatJsonRpcEvent()](../../src/tooling/extensions/telemetry/ears.ts) in `src/tooling/extensions/telemetry/ears.ts`
 - **Code-Level Comparison**:
 
 ```typescript
-// Student (LUMI-NEW/src/tooling/extensions/ears.ts):
+// Student (LUMI-NEW/src/tooling/extensions/telemetry/ears.ts):
 formatJsonRpcEvent(event: ToolingEvent): JsonRpcNotification {
   return {
     jsonrpc: "2.0",
@@ -145,8 +146,12 @@ formatJsonRpcEvent(event: ToolingEvent): JsonRpcNotification {
 | `packages/protocol` | Telemetry event protocol | `ProtocolEars.formatJsonRpcEvent()` | **Absorbed** |
 | `packages/snapcompact` | History context compactor | `SessionCompactor.compact()` | **Absorbed** |
 | `packages/telemetry` | Microsecond execution timing | `ProtocolEars.startTimer()` / `endTimer()` | **Absorbed** |
-| `packages/coding-agent` | Core agent engine turn loop | `AgentEngine` & `LumiMonolith` | **Absorbed** |
-| `packages/ai` | Model provider resolution | `ModelResolver` | **Absorbed** |
+| `packages/coding-agent` | Core agent loop, interactive mode, cancellation | `AgentEngine`, `InteractiveModeController` & `LumiMonolith` | **Absorbed** |
+| `packages/ai` | Model resolution and provider event lifecycle | `ModelResolver`, `CodexProviderBridge` & `CodexProgressAdapter` | **Absorbed** |
 | `packages/broccolidb` | Slab array memory store | Blueprint for Pass 6 | Planned |
 | `packages/codemarie` | AST structural symbol search | Blueprint for Pass 7 | Planned |
-| `packages/tui` | Terminal progress rendering | Blueprint for Pass 8 | Planned |
+| `packages/tui` | Differential terminal rendering and persistent agent activity | `TuiAltScreen` & `AgentActivityTimeline` | **Absorbed** |
+
+### Current Streaming Refinement
+
+The original `packages/protocol` mapping remains responsible for JSON-RPC telemetry envelopes. User-facing live model activity is a separate execution concern governed by [ADR-082](../adr/ADR-082-structured-agent-activity-streaming.md): `CodexProgressAdapter` translates provider events into `EngineProgressEvent`, and `AgentActivityTimeline` performs identity-based upserts. This separation prevents telemetry framing, provider semantics, and terminal presentation from collapsing into one formatter.

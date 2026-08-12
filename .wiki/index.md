@@ -45,8 +45,15 @@ Welcome to the central documentation wiki for **LUMI-NEW** (`/Users/bozoegg/Desk
 
 ### 6. Developer & Agent Guides
 - 📋 [Agent Orientation Playbook](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/playbook.md)
+- 📡 [Agent Activity Streaming Strategy](agent/streaming-activity-strategy.md)
 - 📋 [API Reference Guide](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/api-reference.md)
 - 📋 [Design Patterns & Workflows](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/patterns.md)
 - 📋 [Key Architectural Audit Findings](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/key-findings.md)
 - 📋 [Troubleshooting & Verification](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/troubleshooting.md)
 - 📋 [Common Pitfalls](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/common-pitfalls.md)
+
+### 7. Provider Integration Decisions
+
+- [ADR-048: OpenAI Codex OAuth and Provider Bridge](adr/ADR-048-phase-31-openai-codex-oauth-and-provider-bridge.md)
+- [ADR-049: Interactive Setup Wizard](adr/ADR-049-interactive-setup-wizard-and-provider-bridge.md)
+- [ADR-082: Structured Agent Activity Streaming](adr/ADR-082-structured-agent-activity-streaming.md)

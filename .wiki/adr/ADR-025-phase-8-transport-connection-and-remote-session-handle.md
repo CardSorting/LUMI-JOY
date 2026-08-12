@@ -31,3 +31,9 @@ Following **ADR-012**:
 
 - **Type Verification**: `npm run check` passed clean with 0 type errors.
 - **Engine Integration**: `npm start` (`npx tsx src/index.ts`) verified clean execution of all 36 passes in the deterministic monolith composition root.
+
+---
+
+## Current Refinement: Remote Progress Boundary
+
+`AbortSignal` and `onProgress` are local process controls and must not be serialized in a remote turn request. A remote transport that exposes activity must define explicit subscription/event and cancellation protocol messages, validate the same `EngineProgressEvent` schema, and preserve per-turn ordering. See [ADR-082](ADR-082-structured-agent-activity-streaming.md).

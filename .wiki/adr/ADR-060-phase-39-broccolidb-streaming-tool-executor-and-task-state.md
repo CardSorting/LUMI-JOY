@@ -34,3 +34,9 @@ This architectural pass introduces:
 
 - Typecheck verification passed via `npm run check` with zero strict TypeScript errors.
 - High-throughput execution verified via `npx tsx src/index.ts --benchmark`.
+
+---
+
+## Relationship to Provider Activity Streaming
+
+`ToolExecutionProgress` describes one local registered tool's queued/validating/running/terminal lifecycle. `EngineProgressEvent` describes the user-facing provider turn and may summarize a provider-reported command or tool item. These contracts are deliberately separate; adapters may bridge a safe subset without forwarding raw tool input or output. See [ADR-082](ADR-082-structured-agent-activity-streaming.md).

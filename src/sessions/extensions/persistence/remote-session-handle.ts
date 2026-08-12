@@ -28,7 +28,9 @@ export class RemoteSessionHandle {
       jsonrpc: "2.0",
       id: `tick-${Date.now()}`,
       method: "engine/tick",
-      params: input,
+      // AbortSignal and progress callbacks are local process controls and are
+      // intentionally not serialized over JSON-RPC.
+      params: { prompt: input.prompt },
     });
 
     const resRaw = await this.gatewayServer.handleJsonRpcRequest(jsonRpcReq, this.targetMonolith);

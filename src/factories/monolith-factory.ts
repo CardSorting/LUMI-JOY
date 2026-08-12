@@ -436,6 +436,11 @@ export class MonolithFactory {
       codexProviderBridge,
       proxyGateway,
     });
+    const savedModel = setupWizard.getSavedModel();
+    if (!options.config && savedModel) {
+      (config as { modelName: string }).modelName = savedModel;
+      modelResolver.setActiveModel(savedModel);
+    }
 
 
 

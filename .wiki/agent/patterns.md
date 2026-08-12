@@ -80,7 +80,7 @@ lumi.rewindToSnapshot(snapshot);        // Rewinds frame index and store state f
 
 ## 3. Tool Execution via Sensory Classification
 
-Tools are instantiated under their sensory classification ([Eyes](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/base/eyes.ts#L14), [AnchoredHands](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/hands.ts#L10), [ProtocolEars](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/ears.ts#L4)) and registered in [ValidatingToolRegistry](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/tool-registry.ts#L9):
+Tools are instantiated under their sensory classification ([Eyes](../../src/tooling/base/eyes.ts), [AnchoredHands](../../src/tooling/extensions/hashline/hands.ts), [ProtocolEars](../../src/tooling/extensions/telemetry/ears.ts)) and registered in [ValidatingToolRegistry](../../src/tooling/extensions/registry/tool-registry.ts):
 
 ```typescript
 this.registerTool({
@@ -95,7 +95,7 @@ this.registerTool({
 
 ---
 
-## 4. Real-Time Telemetry & JSON-RPC Streaming
+## 4. Protocol Telemetry & JSON-RPC Streaming
 
 The `ProtocolEars` subsystem formats telemetry events into standard JSON-RPC 2.0 notifications:
 
@@ -105,3 +105,57 @@ lumi.ears.listen("turn_complete", (event) => {
   console.log(`[JSON-RPC 2.0]`, jsonRpcNotification);
 });
 ```
+
+Protocol telemetry is an integration envelope for remote consumers. It is not the terminal activity model and must not be used as a substitute for provider lifecycle events.
+
+---
+
+## 5. Structured Agent Activity Lifecycle
+
+Live model work follows an identity-based lifecycle instead of rewriting one spinner label:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant UI as InteractiveModeController
+    participant Engine as AgentEngine
+    participant SDK as Codex SDK
+    participant Adapter as CodexProgressAdapter
+    participant Timeline as AgentActivityTimeline
+
+    User->>UI: Submit prompt
+    UI->>Engine: tick({ prompt, signal, onProgress })
+    Engine->>Adapter: start()
+    Engine->>SDK: thread.runStreamed(prompt, { signal })
+    SDK-->>Adapter: thread/turn/item events
+    Adapter-->>Timeline: EngineProgressEvent
+    Timeline->>Timeline: upsert activityId; reject stale sequence
+    SDK-->>Engine: turn.completed or failure
+    Adapter-->>Timeline: completed/failed/cancelled terminal
+    Engine-->>UI: EngineTickResult
+```
+
+The reducer pattern is deliberately small:
+
+```ts
+function applyProgress(
+  activities: Map<string, EngineProgressEvent>,
+  event: EngineProgressEvent
+): void {
+  const current = activities.get(event.activityId);
+  if (!current || event.sequence >= current.sequence) {
+    activities.set(event.activityId, event);
+  }
+}
+```
+
+The important invariants are:
+
+- Reuse the provider item ID across `started`, `in_progress`, and terminal updates.
+- Treat provider completion as authoritative and settle every turn as `completed`, `failed`, or `cancelled`.
+- Keep local controls such as `AbortSignal` and callbacks outside serialized remote payloads.
+- Show only concise, sanitized activity summaries. Never place credentials, raw command output, tool payloads, complete model responses, or hidden reasoning in progress events.
+- Preserve fidelity: Codex SDK turns expose detailed item activity; API-key HTTP routes may expose only coarse request states.
+
+The provider activity stream, individual tool executor progress, and JSON-RPC protocol telemetry are related but separate layers. See the [Agent Activity Streaming Strategy](streaming-activity-strategy.md) and [ADR-082](../adr/ADR-082-structured-agent-activity-streaming.md).

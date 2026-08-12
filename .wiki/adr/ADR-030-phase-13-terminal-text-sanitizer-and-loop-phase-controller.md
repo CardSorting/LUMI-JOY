@@ -31,3 +31,9 @@ Following **ADR-012**:
 
 - **Type Verification**: `npm run check` passed clean with 0 type errors.
 - **Engine Integration**: `npm start` (`npx tsx src/index.ts`) verified clean execution of all 51 passes in the deterministic monolith composition root.
+
+---
+
+## Current Refinement: Progress Sanitization and Settlement
+
+Terminal escape sanitization remains responsible for arbitrary terminal text. Agent activity adds a narrower boundary in `src/core/utilities/progress-sanitizer.ts`: every progress message/detail is control-character-safe and bounded before presentation. Turn timers and active controller references are released in `finally`, and terminal lifecycle events settle visible activities. See [ADR-082](ADR-082-structured-agent-activity-streaming.md).

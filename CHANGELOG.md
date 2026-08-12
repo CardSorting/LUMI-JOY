@@ -8,6 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added (Structured Agent Activity Streaming)
+
+- **Typed progress lifecycle**: Extended `EngineTickInput` with local cancellation and structured `onProgress` events carrying stable activity identity, lifecycle status, safe detail, timestamps, elapsed time, ordering, and metadata.
+- **Codex SDK activity adapter**: Added `CodexProgressAdapter` to preserve thread/turn/item lifecycle identity, deduplicate updates, expose readable reasoning summaries, plan counts, safe commands, file changes, MCP/web activity, response readiness, usage totals, and explicit terminal states.
+- **Persistent terminal timeline**: Added `AgentActivityTimeline` and integrated it into fullscreen and fallback interactive sessions with elapsed time, bounded history, pinned turn summary, active animation, familiar terminal-state icons, and retained audit history.
+- **Progress security boundary**: Added shared `sanitizeProgressText()` defense-in-depth redaction for authorization headers, provider keys, GitHub tokens, JWTs, URL credentials, secret query parameters, environment assignments, and CLI flags.
+- **Architecture documentation**: Published the canonical [Agent Activity Streaming Strategy](.wiki/agent/streaming-activity-strategy.md) and [ADR-082](.wiki/adr/ADR-082-structured-agent-activity-streaming.md).
+
+### Fixed (Model Dispatch and Interactive Execution)
+
+- Routed Codex OAuth turns through the official `@openai/codex-sdk` streamed thread API rather than treating subscription OAuth as a direct API-key request.
+- Made guided Codex setup launch the system browser on a best-effort basis while always exposing a clickable/copyable login URL, `O` retry, automatic localhost callback, and manual code/URL fallback.
+- Reused valid existing Codex credentials without forcing another login and persisted the provider's selected default model.
+- Replaced the indefinite generic `Thinking...` presentation with explicit connection, analysis, plan, tool, file, response, completion, failure, timeout, and cancellation states.
+- Added `Esc/Ctrl+C` cancellation, ten-minute Codex turn timeout, endpoint timeout composition, duplicate-turn prevention, failed-thread reset, loop-phase cleanup, and orphan-process verification.
+- Made missing credentials and provider errors visible instead of silently returning a misleading offline response.
+- Limited the built-in Frogger shortcut to explicit Frogger requests so general game prompts reach the authenticated model.
+
 ### Added (Pass 6)
 - **Zero-GC Substrate Memory Allocation (`broccolidb`)**: Added `ArenaAllocator` ([arena-allocator.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/substrate/arena-allocator.ts)) contiguous 16MB ArrayBuffer slab allocation inside `PersistentSessionStore` ([session-store.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/sessions/extensions/persistence/session-store.ts)) and published `ADR-009`.
 
@@ -173,17 +191,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 - **AKD-DSO Paradigm & Formal Whitepaper**: Published formal academic specification paper ([AKD-DSO-ACADEMIC-WHITEPAPER.md](.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md)) detailing Architectural Knowledge Distillation ($\mathcal{L}_{\text{AKD}}$) and Deterministic Substrate Optimization ($\mathbf{Step}_t$).
-- **Deterministic Game Engine Execution Loop**: Implemented `tick(input: EngineTickInput)` in `AbstractAgentEngine` ([abstract-agent-engine.ts](src/core/abstracts/abstract-agent-engine.ts#L12)) and `AgentEngine` ([agent-engine.ts](src/agents/extensions/agent-engine.ts#L18)).
-- **Immutable State Snapshotting & Frame Rewind**: Implemented `createSnapshot()` and `rewindToSnapshot()` in `PersistentSessionStore` ([session-store.ts](src/sessions/extensions/session-store.ts#L14)) with $O(1)$ zero-drift state time travel.
+- **Deterministic Game Engine Execution Loop**: Implemented `tick(input: EngineTickInput)` in `AbstractAgentEngine` ([abstract-agent-engine.ts](src/core/abstracts/abstract-agent-engine.ts#L12)) and `AgentEngine` ([agent-engine.ts](src/agents/extensions/execution/agent-engine.ts)).
+- **Immutable State Snapshotting & Frame Rewind**: Implemented `createSnapshot()` and `rewindToSnapshot()` in `PersistentSessionStore` ([session-store.ts](src/sessions/extensions/persistence/session-store.ts)) with $O(1)$ zero-drift state time travel.
 - **Dependency Inversion Core Contracts & Abstracts**: Added `src/core/contracts/` (`agent`, `session`, `tooling`) and `src/core/abstracts/` (`AbstractAgentEngine`, `AbstractSessionStore`, `AbstractHands`, `AbstractEars`, `AbstractToolRegistry`).
 - **Container Factory Composition**: Added `MonolithFactory` ([monolith-factory.ts](src/factories/monolith-factory.ts#L18)) for clean engine bootstrapping and session forking.
-- **Line-Anchored Hash Editing (`hashline`)**: Added `AnchoredHands.applyAnchoredEdit()` ([hands.ts](src/tooling/extensions/hands.ts#L30)) with native bitwise hash calculation (`computeLineHash`).
-- **Type-Safe Tool Schema Validation (`omptype`)**: Added `ValidatingToolRegistry.validateToolArgs()` ([tool-registry.ts](src/tooling/extensions/tool-registry.ts#L22)) to enforce argument parameter types prior to tool execution.
-- **JSON-RPC 2.0 Telemetry Stream (`protocol`)**: Added `ProtocolEars.formatJsonRpcEvent()` ([ears.ts](src/tooling/extensions/ears.ts#L24)) for streaming performance telemetry notifications.
-- **File System Session Persistence (`session-backends`)**: Added `PersistentSessionStore.saveToFile()` and `.loadFromFile()` ([session-store.ts](src/sessions/extensions/session-store.ts#L30)).
-- **Long-Term Memory Fact & KI Store**: Added `SessionMemoryStore` ([session-memory-store.ts](src/sessions/extensions/session-memory-store.ts#L8)) and tools `search_memory` & `save_memory`.
-- **In-Memory Virtual File System Overlay**: Added `SessionVfs` ([session-vfs.ts](src/sessions/extensions/session-vfs.ts#L10)) for staging file diff overlays prior to disk commit.
-- **Interactive Slash Command Router**: Added `AgentSlashRouter` ([agent-slash-router.ts](src/agents/extensions/agent-slash-router.ts#L24)) supporting sub-millisecond `/stats`, `/vfs`, `/memory`, `/skills`, `/models`, `/compact`, and `/clear` commands.
+- **Line-Anchored Hash Editing (`hashline`)**: Added `AnchoredHands.applyAnchoredEdit()` ([hands.ts](src/tooling/extensions/hashline/hands.ts)) with native bitwise hash calculation (`computeLineHash`).
+- **Type-Safe Tool Schema Validation (`omptype`)**: Added `ValidatingToolRegistry.validateToolArgs()` ([tool-registry.ts](src/tooling/extensions/registry/tool-registry.ts)) to enforce argument parameter types prior to tool execution.
+- **JSON-RPC 2.0 Telemetry Stream (`protocol`)**: Added `ProtocolEars.formatJsonRpcEvent()` ([ears.ts](src/tooling/extensions/telemetry/ears.ts)) for streaming performance telemetry notifications.
+- **File System Session Persistence (`session-backends`)**: Added `PersistentSessionStore.saveToFile()` and `.loadFromFile()` ([session-store.ts](src/sessions/extensions/persistence/session-store.ts)).
+- **Long-Term Memory Fact & KI Store**: Added `SessionMemoryStore` ([session-memory-store.ts](src/sessions/extensions/memory/session-memory-store.ts)) and tools `search_memory` & `save_memory`.
+- **In-Memory Virtual File System Overlay**: Added `SessionVfs` ([session-vfs.ts](src/sessions/extensions/vfs/session-vfs.ts)) for staging file diff overlays prior to disk commit.
+- **Interactive Slash Command Router**: Added `AgentSlashRouter` ([agent-slash-router.ts](src/agents/extensions/resolution/agent-slash-router.ts)) supporting sub-millisecond `/stats`, `/vfs`, `/memory`, `/skills`, `/models`, `/compact`, and `/clear` commands.
 
 ### Changed
 - **Directory Hierarchy Restructuring**: Re-organized 3-tier monolith into `base/` (foundational domain types) and `extensions/` (subclass mutations) subdirectories across `src/agents/`, `src/sessions/`, and `src/tooling/`.

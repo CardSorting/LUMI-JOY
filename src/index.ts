@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs";
 import * as readline from "node:readline";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { MonolithFactory, type MonolithFactoryOptions } from "./factories/monolith-factory.js";
 import { GrandMonolithSynthesizer } from "./factories/grand-monolith-synthesizer.js";
 import type { EngineTickInput, EngineTickResult, IAgentEngine } from "./core/contracts/agent.contracts.js";
@@ -99,7 +101,15 @@ import { CentennialPassMarker, type CentennialMilestone } from "./tooling/extens
 
 import { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.js";
 
-export type { EngineTickInput, EngineTickResult, IAgentEngine } from "./core/contracts/agent.contracts.js";
+export type {
+  EngineProgressEvent,
+  EngineProgressMetadata,
+  EngineProgressPhase,
+  EngineProgressStatus,
+  EngineTickInput,
+  EngineTickResult,
+  IAgentEngine,
+} from "./core/contracts/agent.contracts.js";
 export type { GameStateSnapshot, SessionMessage, ISessionStore, SlabBufferSnapshot } from "./core/contracts/session.contracts.js";
 export type { CommandResult, AnchoredEditResult, ToolingEvent, JsonRpcNotification, TerminalProgressFrame, IHands, IEars, IToolRegistry } from "./core/contracts/tooling.contracts.js";
 
@@ -273,6 +283,7 @@ export type { ContractValidationResult } from "./tooling/extensions/cache/brocco
 export { BroccoliReactivePolicyObserver } from "./tooling/extensions/permissions/broccolidb-reactive-policy.js";
 export type { ToolExecutionPayload, ReactiveObservationResult } from "./tooling/extensions/permissions/broccolidb-reactive-policy.js";
 export { BroccoliUniversalGuard } from "./tooling/extensions/permissions/broccolidb-universal-guard.js";
+export * as Tui from "./tui/tui-facade.js";
 export type { ExecutionMode } from "./tooling/extensions/permissions/broccolidb-universal-guard.js";
 export { BroccoliJoyRideDecisionLog } from "./tooling/extensions/cache/broccolidb-joyride-decision-log.js";
 export type { DecisionType, JoyRideCacheDecision } from "./tooling/extensions/cache/broccolidb-joyride-decision-log.js";
@@ -547,11 +558,14 @@ export class LumiMonolith implements IAgentEngine {
         this.telemetryTracer.addEvent(span, "frame_start", { prompt: input.prompt });
         this.loopPhaseController.setPhase("thinking");
         const startTime = Date.now();
-        const res = await this.agentEngine.tick(input);
-        this.timingBuffer.record("frame_tick", Date.now() - startTime);
-        this.loopPhaseController.setPhase("idle");
-        this.telemetryTracer.addEvent(span, "frame_complete", { response: res.response });
-        return res;
+        try {
+          const res = await this.agentEngine.tick(input);
+          this.timingBuffer.record("frame_tick", Date.now() - startTime);
+          this.telemetryTracer.addEvent(span, "frame_complete", { response: res.response });
+          return res;
+        } finally {
+          this.loopPhaseController.setPhase("idle");
+        }
       }
     );
   }
@@ -559,6 +573,13 @@ export class LumiMonolith implements IAgentEngine {
   /** Backward-compatible turn runner */
   async runTurn(prompt: string): Promise<EngineTickResult> {
     return this.tick({ prompt });
+  }
+
+  /** Dynamically changes the active LLM model */
+  setModel(modelName: string): void {
+    (this.config as { modelName: string }).modelName = modelName;
+    this.modelResolver.setActiveModel(modelName);
+    this.setupWizard.setSavedModel(modelName);
   }
 
   /** Creates an immutable frame-perfect snapshot of active game engine state */
@@ -593,8 +614,18 @@ export class LumiMonolith implements IAgentEngine {
   }
 }
 
-// CLI entrypoint when run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// CLI entrypoint when run directly, including through an npm-link symlink.
+const cliEntrypoint = process.argv[1];
+let isDirectCliExecution = false;
+if (cliEntrypoint) {
+  try {
+    isDirectCliExecution = realpathSync(cliEntrypoint) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    isDirectCliExecution = pathToFileURL(cliEntrypoint).href === import.meta.url;
+  }
+}
+
+if (isDirectCliExecution) {
   const args = process.argv.slice(2);
   const isSmoke = args.includes("--smoke") || args.includes("-s");
   const isSetup = args.includes("--setup") || args.includes("setup");
@@ -754,68 +785,7 @@ Usage:
   };
 
   const startRepl = async (lumi: LumiMonolith) => {
-    console.log("\x1b[1;36m========================================================\x1b[0m");
-    console.log("\x1b[1;36m   LUMI Agent CLI - Interactive REPL Session            \x1b[0m");
-    console.log("\x1b[90m   Commands: /setup, /health, /snapshot, /clear, /exit  \x1b[0m");
-    console.log("\x1b[1;36m========================================================\x1b[0m\n");
-
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-      prompt: "\x1b[1;35mlumi > \x1b[0m",
-    });
-
-    rl.prompt();
-
-    rl.on("line", async (line) => {
-      const input = line.trim();
-      if (!input) {
-        rl.prompt();
-        return;
-      }
-
-      if (input === "/exit" || input === "/quit") {
-        console.log("\x1b[33mGoodbye!\x1b[0m");
-        rl.close();
-        process.exit(0);
-      }
-
-      if (input === "/clear") {
-        console.clear();
-        rl.prompt();
-        return;
-      }
-
-      if (input === "/setup") {
-        await lumi.setupWizard.runInteractiveWizard(rl);
-        rl.prompt();
-        return;
-      }
-
-      if (input === "/health") {
-        console.log("\x1b[32mOverall Subsystem Status:\x1b[0m", lumi.systemHealthAggregator.getOverallStatus());
-        rl.prompt();
-        return;
-      }
-
-      if (input === "/snapshot") {
-        const snap = lumi.createSnapshot();
-        console.log(`\x1b[32mCreated Snapshot ID:\x1b[0m '${snap.snapshotId}' at Frame #${snap.frameIndex}`);
-        rl.prompt();
-        return;
-      }
-
-      try {
-        const result = await lumi.tick({ prompt: input });
-        console.log(`\x1b[1;32m[Frame #${result.frameIndex}]\x1b[0m (${result.durationMs}ms)`);
-        console.log(result.response);
-        console.log();
-      } catch (err: any) {
-        console.error("\x1b[31mError during tick:\x1b[0m", err?.message || err);
-      }
-
-      rl.prompt();
-    });
+    await lumi.interactiveController.startInteractiveSession(lumi);
   };
 
   (async () => {
@@ -839,5 +809,3 @@ Usage:
     console.error("LUMI CLI execution failed:", err);
   });
 }
-
-

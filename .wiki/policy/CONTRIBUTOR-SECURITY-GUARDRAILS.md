@@ -29,6 +29,12 @@ Following the optimization milestone achieving **$0.22\text{ ms}$ turn tick late
 - **Requirement**: Base parent classes in `src/*/base/` (`AgentConfig`, `SessionContext`, `Eyes`) are foundational and immutable.
 - **Enforcement**: All feature mutations and evolutionary extensions MUST inherit downward (`class Child extends Parent`) in domain-scoped subdirectories inside `src/*/extensions/<domain>/`.
 
+### Rule 5: Agent Activity Observability Boundary (`ADR-082`)
+- **Requirement**: Progress events MUST use stable activity identity and explicit terminal lifecycle states. User/provider-derived status text MUST be sanitized and bounded.
+- **Prohibited data**: Credentials, authorization material, raw command output, tool arguments/results, full model responses, and hidden reasoning MUST NOT enter `EngineProgressEvent`.
+- **Transport boundary**: `AbortSignal` and progress callbacks are local controls and MUST NOT be serialized without an explicit remote cancellation/event protocol.
+- **Verification**: Changes require repository validation plus authenticated completion, cancellation, terminal settlement, and representative redaction checks described in the [streaming strategy](../agent/streaming-activity-strategy.md).
+
 ---
 
 ## 🛠️ Contributor Verification Checklist
@@ -41,4 +47,7 @@ npm run check
 
 # 2. Run repository protection audit & SLA verification
 npm test
+
+# 3. Compile the production build
+npm run build
 ```

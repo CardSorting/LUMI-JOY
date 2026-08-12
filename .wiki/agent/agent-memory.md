@@ -22,6 +22,15 @@ This document defines non-negotiable architectural and syntax constraints for al
    - Avoid creating micro-helpers or extra wrapper files that fragment the monolithic composition root.
 
 5. **Tooling Classification (Eyes, Hands, Ears)**:
-   - Perception logic MUST reside in [Eyes](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/eyes.ts#L14).
-   - Action/mutation logic MUST reside in [Hands](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/hands.ts#L13).
-   - Event listening/streaming logic MUST reside in [Ears](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/ears.ts#L12).
+   - Perception logic belongs under [`src/tooling/extensions/perception/`](../../src/tooling/extensions/perception/).
+   - Action and line-anchored mutation logic belongs under [`src/tooling/extensions/hashline/`](../../src/tooling/extensions/hashline/).
+   - Protocol telemetry belongs under [`src/tooling/extensions/telemetry/`](../../src/tooling/extensions/telemetry/), including `ProtocolEars`.
+   - Provider turn activity is not protocol telemetry. The public contract belongs in [`src/core/contracts/agent.contracts.ts`](../../src/core/contracts/agent.contracts.ts), provider mapping belongs beside execution in [`CodexProgressAdapter`](../../src/agents/extensions/execution/codex-progress-adapter.ts), and presentation belongs in [`AgentActivityTimeline`](../../src/tui/components/agent-activity-timeline.ts).
+
+6. **Structured Progress Safety**:
+   - Reuse stable activity IDs and monotonically increasing sequence numbers.
+   - End every turn with `completed`, `failed`, or `cancelled`.
+   - Never place credentials, raw command output, tool payloads, complete model responses, or hidden reasoning in progress events.
+   - Keep `AbortSignal` and callbacks local; do not serialize them across remote session boundaries.
+
+See [Agent Activity Streaming Strategy](streaming-activity-strategy.md) for the normative lifecycle.

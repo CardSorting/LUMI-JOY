@@ -40,3 +40,9 @@ This architectural pass introduces:
 
 - TypeScript strict verification passed via `npm run check` with **0 errors** after fixing `erasableSyntaxOnly` violation (replaced constructor parameter property shorthand with explicit field declarations).
 - High-throughput execution verified via `npx tsx src/index.ts --benchmark`.
+
+---
+
+## Relationship to Agent Activity
+
+Bounded command output and diagnostics remain terminal/debugging facilities. Their raw or aggregated output is not copied into `EngineProgressEvent`. The activity surface may report a sanitized command label, status, elapsed time, and exit code; complete output remains in its dedicated result/diagnostic channel. See [ADR-082](ADR-082-structured-agent-activity-streaming.md).

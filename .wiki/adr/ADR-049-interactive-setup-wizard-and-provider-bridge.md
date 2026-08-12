@@ -18,12 +18,15 @@ We implemented **SetupWizard** ([setup-wizard.ts](file:///Users/bozoegg/Desktop/
 2. **OpenAI Codex OAuth PKCE Flow & Callback Server**:
    - Generates PKCE challenge and authorization URL (`https://auth.openai.com/oauth/authorize`).
    - Launches a temporary HTTP callback server on `http://localhost:1455/auth/callback` to automatically capture the OAuth redirect code.
-   - Exchanges code for access & refresh tokens, extracts `ChatGPT-Account-Id`, updates `AuthStorageVault`, and saves credentials to disk (`~/.codex/auth.json` and `~/.lumi/config.json`).
+   - The fullscreen walkthrough attempts to open the system browser, renders a clickable and copyable authorization URL, supports `O` to retry, and accepts a pasted authorization code or callback URL when automatic capture is unavailable.
+   - Exchanges code for access & refresh tokens, extracts `ChatGPT-Account-Id`, updates `AuthStorageVault`, and saves LUMI-managed credentials to `~/.lumi/config.json`. Existing Codex CLI auth is read when available and left unchanged.
+   - Allows a user with valid existing credentials to keep them and activate the Codex default model without repeating login.
 
 3. **Live LLM Provider Dispatch & Dynamic Fallback**:
    - Wires `CodexProviderBridge` and `LlmProxyGateway` into `AgentEngine` ([agent-engine.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/execution/agent-engine.ts)).
-   - Performs live LLM API dispatches when authenticated.
-   - Generates standalone, interactive HTML5/JS applications (`index.html`) when creation prompts (such as `create a frogger game`) are executed offline or unauthenticated.
+   - Performs live Codex OAuth dispatch through `@openai/codex-sdk` and API-key dispatch through the configured HTTP endpoint.
+   - Returns actionable setup guidance when no credentials match the selected model.
+   - Keeps the built-in HTML5 Frogger generator as an explicit `frogger` demo shortcut only; it is not a generic unauthenticated creation fallback.
 
 4. **Connection Verification Diagnostics**:
    - Evaluates header resolution across modern models (`gpt-5.6-terra`, `claude-3-5-sonnet`, `gpt-4o`, `gemini-1.5-pro`, `deepseek-v3`).
@@ -32,8 +35,12 @@ We implemented **SetupWizard** ([setup-wizard.ts](file:///Users/bozoegg/Desktop/
 
 ### Positive
 - Zero manual JSON editing needed to configure API keys or OAuth credentials.
-- Automates PKCE authorization code capture via local HTTP callback server.
-- Live model dispatches and robust offline app creation fallback.
+- Automates PKCE authorization code capture via local HTTP callback server while retaining browser-launch and manual-paste fallbacks.
+- Persists provider selection and supports live model dispatch with visible lifecycle activity.
 
 ### Negative
 - Local HTTP callback server requires port `1455` to be available during OAuth login.
+
+## Current Refinement: Model Selection and Activity
+
+Provider configuration now activates and persists that provider's default model. The header, setup audit, and `/health` must be read together: process health alone does not prove that credentials resolve for the selected model. Authenticated Codex turns expose structured activity and cancellation according to [ADR-082](ADR-082-structured-agent-activity-streaming.md). Operational recovery steps are documented in the [Troubleshooting Guide](../agent/troubleshooting.md).

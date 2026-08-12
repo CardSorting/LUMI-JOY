@@ -23,7 +23,7 @@
 | 🏗️ [Architecture Tree](#%EF%B8%8F-subsystem-architecture--file-tree) | 📦 [1-to-1 Package Matrix](.wiki/package-mappings/PACKAGE-MAPPING-MATRIX.md) | ⚙️ [Core Abstracts](src/core/abstracts/) |
 | 🧪 [Osmosis Methodology](#-the-osmosis-learning-methodology) | 🧠 [Handoff Strategy Guide](.wiki/agent/osmosis-methodology.md) | 🧠 [Agents Tier](src/agents/) |
 | 🚀 [Quick Start Guide](#-quick-start--installation) | 📋 [API Reference Guide](.wiki/agent/api-reference.md) | 💾 [Sessions Tier](src/sessions/) |
-| 💻 [Programmatic Usage](#-programmatic-usage-guide) | 📖 [ADR Architecture Index](.wiki/adr/README.md) | 🛠️ [Tooling Tier](src/tooling/) |
+| 📡 [Live Activity Streaming](#-live-agent-activity-streaming) | 📡 [Streaming Strategy](.wiki/agent/streaming-activity-strategy.md) | 🖥️ [TUI Components](src/tui/components/) |
 | 🤝 [Contributing Guide](CONTRIBUTING.md) | 📋 [Workspace Changelog](CHANGELOG.md) | 📜 [Core Contracts](src/core/contracts/) |
 
 ---
@@ -42,6 +42,7 @@ Traditional AI agent frameworks suffer from **"framework soup"**—sprawling mul
 > 📊 **Read Comprehensive Benchmark Field Note**: [Benchmark Performance Field Note](.wiki/field-notes/BENCHMARK-PERFORMANCE-FIELD-NOTE.md)  
 > 🛡️ **Anti-Patent-Troll Pledge & Prior-Art Specification**: [Defensive Patent Pledge](PATENT-NON-AGGRESSION-PLEDGE.md) | [Prior-Art Claims](.wiki/ip/DEFENSIVE-PRIOR-ART-CLAIMS.md)  
 > 📦 **Explore the 1-to-1 Package Mapping Matrix**: [Package Mapping Matrix](.wiki/package-mappings/PACKAGE-MAPPING-MATRIX.md)
+> 📡 **Understand Live Agent Activity**: [Agent Activity Streaming Strategy](.wiki/agent/streaming-activity-strategy.md) | [ADR-082](.wiki/adr/ADR-082-structured-agent-activity-streaming.md)
 
 ---
 
@@ -75,14 +76,15 @@ lumi --setup
 src/
 ├── core/
 │   ├── contracts/                         # System Interfaces & GameStateSnapshot
-│   └── abstracts/                         # Abstract Base Classes (DIP)
+│   ├── abstracts/                         # Abstract Base Classes (DIP)
+│   └── utilities/                         # Shared progress credential sanitizer
 │
 ├── agents/                                # Tier 1: Agents Subsystem
 │   ├── base/                              # Agent Base Config
 │   └── extensions/                        # Domain Mutation Subdirectories
 │       ├── compaction/                    # prompt-composer.ts
 │       ├── resolution/                    # model-resolver.ts, agent-slash-router.ts, model-catalog.ts
-│       ├── execution/                     # agent-engine.ts
+│       ├── execution/                     # agent-engine.ts, Codex progress adapter, interactive controller
 │       ├── mentions/                      # mention-resolver.ts (Pass 9)
 │       ├── swarm/                         # agent-swarm-dispatcher.ts (Pass 11)
 │       └── intelligence/                  # workspace-intelligence.ts (Pass 13)
@@ -113,11 +115,49 @@ src/
 ├── factories/                             # Engine Monolith Bootstrapper
 │   └── monolith-factory.ts
 │
-└── index.ts                               # Composition Root (LumiMonolith - 21 Passes Verified)
+├── tui/                                   # Differential terminal renderer & activity timeline
+│   └── components/                        # agent-activity-timeline.ts and UI primitives
+│
+└── index.ts                               # Composition Root (LumiMonolith)
 ```
 
 > 🛡️ **Non-Destructive Osmosis Extension Strategy (`ADR-012`)**:  
 > Base classes in `src/*/base/` remain immutable. Evolutionary passes introduce single-responsibility extension classes in dedicated mutation subdirectories (`src/*/extensions/<mutation-domain>/`) and compose them cleanly in `MonolithFactory` and `LumiMonolith`.
+
+---
+
+## 📡 Live Agent Activity Streaming
+
+Authenticated Codex turns use the official SDK event stream and render a persistent activity card instead of a single ambiguous `Thinking...` label. Stable activities update in place as they move through `started`, `in_progress`, and a terminal state.
+
+Use `/setup` to connect and activate a provider. Codex setup attempts to open the browser, but also displays a clickable and copyable OpenAI sign-in URL; press `O` to retry or paste the authorization code/full callback URL if automatic capture is unavailable. When Codex is already authenticated, submit an empty field to keep the login and activate its default model. The selection is saved in `~/.lumi/config.json`.
+
+```text
+Agent activity · Working 4s · gpt-5.6-terra
+  ✓ Connected to Codex — gpt-5.6-terra
+  ◐ Analyzing the request — Understanding goals and workspace context
+  ◐ Running workspace command — npm test
+```
+
+The timeline can show safe reasoning summaries, plan progress, redacted commands, relative file changes, MCP/web activity, response readiness, elapsed time, and final token totals. It never displays raw chain-of-thought, aggregated tool output, MCP payloads, OAuth material, or full response text.
+
+Press `Esc` or `Ctrl+C` to cancel an active turn. Cancellation and failure settle active child rows, discard the failed Codex thread, restore the loop phase to idle, and leave the terminal audit trail visible.
+
+Programmatic callers can consume the same lifecycle through `EngineTickInput.onProgress`:
+
+```typescript
+const abortController = new AbortController();
+
+const result = await lumi.tick({
+  prompt: "make a racing game",
+  signal: abortController.signal,
+  onProgress: (event) => {
+    console.log(event.activityId, event.status, event.message, event.detail);
+  },
+});
+```
+
+See the [complete streaming strategy](.wiki/agent/streaming-activity-strategy.md), [public API reference](.wiki/agent/api-reference.md), and [ADR-082](.wiki/adr/ADR-082-structured-agent-activity-streaming.md).
 
 ---
 
@@ -138,7 +178,7 @@ To prevent code regression, file overwrites, and structural drift as new evoluti
 |---|---|---|---|
 | **Agents** (`src/agents/extensions/`) | `compaction/` | System prompt compilation & context assembly | `PromptComposer` |
 | | `resolution/` | Model fallback resolution, slash routing & pricing specs | `ModelResolver`, `AgentSlashRouter`, `ModelCatalog` |
-| | `execution/` | Deterministic tick engine loop execution | `AgentEngine` |
+| | `execution/` | Deterministic tick execution, Codex lifecycle adaptation, interactive orchestration | `AgentEngine`, `CodexProgressAdapter`, `InteractiveModeController` |
 | | `mentions/` *(Pass 9)* | Prompt `@mention` context expansion | `MentionResolver` |
 | | `swarm/` *(Pass 11)* | Subagent task delegation & frame snapshot sync | `AgentSwarmDispatcher` |
 | | `intelligence/` *(Pass 13)* | Workspace topology & package identity indexing | `WorkspaceIntelligenceEngine` |
@@ -149,7 +189,7 @@ To prevent code regression, file overwrites, and structural drift as new evoluti
 | | `compaction/` | Sliding window compaction & dense bitmap archiving | `SessionCompactor`, `SnapcompactEngine` |
 | | `integrity/` *(Pass 12)* | Environment auditing & forensic self-healing | `StabilityDoctor` |
 | **Tooling** (`src/tooling/extensions/`) | `perception/` | AST structural code symbol search | `AstPerceptionEyes` |
-| | `progress/` | Reactive CLI progress spinner & percent bar rendering | `ProgressStreamingEars`, `TerminalProgressRenderer` |
+| | `progress/` | Legacy JSON-RPC progress notification formatting; distinct from provider activity | `ProgressStreamingEars`, `TerminalProgressRenderer` |
 | | `telemetry/` | Microsecond performance timers & OpenTelemetry spans | `ProtocolEars`, `TelemetryTracer` |
 | | `hashline/` | Line-anchored hash edit verification | `AnchoredHands` |
 | | `registry/` | Skill discovery & schema validation tool execution | `SkillsIngestor`, `ValidatingToolRegistry` |
@@ -170,6 +210,8 @@ To prevent code regression, file overwrites, and structural drift as new evoluti
 - 🧠 [The Osmosis Methodology & Handoff Guide](.wiki/agent/osmosis-methodology.md)
 - 📖 [Wiki Landing Page](.wiki/index.md)
 - 📋 [API Reference Guide](.wiki/agent/api-reference.md)
+- 📡 [Agent Activity Streaming Strategy](.wiki/agent/streaming-activity-strategy.md)
+- 🧭 [ADR-082: Structured Agent Activity Streaming](.wiki/adr/ADR-082-structured-agent-activity-streaming.md)
 - 📖 [ADR Index & Decision Records](.wiki/adr/README.md)
 
 ---
