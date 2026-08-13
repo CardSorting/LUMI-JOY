@@ -18,7 +18,11 @@ export type EngineProgressStatus =
   | "cancelled";
 
 export interface EngineProgressMetadata {
-  source?: "codex-sdk" | "openai-api" | "lumi";
+  source?: "codex-sdk" | "openai-api" | "lumi" | string;
+  /** Distinguishes the one overall turn lifecycle from child activity rows. */
+  scope?: "turn" | "activity";
+  /** One-based provider attempt number when a turn is retried in place. */
+  attempt?: number;
   itemType?: string;
   files?: readonly string[];
   exitCode?: number;
@@ -52,8 +56,12 @@ export interface EngineTickInput {
   onProgress?: (event: EngineProgressEvent) => void;
 }
 
+export type EngineTickOutcome = "completed" | "failed" | "cancelled";
+
 export interface EngineTickResult {
   frameIndex: number;
+  /** Authoritative terminal outcome for this frame. */
+  outcome: EngineTickOutcome;
   activeModel: string;
   isFallbackModel: boolean;
   isSlashCommand?: boolean;

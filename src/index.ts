@@ -3,14 +3,8 @@ import { realpathSync } from "node:fs";
 import * as readline from "node:readline";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { MonolithFactory, type MonolithFactoryOptions } from "./factories/monolith-factory.js";
-import { GrandMonolithSynthesizer } from "./factories/grand-monolith-synthesizer.js";
 import type { EngineTickInput, EngineTickResult, IAgentEngine } from "./core/contracts/agent.contracts.js";
 import type { GameStateSnapshot } from "./core/contracts/session.contracts.js";
-import { AbstractAgentEngine } from "./core/abstracts/abstract-agent-engine.js";
-import { AbstractSessionStore } from "./core/abstracts/abstract-session-store.js";
-import { AbstractHands } from "./core/abstracts/abstract-hands.js";
-import { AbstractEars } from "./core/abstracts/abstract-ears.js";
-import { AbstractToolRegistry } from "./core/abstracts/abstract-tool-registry.js";
 import { AgentConfig } from "./agents/base/agent-config.js";
 import { AgentEngine } from "./agents/extensions/execution/agent-engine.js";
 import { PromptComposer } from "./agents/extensions/compaction/prompt-composer.js";
@@ -71,7 +65,11 @@ import { ToolCallSchemaValidator, type ValidationResult } from "./tooling/extens
 import { ArgumentCoercer } from "./tooling/extensions/registry/argument-coercer.js";
 import { BatchEditAnchorer, type BatchEditTask } from "./tooling/extensions/hashline/batch-edit-anchorer.js";
 import { DiffSynthesizer } from "./tooling/extensions/hashline/diff-synthesizer.js";
-import { MasterBenchmarkOrchestrator } from "./tooling/extensions/evals/master-benchmark-orchestrator.js";
+import { MasterBenchmarkOrchestrator, type GrandBenchmarkResult } from "./tooling/extensions/evals/master-benchmark-orchestrator.js";
+import { RuntimeSmokeSuite, type RuntimeSmokeReport } from "./tooling/extensions/evals/runtime-smoke-suite.js";
+import { LiveBaselineReporter } from "./tooling/extensions/evals/live-baseline-reporter.js";
+import { FlappyBirdProjectBenchmark } from "./tooling/extensions/evals/flappy-bird-project-benchmark.js";
+import { ArchitectureGuardrailGate } from "./tooling/extensions/policy/architecture-guardrail-gate.js";
 import { McpHub, type McpServerConfig, type McpDiscoveredTool } from "./tooling/extensions/mcp/mcp-hub.js";
 import { RipgrepSearchService, type RipgrepMatch } from "./tooling/extensions/perception/ripgrep-search-service.js";
 import { UrlContentFetcher } from "./tooling/extensions/perception/url-content-fetcher.js";
@@ -89,7 +87,7 @@ import { SkillsIngestor } from "./tooling/extensions/registry/skills-ingestor.js
 import { ValidatingToolRegistry, ToolRegistry } from "./tooling/extensions/registry/tool-registry.js";
 import { ModuleDecomposer } from "./tooling/extensions/policy/module-decomposer.js";
 import { MonolithGatewayServer } from "./tooling/extensions/gateway/monolith-gateway-server.js";
-import { MonolithBenchmarkEvaluator, type BenchmarkSuiteResult } from "./tooling/extensions/evals/benchmark-evaluator.js";
+import { MonolithBenchmarkEvaluator } from "./tooling/extensions/evals/benchmark-evaluator.js";
 import { TelemetryTracer, type ActiveSpan } from "./tooling/extensions/telemetry/telemetry-tracer.js";
 import { AgenticCommitGenerator, type ConventionalCommitResult } from "./tooling/extensions/policy/agentic-commit-generator.js";
 import { StreamEventFormatter, type StreamChunkEvent } from "./tooling/extensions/telemetry/stream-event-formatter.js";
@@ -107,6 +105,7 @@ export type {
   EngineProgressPhase,
   EngineProgressStatus,
   EngineTickInput,
+  EngineTickOutcome,
   EngineTickResult,
   IAgentEngine,
 } from "./core/contracts/agent.contracts.js";
@@ -353,6 +352,24 @@ export { BatchEditAnchorer } from "./tooling/extensions/hashline/batch-edit-anch
 export type { BatchEditTask } from "./tooling/extensions/hashline/batch-edit-anchorer.js";
 export { DiffSynthesizer } from "./tooling/extensions/hashline/diff-synthesizer.js";
 export { MasterBenchmarkOrchestrator } from "./tooling/extensions/evals/master-benchmark-orchestrator.js";
+export type { GrandBenchmarkResult } from "./tooling/extensions/evals/master-benchmark-orchestrator.js";
+export { RuntimeSmokeSuite } from "./tooling/extensions/evals/runtime-smoke-suite.js";
+export type { RuntimeSmokeCheckResult, RuntimeSmokeReport } from "./tooling/extensions/evals/runtime-smoke-suite.js";
+export { LiveBaselineReporter } from "./tooling/extensions/evals/live-baseline-reporter.js";
+export type { LiveBaselineInput, LiveBaselineWriteResult } from "./tooling/extensions/evals/live-baseline-reporter.js";
+export { FlappyBirdProjectBenchmark } from "./tooling/extensions/evals/flappy-bird-project-benchmark.js";
+export type { FlappyBirdBenchmarkCheck } from "./tooling/extensions/evals/flappy-bird-project-benchmark.js";
+export {
+  FLAPPY_BIRD_PROJECT_DIRECTORY,
+  FlappyBirdProjectSynthesizer,
+} from "./agents/extensions/execution/flappy-bird-project-synthesizer.js";
+export type {
+  SynthesizedFlappyBirdProject,
+  SynthesizedProjectFile,
+  WrittenFlappyBirdProject,
+} from "./agents/extensions/execution/flappy-bird-project-synthesizer.js";
+export { ArchitectureGuardrailGate } from "./tooling/extensions/policy/architecture-guardrail-gate.js";
+export type { GuardrailAuditReport, GuardrailCheckResult } from "./tooling/extensions/policy/architecture-guardrail-gate.js";
 export { McpHub } from "./tooling/extensions/mcp/mcp-hub.js";
 export type { McpServerConfig, McpDiscoveredTool } from "./tooling/extensions/mcp/mcp-hub.js";
 export { RipgrepSearchService } from "./tooling/extensions/perception/ripgrep-search-service.js";
@@ -379,7 +396,13 @@ export { ValidatingToolRegistry, ToolRegistry } from "./tooling/extensions/regis
 export { ModuleDecomposer } from "./tooling/extensions/policy/module-decomposer.js";
 export { MonolithGatewayServer } from "./tooling/extensions/gateway/monolith-gateway-server.js";
 export { MonolithBenchmarkEvaluator } from "./tooling/extensions/evals/benchmark-evaluator.js";
-export type { BenchmarkSuiteResult } from "./tooling/extensions/evals/benchmark-evaluator.js";
+export type {
+  BenchmarkAssertionResult,
+  BenchmarkCaseExecution,
+  BenchmarkSuiteResult,
+  BenchmarkTestCase,
+  BenchmarkTestResult,
+} from "./tooling/extensions/evals/benchmark-evaluator.js";
 export { TelemetryTracer } from "./tooling/extensions/telemetry/telemetry-tracer.js";
 export type { ActiveSpan } from "./tooling/extensions/telemetry/telemetry-tracer.js";
 export { AgenticCommitGenerator } from "./tooling/extensions/policy/agentic-commit-generator.js";
@@ -398,7 +421,12 @@ export { CentennialPassMarker } from "./tooling/extensions/policy/centennial-pas
 export type { CentennialMilestone } from "./tooling/extensions/policy/centennial-pass-marker.js";
 
 export { MonolithFactory } from "./factories/monolith-factory.js";
-export { GrandMonolithSynthesizer } from "./factories/grand-monolith-synthesizer.js";
+export {
+  CURRENT_EVOLUTION_BASELINE,
+  CURRENT_REQUIRED_COMPONENTS,
+  GrandMonolithSynthesizer,
+} from "./factories/grand-monolith-synthesizer.js";
+export type { CompositionVerification } from "./factories/grand-monolith-synthesizer.js";
 
 /**
  * Deterministic Game Engine Monolith Composition Root.
@@ -406,6 +434,8 @@ export { GrandMonolithSynthesizer } from "./factories/grand-monolith-synthesizer
  * and provides frame-perfect state rewind and replay.
  */
 export class LumiMonolith implements IAgentEngine {
+  /** Complete, future-compatible factory composition. Named fields below remain compatibility aliases. */
+  readonly components: Readonly<ReturnType<typeof MonolithFactory.createEngine>>;
   readonly config: AgentConfig;
   readonly sessionContext: SessionContext;
   readonly sessionStore: PersistentSessionStore;
@@ -491,6 +521,7 @@ export class LumiMonolith implements IAgentEngine {
 
   constructor(options: MonolithFactoryOptions = {}) {
     const components = MonolithFactory.createEngine(options);
+    this.components = components;
     this.config = components.config;
     this.sessionContext = components.sessionContext;
     this.sessionStore = components.sessionStore;
@@ -580,13 +611,18 @@ export class LumiMonolith implements IAgentEngine {
     return this.telemetryTracer.startSpan(
       `tick-frame-${this.sessionContext.turnCount + 1}`,
       async (span) => {
-        this.telemetryTracer.addEvent(span, "frame_start", { prompt: input.prompt });
+        this.telemetryTracer.addEvent(span, "frame_start", { promptLength: input.prompt.length });
         this.loopPhaseController.setPhase("thinking");
         const startTime = Date.now();
         try {
           const res = await this.agentEngine.tick(input);
           this.timingBuffer.record("frame_tick", Date.now() - startTime);
-          this.telemetryTracer.addEvent(span, "frame_complete", { response: res.response });
+          span.attributes["turn.outcome"] = res.outcome;
+          if (res.outcome !== "completed") span.status = "error";
+          this.telemetryTracer.addEvent(span, "frame_terminal", {
+            outcome: res.outcome,
+            responseLength: res.response.length,
+          });
           return res;
         } finally {
           this.loopPhaseController.setPhase("idle");
@@ -655,6 +691,7 @@ if (isDirectCliExecution) {
   const isSmoke = args.includes("--smoke") || args.includes("-s");
   const isSetup = args.includes("--setup") || args.includes("setup");
   const isBenchmark = args.includes("--benchmark") || args.includes("-b");
+  const isBaseline = args.includes("--baseline");
   const isHelp = args.includes("--help") || args.includes("-h");
 
   if (isHelp) {
@@ -665,148 +702,113 @@ Usage:
   lumi                    Start interactive REPL mode
   lumi --setup            Launch Interactive Setup Wizard (Model Providers & OAuth)
   lumi --benchmark (-b)   Run Automated Engine Benchmark & Throughput Test Suite
+  lumi --baseline         Run smoke + benchmark + guardrails and regenerate live baseline reports
   lumi "your prompt"      Run a single prompt turn
-  lumi --smoke (-s)       Run full 105-pass smoke test suite
+  lumi --smoke (-s)       Run current capability-based runtime smoke suite
   lumi --help (-h)        Show this help message
 `);
     process.exit(0);
   }
 
-  const runSmokeTest = async (lumi: LumiMonolith) => {
-    console.log("Initializing Deterministic Game Engine Monolith...");
-    console.log("\n--- Subsystem Abstract Base Class Verification ---");
-    console.log("lumi.agentEngine instanceof AbstractAgentEngine:", lumi.agentEngine instanceof AbstractAgentEngine);
-    console.log("lumi.sessionStore instanceof AbstractSessionStore:", lumi.sessionStore instanceof AbstractSessionStore);
-    console.log("lumi.hands instanceof AbstractHands:", lumi.hands instanceof AbstractHands);
-    console.log("lumi.ears instanceof AbstractEars:", lumi.ears instanceof AbstractEars);
-    console.log("lumi.toolRegistry instanceof AbstractToolRegistry:", lumi.toolRegistry instanceof AbstractToolRegistry);
+  const runSmokeTest = async (lumi: LumiMonolith): Promise<RuntimeSmokeReport> => {
+    console.log("\x1b[1;36m========================================================\x1b[0m");
+    console.log("\x1b[1;36m   LUMI Current Runtime Capability Smoke Suite          \x1b[0m");
+    console.log("\x1b[1;36m========================================================\x1b[0m\n");
 
-    const frame1 = await lumi.tick({ prompt: "remember: engine = deterministic" });
-    console.log(`\nFrame #${frame1.frameIndex} Result:`, frame1.response, `(${frame1.durationMs}ms)`);
+    const report = await new RuntimeSmokeSuite().run(lumi);
+    console.log(`Evolution Baseline:       \x1b[36m${report.baseline.label}\x1b[0m`);
+    console.log(`Composed Components:      \x1b[36m${report.composition.componentCount}\x1b[0m`);
+    console.log(`Required Capabilities:    \x1b[36m${report.composition.requiredComponentCount}\x1b[0m\n`);
 
-    const snapshot = lumi.createSnapshot();
-    console.log(`Created Snapshot ID: '${snapshot.snapshotId}' at Frame #${snapshot.frameIndex}`);
-    console.log("Zero-GC Slab Memory Snapshot:", snapshot.slabSnapshot);
+    for (const check of report.checks) {
+      const status = check.passed ? "\x1b[32m[PASS]\x1b[0m" : "\x1b[31m[FAIL]\x1b[0m";
+      console.log(`  ${status} ${check.name}`);
+      console.log(`         ${check.detail} (${check.durationMs.toFixed(2)} ms)`);
+    }
 
-    const frame2 = await lumi.tick({ prompt: "view: package.json" });
-    console.log(`Frame #${frame2.frameIndex} Result:`, frame2.response);
-    console.log("Current message count before rewind:", lumi.sessionStore.getMessages().length);
-    console.log("Slab allocated bytes before rewind:", lumi.sessionStore.getSlabSnapshot().allocatedBytes);
-
-    lumi.rewindToSnapshot(snapshot);
-    console.log("Rewound frame index:", lumi.sessionContext.turnCount);
-    console.log("Message count after rewind:", lumi.sessionStore.getMessages().length);
-    console.log("Slab allocated bytes after rewind:", lumi.sessionStore.getSlabSnapshot().allocatedBytes);
-
-    lumi.completionGate.registerGate("phase-24", [{ id: "c1", description: "all passes completed", required: true, evaluated: true, passed: true }]);
-    const gateRes = lumi.completionGate.evaluateGate("phase-24");
-    console.log("\nRoadmap Completion Gate (Pass 82):");
-    console.log("  Allowed to Proceed:", gateRes.allowedToProceed);
-
-    const digest = lumi.checkpointDigest.computeDigest("phase-24-chk", ["ADR-041", "RoadmapCompletionGate"]);
-    console.log("\nRoadmap Checkpoint Digest (Pass 83):");
-    console.log("  Computed Checksum Hash:", digest.hash);
-
-    lumi.clipboardBridge.writeText("LUMI-NEW OS Clipboard Buffer");
-    console.log("\nNative Clipboard Bridge (Pass 85):");
-    console.log("  Clipboard Content:", lumi.clipboardBridge.readText().content);
-
-    const harnessRes = await lumi.loopHarness.runHarnessTurn("smoke-test-prompt", { echoTool: "ok" });
-    console.log("\nAgent Loop Harness (Pass 86):");
-    console.log("  Total Steps Executed:", harnessRes.totalSteps);
-
-    lumi.postmortemDiagnostic.recordException("Non-fatal test warning", "warning");
-    const pmReport = lumi.postmortemDiagnostic.generateReport();
-    console.log("\nPostmortem Diagnostic (Pass 88):");
-    console.log("  Recorded Exceptions:", pmReport.totalExceptions, "| Healthy:", pmReport.healthy);
-
-    lumi.processLifecycleManager.registerProcess(1234, "node-test-proc");
-    console.log("\nProcess Lifecycle Manager (Pass 89):");
-    console.log("  Active Process Count:", lumi.processLifecycleManager.getActiveProcesses().length);
-
-    lumi.providerAttribution.recordUsage("claude-3-7-sonnet", 1000, 500);
-    const attrSummary = lumi.providerAttribution.getAttributionSummary();
-    console.log("\nProvider Attribution Composer (Pass 91):");
-    console.log("  Total Cost USD: $", attrSummary.totalCostUsd);
-
-    const cleanErr = lumi.stderrGuard.filterNoise("ExperimentalWarning: Feature X\nCritical system error line");
-    console.log("\nStderr Guard Filter (Pass 92):");
-    console.log("  Filtered Output Line:", cleanErr);
-
-    const isMatched = lumi.keybindingsController.matchesKey("ctrl+c", "ctrl+c");
-    console.log("\nKeybindings Controller (Pass 94):");
-    console.log("  Shortcut Matched:", isMatched);
-
-    const httpCfg = lumi.httpDispatcher.configureDispatcher(undefined, { "x-custom-header": "test" });
-    console.log("\nHTTP Dispatcher Overlay (Pass 95):");
-    console.log("  Configured Header:", httpCfg.customHeaders["x-custom-header"]);
-
-    lumi.authStorageVault.setToken("openai", "sk-test-token");
-    console.log("\nAuth Storage Vault (Pass 97):");
-    console.log("  Has Provider Token:", lumi.authStorageVault.hasToken("openai"));
-
-    lumi.ttsrCoordinator.markStart("turn-1");
-    const ttsrLatency = lumi.ttsrCoordinator.markSecondResponse("turn-1");
-    console.log("\nTTSR Coordinator (Pass 98):");
-    console.log("  TTSR Latency Recorded (ms):", typeof ttsrLatency === "number");
-
-    const centennial = lumi.centennialPassMarker.markCentennial(100);
-    console.log("\nCentennial Pass Marker (Pass 100):");
-    console.log("  Milestone Verified:", centennial.milestoneVerified, "| Title:", centennial.centuryTitle);
-
-    const overallHealth = lumi.systemHealthAggregator.getOverallStatus();
-    console.log("\nSystem Health Aggregator (Pass 101):");
-    console.log("  Overall Subsystem Status:", overallHealth);
-
-    const codexUrlDetails = lumi.codexOAuthManager.generateAuthUrl();
-    console.log("\nOpenAI Codex OAuth Manager (Pass 103):");
-    console.log("  PKCE Auth URL Generated:", codexUrlDetails.url.startsWith("https://auth.openai.com"));
-
-    const isTerraCodex = lumi.codexProviderBridge.isCodexProvider("gpt-5.6-terra");
-    const resolvedAuth = await lumi.codexProviderBridge.resolveProviderAuth("gpt-5.6-terra", "fallback-key");
-    console.log("\nCodex Provider Bridge (Pass 104):");
-    console.log("  Is GPT-5.6 Terra Model:", isTerraCodex, "| Auth Type:", resolvedAuth.authType);
-
-    const grandVerification = GrandMonolithSynthesizer.verifyAllPasses();
-    console.log("\n--- Grand Monolith Verification (Pass 105) ---");
-    console.log("Total Evolutionary Passes Verified:", 105);
-    console.log("Cohesion Status:", grandVerification.cohesionStatus);
-    console.log("Active Subsystem Component Count:", Object.keys(lumi).length);
-
-    console.log("\nALL 105 EVOLUTIONARY PASSES PASSED EMPIRICAL SMOKE TEST SUITE CLEANLY!");
+    console.log(`\nSmoke Result: ${report.passed ? "\x1b[1;32mPASSED" : "\x1b[1;31mFAILED"}\x1b[0m · ${report.passedCount}/${report.totalChecks} checks · ${report.durationMs.toFixed(2)} ms\n`);
+    return report;
   };
 
-  const runBenchmarkSuite = async (lumi: LumiMonolith) => {
+  const runBenchmarkSuite = async (lumi: LumiMonolith): Promise<GrandBenchmarkResult> => {
     console.log("\x1b[1;36m========================================================\x1b[0m");
     console.log("\x1b[1;36m   LUMI Monolith Benchmark & Throughput Test Suite      \x1b[0m");
     console.log("\x1b[1;36m========================================================\x1b[0m\n");
 
-    const startTime = performance.now();
+    const rewindSnapshot = lumi.createSnapshot();
+    const rewindMutation = await lumi.tick({ prompt: "remember: benchmark_rewind = mutated" });
+    if (rewindMutation.outcome !== "completed") {
+      throw new Error("Unable to prepare deterministic rewind benchmark");
+    }
+
     const benchmarkResult = await lumi.masterBenchmarkOrchestrator.runGrandBenchmarkSuite(lumi, [
       { name: "Turn Tick Latency & Fact Storage", prompt: "remember: engine = deterministic", expectedKeywords: ["deterministic"] },
       { name: "VFS File Perception & Reading", prompt: "view: package.json", expectedKeywords: ["package.json"] },
-      { name: "Code & Game Synthesis Throughput", prompt: "create a frogger game", expectedKeywords: ["Frogger"] },
+      {
+        name: "Complete Flappy Bird React + TypeScript + Vite Synthesis",
+        expectedKeywords: ["Generated 12-file", "gameplay state-machine simulation"],
+        execute: () => new FlappyBirdProjectBenchmark().execute(),
+      },
       { name: "Slash Command Router Latency", prompt: "/stats", expectedKeywords: ["Telemetry"] },
-      { name: "Snapshot State Rewind Latency", prompt: "remember: state = rewindable", expectedKeywords: ["rewindable"] },
+      {
+        name: "Snapshot State Rewind Latency",
+        expectedKeywords: ["rewound"],
+        execute: (current) => {
+          current.rewindToSnapshot(rewindSnapshot);
+          const restored = current.sessionContext.turnCount === rewindSnapshot.frameIndex
+            && current.sessionStore.getMessages().length === rewindSnapshot.messages.length;
+          return {
+            outcome: restored ? "completed" : "failed",
+            response: restored ? `Rewound to frame ${rewindSnapshot.frameIndex}` : "Snapshot rewind state mismatch",
+            assertionPassed: restored,
+          };
+        },
+      },
     ]);
-    const totalDurationMs = Number((performance.now() - startTime).toFixed(2));
-    const throughputTps = Number((benchmarkResult.suiteResult.totalTests / (totalDurationMs / 1000)).toFixed(2));
 
     console.log(`\x1b[1;32mBenchmark Results:\x1b[0m`);
     console.log(`  Total Evaluated Tests:  \x1b[36m${benchmarkResult.suiteResult.totalTests}\x1b[0m`);
     console.log(`  Passed Tests:           \x1b[32m${benchmarkResult.suiteResult.passCount}\x1b[0m`);
     console.log(`  Failed Tests:           \x1b[31m${benchmarkResult.suiteResult.failCount}\x1b[0m`);
     console.log(`  Pass Rate:              \x1b[33m${benchmarkResult.suiteResult.passRate}%\x1b[0m`);
-    console.log(`  Mean Turn Latency:      \x1b[36m${benchmarkResult.suiteResult.meanLatencyMs} ms\x1b[0m`);
-    console.log(`  Total Test Time:        \x1b[36m${totalDurationMs} ms\x1b[0m`);
-    console.log(`  Execution Throughput:   \x1b[1;32m${throughputTps} turns/sec (${(throughputTps * 60).toFixed(0)} turns/min)\x1b[0m\n`);
+    console.log(`  Mean Case Latency:      \x1b[36m${benchmarkResult.suiteResult.meanLatencyMs} ms\x1b[0m`);
+    console.log(`  Total Test Time:        \x1b[36m${benchmarkResult.totalDurationMs} ms\x1b[0m`);
+    console.log(`  Workload Throughput:    \x1b[1;32m${benchmarkResult.throughputTps} cases/sec (${benchmarkResult.throughputPerMinute} cases/min)\x1b[0m\n`);
 
     console.log("\x1b[1;34mDetailed Test Case Metrics:\x1b[0m");
     for (const res of benchmarkResult.suiteResult.results) {
       const status = res.passed ? "\x1b[32m[PASS]\x1b[0m" : "\x1b[31m[FAIL]\x1b[0m";
-      console.log(`  ${status} ${res.testName.padEnd(35)} -> Latency: \x1b[33m${res.durationMs} ms\x1b[0m`);
+      const assertionSummary = res.assertions.length > 0
+        ? ` · Assertions: ${res.assertions.filter((assertion) => assertion.passed).length}/${res.assertions.length}`
+        : "";
+      console.log(`  ${status} ${res.testName.padEnd(62)} -> Latency: \x1b[33m${res.durationMs} ms\x1b[0m${assertionSummary}`);
+      for (const assertion of res.assertions) {
+        const assertionStatus = assertion.passed ? "\x1b[32m✓\x1b[0m" : "\x1b[31m✗\x1b[0m";
+        console.log(`         ${assertionStatus} ${assertion.name}: ${assertion.detail}`);
+      }
     }
     console.log();
+    return benchmarkResult;
+  };
+
+  const updateLiveBaseline = async (lumi: LumiMonolith): Promise<boolean> => {
+    const smoke = await runSmokeTest(lumi);
+    const benchmark = await runBenchmarkSuite(lumi);
+    const guardrails = await new ArchitectureGuardrailGate().runFullGuardrailAudit(lumi);
+    const writeResult = new LiveBaselineReporter().write(process.cwd(), {
+      repositoryVersion: process.env["npm_package_version"] ?? "0.1.0",
+      configuredModel: lumi.modelResolver.getActiveModel(),
+      smoke,
+      benchmark,
+      guardrails,
+    });
+
+    console.log("\x1b[1;34mLive baseline artifacts:\x1b[0m");
+    for (const file of writeResult.files) console.log(`  - ${file}`);
+    console.log(`  Generated: ${writeResult.generatedAt}`);
+    console.log(`  Guardrails: ${guardrails.passedCount}/${guardrails.totalChecks}`);
+    console.log(`  Status: ${writeResult.passed ? "\x1b[1;32mPASSED" : "\x1b[1;31mFAILED"}\x1b[0m\n`);
+    return writeResult.passed;
   };
 
   const startRepl = async (lumi: LumiMonolith) => {
@@ -818,19 +820,30 @@ Usage:
 
     if (isSetup) {
       await lumi.setupWizard.runInteractiveWizard();
+    } else if (isBaseline) {
+      const passed = await updateLiveBaseline(lumi);
+      if (!passed) throw new Error("Live baseline verification failed");
     } else if (isBenchmark) {
-      await runBenchmarkSuite(lumi);
+      const benchmark = await runBenchmarkSuite(lumi);
+      if (!benchmark.passed) throw new Error("Benchmark suite failed");
     } else if (isSmoke) {
-      await runSmokeTest(lumi);
+      const smoke = await runSmokeTest(lumi);
+      if (!smoke.passed) throw new Error("Runtime smoke suite failed");
     } else if (args.length > 0 && !args[0].startsWith("-")) {
       const prompt = args.join(" ");
       const result = await lumi.tick({ prompt });
-      console.log(`\x1b[1;32m[LUMI Frame #${result.frameIndex}]\x1b[0m (${result.durationMs}ms)`);
+      const color = result.outcome === "completed"
+        ? "\x1b[1;32m"
+        : result.outcome === "cancelled"
+          ? "\x1b[1;33m"
+          : "\x1b[1;31m";
+      console.log(`${color}[${result.outcome.toUpperCase()} · LUMI Frame #${result.frameIndex}]\x1b[0m (${result.durationMs}ms)`);
       console.log(result.response);
     } else {
       await startRepl(lumi);
     }
   })().catch((err) => {
     console.error("LUMI CLI execution failed:", err);
+    process.exitCode = 1;
   });
 }

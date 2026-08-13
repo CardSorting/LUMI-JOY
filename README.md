@@ -6,8 +6,8 @@
 
 *An enterprise-grade TypeScript agent framework built on structural knowledge distillation, frame-perfect state snapshotting, and biological osmosis self-mutation.*
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-20+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20.19+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Academic Paper](https://img.shields.io/badge/Academic%20Paper-AKD--DSO-9C27B0?style=for-the-badge)](.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md)
 [![Whitepaper](https://img.shields.io/badge/Whitepaper-Osmosis%20Paradigm-00C853?style=for-the-badge)](.wiki/whitepaper/OSMOSIS-WHITEPAPER.md)
 [![Auto-Rolling Roadmap](https://img.shields.io/badge/Roadmap-Auto--Rolling-E91E63?style=for-the-badge)](.wiki/roadmap/AUTOROLLING-ROADMAP.md)
@@ -46,8 +46,8 @@ Select your role for tailored navigation and onboarding instructions:
 ### 🎯 Concrete Goals by Stakeholder Role
 
 #### 👔 Executive & Engineering VP
-- **Goal 1: Predictable Infrastructure Costs & High Density**: Scale agent workloads to 247,000+ turns/min per server node with zero microservice overhead.
-- **Goal 2: Strict Turn Latency SLAs**: Enforce sub-millisecond turn tick bounds ($0.11\text{ ms}$) guaranteed by pre-commit automated guardrail testing.
+- **Goal 1: Predictable Infrastructure Costs & High Density**: Enforce a deterministic fast-path floor of at least $1,000$ frames/second without microservice IPC overhead; consult the live baseline for the current host measurement.
+- **Goal 2: Strict Turn Latency SLAs**: Enforce a mean deterministic fast-path latency below $1.0\text{ ms}$ through automated guardrail testing.
 - **Goal 3: Enterprise Compliance**: Deploy under the Apache License 2.0 backed by an explicit Defensive Patent Non-Aggression Pledge.
 
 #### 🏗️ Enterprise Architect & Technical Lead
@@ -62,7 +62,7 @@ Select your role for tailored navigation and onboarding instructions:
 
 #### 💻 Software Engineer & Developer
 - **Goal 1: Instant Local Setup**: Get up and running in under 60 seconds with `npm install` and `npx tsx src/index.ts --setup`.
-- **Goal 2: Frame-Perfect State Rewind**: Perform $O(1)$ state rollbacks ($0.04\text{ ms}$) during iterative agent debugging.
+- **Goal 2: Frame-Perfect State Rewind**: Perform $O(1)$ state restoration under the enforced $0.1\text{ ms}$ warmed-p95 guardrail during iterative agent debugging.
 - **Goal 3: Type-Safe Programmatic SDK**: Embed `LumiMonolith` seamlessly into node applications with full TypeScript autocompletion and progress callbacks.
 
 ## 💡 Why LUMI-NEW? (The Architectural Imperative)
@@ -71,21 +71,35 @@ Traditional AI agent frameworks (LangChain, AutoGen, CrewAI, and raw provider wr
 
 | Architectural Challenge | Traditional Agent Frameworks | AKD-DSO Engine (`LUMI-NEW`) | Business & Technical Impact |
 |---|---|---|---|
-| **Framework Overhead** | 18+ micro-packages with RPC/IPC queues | **Single 3-tier monolith** (`agents`, `sessions`, `tooling`) | **$129\times$ Latency Reduction ($0.11\text{ ms}$ tick SLA)** |
+| **Framework Overhead** | 18+ micro-packages with RPC/IPC queues | **Single 3-tier monolith** (`agents`, `sessions`, `tooling`) | **Measured deterministic fast path with $<1.0\text{ ms}$ latency SLA** |
 | **Context Safety & DSL** | Loose string joins prone to prompt injection | **Formal `ContextDslEngine` AST parsing & SHA-256 digests** | **Deterministic context bounds & injection defense** |
 | **Memory & GC Latency** | Dynamic heap allocations causing V8 GC sweeps | **Contiguous 16MB ArrayBuffer zero-GC substrate** | **Zero Garbage Collection pauses during live streaming** |
-| **State Rewind & Audit** | Slow transcript re-parsing ($285\text{ ms}$) | **$O(1)$ Memory pointer snapshot assignment ($0.04\text{ ms}$)** | **$7,125\times$ Faster state rollbacks & frame-perfect audit** |
+| **State Rewind & Audit** | Slow transcript re-parsing | **$O(1)$ in-memory snapshot restoration** | **Warmed-p95 guardrail below $0.1\text{ ms}$ and frame-perfect state verification** |
 
 ---
 
 ## 🌟 Business & Technical ROI Highlights
 
-- **⚡ $129\times$ Latency Reduction ($0.11\text{ ms}$ SLA)**: Direct function dispatch eliminates micro-package IPC/RPC network queues, dropping mean tick latency from $14.2\text{ ms}$ down to $0.11\text{ ms}$.
-- **📈 $58.7\times$ Throughput Boost ($4,132\text{ turns/sec}$)**: High-density turn processing supports over $247,000$ turns per minute on a single node.
-- **🔄 $O(1)$ Instant State Rewind ($0.04\text{ ms}$)**: Replaces slow JSON re-parsing with $O(1)$ memory pointer assignments for instantaneous state rollbacks.
+- **⚡ Enforced Fast-Path Latency**: Direct function dispatch eliminates micro-package IPC/RPC queues; `ArchitectureGuardrailGate` requires mean local frame latency below $1.0\text{ ms}$.
+- **📈 Enforced Fast-Path Throughput**: The same guardrail requires at least $1,000$ deterministic frames/second and records the host-specific observation in the live baseline.
+- **🔄 $O(1)$ State Rewind**: In-memory snapshot restoration is verified for state correctness and a warmed p95 below $0.1\text{ ms}$.
 - **🔒 Enterprise Security & OAuth PKCE**: Native PKCE OAuth 2.0 integration with zero-leak credential storage in `~/.lumi/config.json` and strict permission gates (`CommandPermissionController`).
 - **🧠 Formal Context Envelope DSL & Template Engine**: Structured `ContextDslEngine` AST parsing (`LUMI-CONTEXT/1`, `LUMI-THREAD/1`, `LUMI-MEMORY/1`, `LUMI-TOOL-RESULT/1`, `LUMI-GOAL/1`) and `PromptTemplateEngine` (`{{#if}}`/`{{#unless}}`) prevent prompt injection and guarantee deterministic context control.
 - **🛡️ Contiguous Zero-GC Substrate**: 16MB pre-allocated ArrayBuffer memory slab eliminates runtime Garbage Collection latency spikes.
+
+### Latest verified workspace baseline
+
+The authoritative run was generated on **2026-08-13T04:45:51.966Z** using Node.js `v23.5.0` on macOS ARM64. It passed:
+
+| Verification lane | Latest result |
+|---|---:|
+| Pass 192 composition manifest | 142/142 components |
+| Runtime capability smoke | 9/9 checks |
+| Heterogeneous benchmark suite | 5/5 cases |
+| Complete Flappy Bird React + TypeScript + Vite case | 8/8 assertions; 12/12 files |
+| Architecture and performance guardrails | 6/6 checks |
+
+Performance timings are host-sensitive and must not be copied forward as permanent guarantees. Read the generated [machine-readable baseline](docs/LIVE_BASELINE.json), [benchmark evidence](docs/BENCHMARK_REPORT.md), and [architectural audit](docs/GRAND_ARCHITECTURAL_AUDIT.md) for the exact current measurements and regeneration timestamp.
 
 ---
 
@@ -95,12 +109,12 @@ Get up and running with **LUMI-NEW** in seconds:
 
 ### 1. Prerequisites & Installation
 
-Ensure you have **Node.js 20+** installed:
+Ensure you have **Node.js 20.19+** (or a compatible newer release) installed:
 
 ```bash
 # Clone the repository
-git clone https://github.com/CardSorting/LUMI-JOY.git
-cd LUMI-JOY
+git clone https://github.com/CardSorting/LUMI-NEW.git
+cd LUMI-NEW
 
 # Install dependencies
 npm install
@@ -155,10 +169,14 @@ console.log("Agent Response:", result.response);
 
 | Command | Action |
 |---|---|
-| `npm test` | Run complete validation suite (`validate-dsl-strategy`, `validate-context-management`, `validate-repo`) |
+| `npm test` | Run the complete validation suite, including runtime-baseline contracts, documentation freshness/link checks, and architecture guardrails |
 | `npm run build` | Compile TypeScript (`tsc`) to `dist/` |
-| `npx tsx src/index.ts --benchmark` | Run sub-millisecond turn tick latency and throughput benchmark suite |
+| `npm run smoke` | Verify the current Pass 192 composition and critical runtime completion, rewind, safety, and integrity behaviors |
+| `npm run benchmark` | Run the hermetic latency and throughput benchmark suite |
+| `npm run baseline:update` | Run smoke, benchmarks, and guardrails, then atomically regenerate the live baseline reports |
 | `npx tsx src/index.ts --setup` | Run guided provider & model selection wizard |
+
+The current measured baseline is stored in [`docs/LIVE_BASELINE.json`](docs/LIVE_BASELINE.json). [`docs/BENCHMARK_REPORT.md`](docs/BENCHMARK_REPORT.md) and [`docs/GRAND_ARCHITECTURAL_AUDIT.md`](docs/GRAND_ARCHITECTURAL_AUDIT.md) are generated views of that same run; do not hand-edit their measured values.
 
 ---
 
@@ -168,12 +186,12 @@ console.log("Agent Response:", result.response);
 |---|---|---|---|
 | **Architecture** | 18+ Micro-packages | **3-Tier Monolith** (`agents`, `sessions`, `tooling`) | **Zero Framework Bloat** |
 | **Execution Loop** | Loose Async Handlers | **Deterministic Game Loop** (`tick()`) | **Frame-Perfect Isolation** |
-| **Mean Turn Latency** | $14.20\text{ ms}$ | **$0.22\text{ ms}$** | Direct function dispatch replacing IPC/RPC queues (**$64.5\times$ Speedup**). |
-| **Execution Throughput** | $70.4\text{ turns/sec}$ | **$4,132.2\text{ turns/sec}$** ($247.9k\text{ tpm}$) | Direct function dispatch replacing async network queues (**$58.7\times$ Boost**). |
-| **State Rewind Latency** | $285.00\text{ ms}$ (Re-parse) | **$0.04\text{ ms}$** ($O(1)$ Pointer) | Replaced JSON re-parsing with $O(1)$ pointer assignment (**$7,125\times$ Speedup**). |
-| **VFS Perception Speed** | $12.40\text{ ms}$ (Disk I/O) | **$0.03\text{ ms}$** | In-memory contiguous VFS overlay inspection (**$413.3\times$ Speedup**). |
+| **Mean Turn Latency** | $14.20\text{ ms}$ | **Live guardrail: $<1\text{ ms}$** | Direct function dispatch replacing IPC/RPC queues; see the generated live baseline for the current measurement. |
+| **Execution Throughput** | $70.4\text{ turns/sec}$ | **Live guardrail: $\geq1,000\text{ frames/sec}$** | Direct deterministic fast-path measurement, kept separate from heterogeneous benchmark workloads. |
+| **State Rewind Latency** | $285.00\text{ ms}$ (Re-parse) | **Live guardrail: $<0.1\text{ ms}$ p95** | Real snapshot mutation/rewind measured across warmed samples rather than a fixed fallback. |
+| **VFS Perception Speed** | $12.40\text{ ms}$ (Disk I/O) | **Live benchmark case** | In-memory contiguous VFS overlay inspection. |
 | **Memory Allocation** | Dynamic Heap GC Sweep | **16MB Zero-GC Slab** | Pre-allocated slab eliminates Garbage Collection sweeps. |
-| **Canvas Game Synthesis** | N/A (Seconds) | **$0.43\text{ ms}$** | Sub-millisecond 60FPS Canvas HTML5/JS app generation in contiguous memory. |
+| **Complete Game Synthesis** | Manual multi-file setup | **12-file React + TypeScript + Vite project** | Temp-isolated generation, strict compiler diagnostics, executable physics simulation, responsive Canvas UI, controls, and accessibility checks. |
 
 ---
 
@@ -246,7 +264,7 @@ Agent activity · Working 4s · gpt-5.6-terra
   ◐ Running workspace command — npm test
 ```
 
-The timeline can show safe reasoning summaries, plan progress, redacted commands, relative file changes, MCP/web activity, response readiness, elapsed time, and final token totals. It never displays raw chain-of-thought, aggregated tool output, MCP payloads, OAuth material, or full response text.
+The timeline can show safe reasoning summaries, plan progress, redacted commands, relative file changes, MCP/web activity, response-candidate state, elapsed time, and final token totals. A completed message item is only a candidate: LUMI reports success after the provider turn also terminates and the candidate passes final-response validation. It never displays raw chain-of-thought, aggregated tool output, MCP payloads, OAuth material, or full response text.
 
 Press `Esc` or `Ctrl+C` to cancel an active turn. Cancellation and failure settle active child rows, discard the failed Codex thread, restore the loop phase to idle, and leave the terminal audit trail visible.
 
@@ -262,6 +280,11 @@ const result = await lumi.tick({
     console.log(event.activityId, event.status, event.message, event.detail);
   },
 });
+
+if (result.outcome !== "completed") {
+  // `response` contains safe failure or cancellation guidance, not a successful answer.
+  console.error(result.response);
+}
 ```
 
 See the [complete streaming strategy](.wiki/agent/streaming-activity-strategy.md), [public API reference](.wiki/agent/api-reference.md), and [ADR-082](.wiki/adr/ADR-082-structured-agent-activity-streaming.md).
@@ -331,10 +354,10 @@ To prevent code regression, file overwrites, and structural drift as new evoluti
 ## ❓ Frequently Asked Questions (FAQ)
 
 ### Q: What is LUMI-NEW and what core business problem does it solve?
-**LUMI-NEW** is an enterprise-grade AI pair programmer and autonomous agent engine. It solves the high cost, slow turn execution, and unpredictable state drift of traditional agent frameworks by delivering sub-millisecond turn execution ($0.11\text{ ms}$) and frame-perfect state management for production software engineering workloads.
+**LUMI-NEW** is an enterprise-grade AI pair programmer and autonomous agent engine. It addresses framework overhead and state drift through a deterministic local frame path guarded below $1.0\text{ ms}$ mean latency, explicit frame outcomes, immutable snapshots, and fail-closed completion semantics. Provider-backed model latency is external to this local-runtime guardrail.
 
 ### Q: How does LUMI-NEW reduce AI infrastructure and cloud operating costs?
-By eliminating multi-package framework bloat and unnecessary microservice RPC queues, LUMI-NEW processes over **247,000 agent turns per minute on a single server node** ($58.7\times$ higher throughput). This high density allows organizations to scale AI workloads with significantly smaller server footprints and lower cloud compute costs.
+By eliminating internal microservice RPC queues, LUMI-NEW keeps deterministic local orchestration in-process. The enforced floor is **$1,000$ local frames/second**; the latest host run observed **$7,787.13$ frames/second**. These figures are local framework measurements—not provider responses, model tokens, or a universal server-capacity promise—and should be regenerated on deployment hardware.
 
 ### Q: Which LLM providers and AI models are supported?
 LUMI-NEW natively supports major provider ecosystems including **OpenAI** (`gpt-4o`, `gpt-5`, `Codex`), **Anthropic** (`Claude 3.5 Sonnet`), and standard OpenAI-compatible proxy gateways. It features automatic model resolution, fallback routing, and PKCE OAuth 2.0 authentication.
@@ -365,6 +388,9 @@ Engineering teams can install LUMI-NEW in under 60 seconds with `npm install` an
 - 📋 [API Reference Guide](.wiki/agent/api-reference.md)
 - 📡 [Agent Activity Streaming Strategy](.wiki/agent/streaming-activity-strategy.md)
 - 🧭 [ADR-082: Structured Agent Activity Streaming](.wiki/adr/ADR-082-structured-agent-activity-streaming.md)
+- 📈 [Current Machine-Readable Baseline](docs/LIVE_BASELINE.json)
+- 🧪 [Generated Benchmark Evidence](docs/BENCHMARK_REPORT.md)
+- 🏛️ [Generated Architectural Audit](docs/GRAND_ARCHITECTURAL_AUDIT.md)
 - 📖 [ADR Index & Decision Records](.wiki/adr/README.md)
 
 ---

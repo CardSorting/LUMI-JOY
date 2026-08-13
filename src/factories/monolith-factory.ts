@@ -423,12 +423,20 @@ export class MonolithFactory {
     const keybindingsController = new KeybindingsController();
     const httpDispatcher = new HttpDispatcherOverlay();
     const authStorageVault = new AuthStorageVault();
+    for (const status of envKeyResolver.getProviderStatuses()) {
+      if (status.hasKey) {
+        const key = envKeyResolver.resolveKey(status.provider);
+        if (key) {
+          authStorageVault.setToken(status.provider, key);
+        }
+      }
+    }
     const ttsrCoordinator = new TTSRCoordinator();
     const centennialPassMarker = new CentennialPassMarker();
     const systemHealthAggregator = new SystemHealthAggregator();
     const codexOAuthManager = new CodexOAuthManager(authStorageVault);
     codexOAuthManager.loadFromDisk();
-    const codexProviderBridge = new CodexProviderBridge(codexOAuthManager, authStorageVault);
+    const codexProviderBridge = new CodexProviderBridge(codexOAuthManager, authStorageVault, envKeyResolver);
     const setupWizard = new SetupWizard({
       envKeyResolver,
       authStorageVault,

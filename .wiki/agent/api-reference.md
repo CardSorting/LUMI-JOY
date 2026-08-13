@@ -39,6 +39,8 @@ type EngineProgressStatus =
   | "failed"
   | "cancelled";
 
+type EngineTickOutcome = "completed" | "failed" | "cancelled";
+
 interface EngineTickInput {
   prompt: string;
   signal?: AbortSignal;
@@ -56,11 +58,27 @@ interface EngineProgressEvent {
   sequence: number;
   metadata?: EngineProgressMetadata;
 }
+
+interface EngineProgressMetadata {
+  source?: string;
+  scope?: "turn" | "activity";
+  attempt?: number;
+  // safe item, file, plan, exit-code, and usage fields omitted
+}
+
+interface EngineTickResult {
+  frameIndex: number;
+  outcome: EngineTickOutcome;
+  response: string;
+  // model, routing, prompt, tool, and timing fields omitted
+}
 ```
 
 `activityId` is stable for one logical activity. Consumers must update an existing row when that ID reappears, not append a duplicate. `sequence` increases within one turn and allows consumers to ignore stale updates. `phase` describes the kind of work; `status` describes its lifecycle state.
 
-`metadata` may include `source`, `itemType`, safe workspace-relative `files`, `exitCode`, plan counts, and token usage. It must not contain credentials, raw command output, tool payloads, full model output, or hidden chain-of-thought.
+`metadata` may include `source`, `scope` (`turn` or `activity`), one-based retry `attempt`, `itemType`, safe workspace-relative `files`, `exitCode`, plan counts, and token usage. It must not contain credentials, raw command output, tool payloads, full model output, or hidden chain-of-thought.
+
+`result.outcome`, not promise resolution or non-empty `result.response`, determines whether the frame succeeded. Failed and cancelled turns may resolve with user-safe guidance while retaining their non-success outcome.
 
 ```ts
 const controller = new AbortController();
@@ -76,6 +94,10 @@ const result = await lumi.tick({
     }
   },
 });
+
+if (result.outcome !== "completed") {
+  console.error(result.response);
+}
 ```
 
 The callback is observational and best-effort. The engine contains callback exceptions so a renderer cannot terminate a model turn. The caller owns the `AbortController`; aborting the signal cancels the active local provider turn.
@@ -94,9 +116,11 @@ Converts `@openai/codex-sdk` thread events into `EngineProgressEvent` values.
 - `handle(event: ThreadEvent)` maps thread, turn, and item lifecycle events.
 - `cancel(message?)`, `timeout(message?)`, and `fail(message, detail?)` emit explicit terminal outcomes.
 
-SDK item IDs become stable activity IDs. Started, updated, and completed events therefore occupy one timeline row. Supported item types include reasoning summaries, todo lists, commands, file changes, MCP tool calls, web searches, agent messages, and errors.
+SDK item IDs are namespaced by retry attempt and become stable activity IDs within that attempt. Started, updated, and completed events therefore occupy one timeline row without colliding with a later retry. Supported item types include reasoning summaries, todo lists, commands, file changes, MCP tool calls, web searches, agent messages, and errors.
 
-The adapter sanitizes and bounds all displayed text, reduces paths to workspace-relative names, deduplicates identical updates, and treats `item.completed` as authoritative. It never forwards command output or model response bodies through progress events.
+The adapter sanitizes and bounds all displayed text, reduces paths to workspace-relative names, deduplicates identical updates, and treats `item.completed` as authoritative for that item only. A completed `agent_message` becomes the latest response candidate; it cannot terminate the turn. LUMI publishes turn success only after a later `turn.completed` and non-empty candidate validation.
+
+These names are the dot-form event discriminants in the pinned `@openai/codex-sdk` `0.147.0`. The official App Server protocol documents the analogous slash-form JSON-RPC methods (`item/completed`, `turn/completed`) and places the final App Server status on `turn/completed`.
 
 ## Interactive activity timeline
 
@@ -108,11 +132,14 @@ The fullscreen terminal UI renders a persistent activity card rather than a sing
 
 - `update(event)` upserts by `activityId` and rejects lower-sequence stale events.
 - `setElapsed(elapsedMs)` refreshes the visible duration while work is active.
-- `completeIfNeeded(elapsedMs)` supplies a local completion terminal if a provider has no native lifecycle.
+- `completeIfNeeded(elapsedMs)` supplies a missing presentation terminal only after the engine returned `outcome: "completed"`; it is not an independent success detector.
 - `failIfNeeded(message, elapsedMs)` supplies a safe failure terminal.
+- `cancelIfNeeded(message, elapsedMs)` supplies a safe cancellation terminal.
+- `settleIfNeeded(outcome, message, elapsedMs)` maps `EngineTickResult.outcome` to a missing terminal.
 - `isTerminal()` reports whether the turn has completed, failed, or been cancelled.
+- `getTerminalStatus()` returns the immutable terminal status.
 
-The timeline keeps a bounded number of visible rows, preserves terminal history, and settles any still-running rows after cancellation or failure.
+The timeline keeps a bounded number of visible rows, preserves terminal history, and settles any still-running rows after every turn-scoped terminal.
 
 ## Provider dispatch behavior
 
@@ -122,9 +149,13 @@ Source: [`src/agents/extensions/execution/agent-engine.ts`](../../src/agents/ext
 |---|---|---|
 | OpenAI Codex OAuth | `@openai/codex-sdk` thread `runStreamed()` | Full thread, turn, item, usage, failure, and cancellation lifecycle |
 | Provider API key | Provider HTTP endpoint | Coarse request started/completed/failed lifecycle |
-| No matching credentials | No live provider call | Setup guidance is returned immediately |
+| No matching credentials | No live provider call | A failed outcome and setup guidance are returned immediately |
 
-The built-in Frogger generator is an explicit demo shortcut only: it activates when the prompt contains `frogger`. It is not the generic unauthenticated fallback for other creation prompts.
+All routes obey the same public rule: only `EngineTickResult.outcome === "completed"` is success. Codex requires a completed response candidate plus its provider turn terminal. The non-streaming API-key route requires an accepted HTTP response with non-empty assistant content. Missing credentials, empty successful bodies, premature stream EOF, timeouts, and exhausted retries are failed outcomes; caller abort is cancelled.
+
+The complete Flappy Bird generator is an explicit local route: `flappy bird`, `flappy bird react vite`, or `/flappy` creates `flappy-bird-react-vite/` with 12 runnable React, TypeScript, Vite, Canvas, configuration, styling, and documentation files. The generated game includes deterministic seeded pipes, frame-rate-independent physics, collision and scoring, pause/resume, restart, keyboard/pointer controls, responsive styling, and accessibility affordances.
+
+The single-file Frogger generator remains available only for `frogger`, `frogger demo`, or `/frogger`. Neither game route is a generic unauthenticated fallback for other creation prompts.
 
 ## Context and compaction
 
@@ -207,8 +238,9 @@ Resolves OAuth, API-key, or unauthenticated mode for the selected model. Codex m
 |---|---|
 | `lumi` | Launch the fullscreen interactive shell; falls back to readline when necessary |
 | `lumi --setup` | Launch standalone provider and OAuth setup |
-| `lumi --benchmark` / `-b` | Run the benchmark suite |
-| `lumi --smoke` / `-s` | Run the empirical smoke suite |
+| `lumi --benchmark` / `-b` | Run five hermetic heterogeneous cases, including the 12-file/8-assertion Flappy project workload; exits nonzero if any outcome or assertion fails |
+| `lumi --smoke` / `-s` | Verify the current component manifest and critical runtime contracts; exits nonzero on missing or failed capabilities |
+| `lumi --baseline` | Run smoke, benchmarks, and architecture guardrails, then atomically regenerate the live JSON and Markdown baseline reports |
 | `lumi "prompt"` | Execute a single prompt turn |
 | `/setup` | Open guided provider setup in the interactive shell |
 | `/settings` | Open settings and model selection |
@@ -216,6 +248,13 @@ Resolves OAuth, API-key, or unauthenticated mode for the selected model. Codex m
 | `/clear` | Reset interactive history and frame state |
 | `Esc` during a turn | Cancel the active fullscreen request |
 | `Ctrl+C` | Cancel active work first; exit when no turn is active |
+
+### Benchmark and generated-game contract
+
+- `lumi --benchmark` measures heterogeneous case latency and cases/second. Its Flappy case writes into an isolated temporary root, validates the exact 12-file manifest and pinned toolchain, performs strict semantic TypeScript/TSX compilation, runs gameplay and determinism simulations, verifies React controls/accessibility, and cleans up afterward.
+- Engine fast-path latency, frames/second, and rewind p95 are measured separately by `ArchitectureGuardrailGate`; do not interpret aggregate compiler-heavy benchmark timing as frame latency.
+- `lumi "flappy bird react vite"` or `lumi "/flappy"` materializes the runnable `flappy-bird-react-vite/` project in the active CWD and stages all 12 files in `SessionVfs`.
+- `npm run baseline:update` records all benchmark sub-assertions in the JSON and generated Markdown evidence.
 
 ## Other core subsystems
 

@@ -15,6 +15,8 @@ import { SessionMemoryStore } from "../src/sessions/extensions/memory/session-me
 import { PersistentSessionStore } from "../src/sessions/extensions/persistence/session-store.js";
 import { SessionVfs } from "../src/sessions/extensions/vfs/session-vfs.js";
 import type { ValidatingToolRegistry } from "../src/tooling/extensions/registry/tool-registry.js";
+import type { EngineProgressEvent } from "../src/core/contracts/agent.contracts.js";
+import { AgentActivityTimeline } from "../src/tui/components/agent-activity-timeline.js";
 
 function message(role: SessionMessage["role"], content: string, timestamp: number): SessionMessage {
   return { role, content, timestamp };
@@ -27,6 +29,42 @@ function makeTurns(count: number, size = 24): SessionMessage[] {
     result.push(message("assistant", `assistant-${index} ${"a".repeat(size)}`, index * 2 + 2));
   }
   return result;
+}
+
+function createCompletionTestEngine(options: {
+  sessionId: string;
+  providerBridge: CodexProviderBridge;
+  codex?: Codex;
+  modelName?: string;
+  systemPrompt?: string;
+}): AgentEngine {
+  const config = new AgentConfig({
+    modelName: options.modelName ?? "gpt-5.6-terra",
+    systemPrompt: options.systemPrompt ?? "COMPLETION TEST POLICY",
+    maxTurns: 5,
+    temperature: 0,
+  });
+  const toolRegistry = {
+    ears: {
+      startTimer: () => undefined,
+      endTimer: () => 1,
+    },
+  } as unknown as ValidatingToolRegistry;
+  return new AgentEngine(
+    config,
+    new SessionContext({ sessionId: options.sessionId, cwd: process.cwd() }),
+    new PersistentSessionStore(),
+    toolRegistry,
+    new PromptComposer(),
+    new SessionCompactor({ maxTurnHistory: 5, preserveRecentTurns: 2 }),
+    new ModelResolver(config.modelName),
+    new SessionVfs(),
+    new SessionMemoryStore(),
+    new AgentSlashRouter(),
+    options.providerBridge,
+    undefined,
+    options.codex
+  );
 }
 
 function validateBudgetPolicy(): void {
@@ -270,6 +308,14 @@ async function validateStatefulThreadHandoffs(): Promise<void> {
               yield { type: "turn.started" as const };
               yield {
                 type: "item.completed" as const,
+                item: {
+                  id: `progress-message-${responseSequence}`,
+                  type: "agent_message" as const,
+                  text: `intermediate-frame-${responseSequence}`,
+                },
+              };
+              yield {
+                type: "item.completed" as const,
                 item: { id: `message-${responseSequence}`, type: "agent_message" as const, text: response },
               };
               activeRuns -= 1;
@@ -291,6 +337,8 @@ async function validateStatefulThreadHandoffs(): Promise<void> {
   } as unknown as Codex;
   const providerBridge = {
     resolveProviderAuth: async () => ({ headers: {}, authType: "codex-oauth" as const }),
+    resolveProviderName: () => "openai",
+    getDefaultEndpointForModel: () => "https://api.openai.com/v1/chat/completions",
   } as unknown as CodexProviderBridge;
   const toolRegistry = {
     ears: {
@@ -323,10 +371,12 @@ async function validateStatefulThreadHandoffs(): Promise<void> {
     fakeCodex
   );
 
-  await Promise.all([
+  const concurrentResults = await Promise.all([
     engine.tick({ prompt: "turn one" }),
     engine.tick({ prompt: "turn two" }),
   ]);
+  assert.deepEqual(concurrentResults.map((result) => result.outcome), ["completed", "completed"]);
+  assert.deepEqual(concurrentResults.map((result) => result.response), ["response-1", "response-2"]);
   assert.equal(maximumConcurrentRuns, 1);
   assert.equal(promptsByThread.length, 1);
   assert.match(promptsByThread[0][0], /^LUMI-THREAD\/1/);
@@ -371,6 +421,335 @@ async function validateStatefulThreadHandoffs(): Promise<void> {
   assert.match(promptsByThread.at(-1)?.[0] ?? "", /keep public APIs stable/);
 }
 
+async function validateIncompleteCodexStreamIsNotCompletion(): Promise<void> {
+  let attemptCount = 0;
+  const fakeCodex = {
+    startThread: () => ({
+      runStreamed: async () => ({
+        events: (async function* () {
+          attemptCount += 1;
+          yield { type: "turn.started" as const };
+          yield {
+            type: "item.completed" as const,
+            item: {
+              id: `intermediate-message-${attemptCount}`,
+              type: "agent_message" as const,
+              text: "intermediate response frame",
+            },
+          };
+          // A disconnected stream can end here. Without turn.completed this
+          // message is progress, not a successfully completed agent turn.
+        })(),
+      }),
+    }),
+  } as unknown as Codex;
+  const providerBridge = {
+    resolveProviderAuth: async () => ({ headers: {}, authType: "codex-oauth" as const }),
+  } as unknown as CodexProviderBridge;
+  const progressEvents: Array<{ phase: string; status: string }> = [];
+  const engine = createCompletionTestEngine({
+    sessionId: "incomplete-stream-test",
+    providerBridge,
+    codex: fakeCodex,
+    modelName: "gpt-5.6-luna",
+  });
+
+  const result = await engine.tick({
+    prompt: "finish the implementation",
+    onProgress: (event) => progressEvents.push(event),
+  });
+
+  assert.equal(attemptCount, 2);
+  assert.equal(result.outcome, "failed");
+  assert.notEqual(result.response, "intermediate response frame");
+  assert.match(result.response, /Codex stream ended before turn completion/);
+  assert.equal(
+    progressEvents.some((event) => event.phase === "completed" && event.status === "completed"),
+    false
+  );
+  assert.equal(
+    progressEvents.some((event) => event.phase === "failed" && event.status === "failed"),
+    true
+  );
+}
+
+async function validateRetryHasOneOrderedTerminal(): Promise<void> {
+  let runCount = 0;
+  const fakeCodex = {
+    startThread: () => ({
+      runStreamed: async () => {
+        const currentRun = ++runCount;
+        return {
+          events: (async function* () {
+            yield { type: "turn.started" as const };
+            yield {
+              type: "item.completed" as const,
+              item: {
+                id: `message-${currentRun}`,
+                type: "agent_message" as const,
+                text: currentRun === 1 ? "intermediate retry frame" : "final response",
+              },
+            };
+            if (currentRun === 1) {
+              yield {
+                type: "turn.failed" as const,
+                error: { message: "transient provider disconnect" },
+              };
+              return;
+            }
+            yield {
+              type: "turn.completed" as const,
+              usage: {
+                input_tokens: 10,
+                cached_input_tokens: 0,
+                cache_write_input_tokens: 0,
+                output_tokens: 3,
+                reasoning_output_tokens: 0,
+              },
+            };
+          })(),
+        };
+      },
+    }),
+  } as unknown as Codex;
+  const providerBridge = {
+    resolveProviderAuth: async () => ({ headers: {}, authType: "codex-oauth" as const }),
+  } as unknown as CodexProviderBridge;
+  const progressEvents: EngineProgressEvent[] = [];
+  const engine = createCompletionTestEngine({
+    sessionId: "retry-terminal-test",
+    providerBridge,
+    codex: fakeCodex,
+    systemPrompt: "RETRY POLICY",
+  });
+
+  const result = await engine.tick({
+    prompt: "retry safely",
+    onProgress: (event) => progressEvents.push(event),
+  });
+
+  assert.equal(runCount, 2);
+  assert.equal(result.outcome, "completed");
+  assert.equal(result.response, "final response");
+  for (let index = 1; index < progressEvents.length; index++) {
+    assert.ok(progressEvents[index].sequence > progressEvents[index - 1].sequence);
+  }
+  const terminalEvents = progressEvents.filter((event) =>
+    event.metadata?.scope === "turn" &&
+    (event.status === "completed" || event.status === "failed" || event.status === "cancelled")
+  );
+  assert.equal(terminalEvents.length, 1);
+  assert.equal(terminalEvents[0].status, "completed");
+  assert.equal(
+    progressEvents.some((event) =>
+      event.activityId === "codex:attempt:1" &&
+      event.metadata?.scope === "activity" &&
+      event.status === "failed"
+    ),
+    true
+  );
+}
+
+async function validateTurnCompletedWithoutMessageFails(): Promise<void> {
+  let runCount = 0;
+  const fakeCodex = {
+    startThread: () => ({
+      runStreamed: async () => ({
+        events: (async function* () {
+          runCount += 1;
+          yield { type: "turn.started" as const };
+          yield {
+            type: "turn.completed" as const,
+            usage: {
+              input_tokens: 10,
+              cached_input_tokens: 0,
+              cache_write_input_tokens: 0,
+              output_tokens: 0,
+              reasoning_output_tokens: 0,
+            },
+          };
+        })(),
+      }),
+    }),
+  } as unknown as Codex;
+  const providerBridge = {
+    resolveProviderAuth: async () => ({ headers: {}, authType: "codex-oauth" as const }),
+  } as unknown as CodexProviderBridge;
+  const progressEvents: EngineProgressEvent[] = [];
+  const engine = createCompletionTestEngine({
+    sessionId: "empty-codex-response-test",
+    providerBridge,
+    codex: fakeCodex,
+    systemPrompt: "EMPTY POLICY",
+  });
+
+  const result = await engine.tick({
+    prompt: "return a response",
+    onProgress: (event) => progressEvents.push(event),
+  });
+  assert.equal(runCount, 2);
+  assert.equal(result.outcome, "failed");
+  assert.match(result.response, /without a final response/);
+  assert.equal(
+    progressEvents.some((event) => event.metadata?.scope === "turn" && event.status === "completed"),
+    false
+  );
+}
+
+async function validateCancellationHasOneTerminal(): Promise<void> {
+  let runCount = 0;
+  const fakeCodex = {
+    startThread: () => ({
+      runStreamed: async (_prompt: string, options: { signal?: AbortSignal }) => ({
+        events: (async function* () {
+          runCount += 1;
+          yield { type: "turn.started" as const };
+          await new Promise<never>((_resolve, reject) => {
+            if (options.signal?.aborted) {
+              reject(new Error("aborted"));
+              return;
+            }
+            options.signal?.addEventListener("abort", () => reject(new Error("aborted")), { once: true });
+          });
+        })(),
+      }),
+    }),
+  } as unknown as Codex;
+  const providerBridge = {
+    resolveProviderAuth: async () => ({ headers: {}, authType: "codex-oauth" as const }),
+  } as unknown as CodexProviderBridge;
+  const progressEvents: EngineProgressEvent[] = [];
+  const controller = new AbortController();
+  const engine = createCompletionTestEngine({
+    sessionId: "cancel-terminal-test",
+    providerBridge,
+    codex: fakeCodex,
+    systemPrompt: "CANCEL POLICY",
+  });
+
+  const resultPromise = engine.tick({
+    prompt: "cancel this turn",
+    signal: controller.signal,
+    onProgress: (event) => progressEvents.push(event),
+  });
+  setTimeout(() => controller.abort(), 5);
+  const result = await resultPromise;
+
+  assert.equal(runCount, 1);
+  assert.equal(result.outcome, "cancelled");
+  const terminalEvents = progressEvents.filter((event) =>
+    event.metadata?.scope === "turn" &&
+    (event.status === "completed" || event.status === "failed" || event.status === "cancelled")
+  );
+  assert.equal(terminalEvents.length, 1);
+  assert.equal(terminalEvents[0].status, "cancelled");
+}
+
+async function validateMissingCredentialsDoNotRetry(): Promise<void> {
+  let resolutionCount = 0;
+  const providerBridge = {
+    resolveProviderAuth: async () => {
+      resolutionCount += 1;
+      return { headers: {}, authType: "none" as const };
+    },
+  } as unknown as CodexProviderBridge;
+  const progressEvents: EngineProgressEvent[] = [];
+  const engine = createCompletionTestEngine({
+    sessionId: "missing-auth-test",
+    providerBridge,
+    modelName: "missing-auth-model",
+    systemPrompt: "AUTH POLICY",
+  });
+
+  const result = await engine.tick({
+    prompt: "requires a provider",
+    onProgress: (event) => progressEvents.push(event),
+  });
+  assert.equal(resolutionCount, 1);
+  assert.equal(result.outcome, "failed");
+  assert.equal(
+    progressEvents.filter((event) => event.metadata?.scope === "turn" && event.status === "failed").length,
+    1
+  );
+}
+
+function validateTimelineTerminalIsExactlyOnce(): void {
+  const timeline = new AgentActivityTimeline({ model: "test-model", startedAt: 0 });
+  timeline.update({
+    activityId: "codex:item:message:turn",
+    phase: "completed",
+    status: "completed",
+    message: "Item complete",
+    timestamp: 1,
+    sequence: 1,
+    metadata: { source: "codex-sdk", scope: "activity" },
+  });
+  assert.equal(timeline.isTerminal(), false);
+
+  timeline.update({
+    activityId: "codex:turn",
+    phase: "failed",
+    status: "failed",
+    message: "Turn failed",
+    timestamp: 2,
+    sequence: 2,
+    metadata: { source: "codex-sdk", scope: "turn" },
+  });
+  assert.equal(timeline.getTerminalStatus(), "failed");
+
+  timeline.update({
+    activityId: "codex:turn",
+    phase: "completed",
+    status: "completed",
+    message: "Late completion",
+    timestamp: 3,
+    sequence: 3,
+    metadata: { source: "codex-sdk", scope: "turn" },
+  });
+  assert.equal(timeline.getTerminalStatus(), "failed");
+}
+
+async function validateEmptyApiResponseIsNotCompletion(): Promise<void> {
+  const originalFetch = globalThis.fetch;
+  let requestCount = 0;
+  globalThis.fetch = (async () => {
+    requestCount += 1;
+    return new Response(JSON.stringify({ choices: [{ message: { content: "   " } }] }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }) as typeof fetch;
+  const progressEvents: EngineProgressEvent[] = [];
+
+  try {
+    const providerBridge = {
+      resolveProviderAuth: async () => ({ headers: {}, authType: "api-key" as const }),
+      resolveProviderName: () => "openai",
+      getDefaultEndpointForModel: () => "https://api.openai.com/v1/chat/completions",
+    } as unknown as CodexProviderBridge;
+    const engine = createCompletionTestEngine({
+      sessionId: "empty-api-response-test",
+      providerBridge,
+      modelName: "api-empty-model",
+      systemPrompt: "API POLICY",
+    });
+
+    const result = await engine.tick({
+      prompt: "return content",
+      onProgress: (event) => progressEvents.push(event),
+    });
+    assert.equal(result.outcome, "failed");
+    assert.equal(requestCount, 2);
+    assert.match(result.response, /without assistant content/);
+    assert.equal(
+      progressEvents.some((event) => event.metadata?.scope === "turn" && event.status === "completed"),
+      false
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
 async function validateStatelessMultiTurnPayloads(): Promise<void> {
   const requests: Array<Record<string, unknown>> = [];
   const originalFetch = globalThis.fetch;
@@ -390,6 +769,8 @@ async function validateStatelessMultiTurnPayloads(): Promise<void> {
         headers: { Authorization: "Bearer test" },
         authType: "api-key" as const,
       }),
+      resolveProviderName: () => "openai",
+      getDefaultEndpointForModel: () => "https://api.openai.com/v1/chat/completions",
     } as unknown as CodexProviderBridge;
     const toolRegistry = {
       ears: {
@@ -433,6 +814,66 @@ async function validateStatelessMultiTurnPayloads(): Promise<void> {
   assert.equal(requests[0].max_tokens, 4_096);
 }
 
+async function validateEnvironmentAuthAndNoPromptHijack(): Promise<void> {
+  const { CodexProviderBridge } = await import("../src/agents/extensions/resolution/codex-provider-bridge.js");
+  const { EnvironmentKeyResolver } = await import("../src/agents/extensions/resolution/environment-key-resolver.js");
+  const { CodexOAuthManager } = await import("../src/agents/extensions/resolution/codex-oauth-manager.js");
+
+  const envResolver = new EnvironmentKeyResolver();
+  const oauthMgr = new CodexOAuthManager();
+  const bridge = new CodexProviderBridge(oauthMgr, undefined, envResolver);
+
+  // Test provider name and endpoint resolution
+  assert.equal(bridge.resolveProviderName("claude-3-5-sonnet"), "anthropic");
+  assert.equal(bridge.resolveProviderName("gemini-1.5-pro"), "google");
+  assert.equal(bridge.resolveProviderName("deepseek-v3"), "deepseek");
+  assert.equal(bridge.resolveProviderName("openrouter/meta-llama"), "openrouter");
+  assert.equal(bridge.resolveProviderName("llama3:latest"), "ollama");
+
+  assert.equal(bridge.getDefaultEndpointForModel("openrouter/anthropic/claude-3.5-sonnet"), "https://openrouter.ai/api/v1/chat/completions");
+  assert.equal(bridge.getDefaultEndpointForModel("deepseek-v3"), "https://api.deepseek.com/v1/chat/completions");
+  assert.equal(bridge.getDefaultEndpointForModel("llama3:latest"), "http://localhost:11434/v1/chat/completions");
+
+  // Test environment variable authentication resolution
+  process.env.OPENAI_API_KEY = "sk-test-env-key-for-lumi";
+  process.env.ANTHROPIC_API_KEY = "sk-ant-test-key";
+  process.env.GEMINI_API_KEY = "AIzaSyTestKey";
+  process.env.DEEPSEEK_API_KEY = "sk-ds-test-key";
+  process.env.OPENROUTER_API_KEY = "sk-or-test-key";
+
+  try {
+    const authOpenAI = await bridge.resolveProviderAuth("gpt-5.6-terra");
+    assert.equal(authOpenAI.authType, "api-key");
+    assert.equal(authOpenAI.headers.Authorization, "Bearer sk-test-env-key-for-lumi");
+
+    const authAnthropic = await bridge.resolveProviderAuth("claude-3-5-sonnet");
+    assert.equal(authAnthropic.authType, "api-key");
+    assert.equal(authAnthropic.headers.Authorization, "Bearer sk-ant-test-key");
+
+    const authGemini = await bridge.resolveProviderAuth("gemini-1.5-pro");
+    assert.equal(authGemini.authType, "api-key");
+    assert.equal(authGemini.headers.Authorization, "Bearer AIzaSyTestKey");
+
+    const authDeepSeek = await bridge.resolveProviderAuth("deepseek-v3");
+    assert.equal(authDeepSeek.authType, "api-key");
+    assert.equal(authDeepSeek.headers.Authorization, "Bearer sk-ds-test-key");
+
+    const authOpenRouter = await bridge.resolveProviderAuth("openrouter/anthropic/claude-3.5-sonnet");
+    assert.equal(authOpenRouter.authType, "api-key");
+    assert.equal(authOpenRouter.headers.Authorization, "Bearer sk-or-test-key");
+    assert.equal(authOpenRouter.headers["HTTP-Referer"], "https://lumi.agent");
+
+    const authOllama = await bridge.resolveProviderAuth("llama3:latest");
+    assert.equal(authOllama.authType, "api-key");
+  } finally {
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    delete process.env.DEEPSEEK_API_KEY;
+    delete process.env.OPENROUTER_API_KEY;
+  }
+}
+
 async function main(): Promise<void> {
   validateBudgetPolicy();
   validateTurnAwareCompaction();
@@ -441,8 +882,16 @@ async function main(): Promise<void> {
   validateRandomizedContextInvariants();
   validateDurableTranscriptAndRewind();
   validatePromptBoundaries();
+  validateTimelineTerminalIsExactlyOnce();
   await validateStatefulThreadHandoffs();
+  await validateIncompleteCodexStreamIsNotCompletion();
+  await validateRetryHasOneOrderedTerminal();
+  await validateTurnCompletedWithoutMessageFails();
+  await validateCancellationHasOneTerminal();
+  await validateMissingCredentialsDoNotRetry();
   await validateStatelessMultiTurnPayloads();
+  await validateEmptyApiResponseIsNotCompletion();
+  await validateEnvironmentAuthAndNoPromptHijack();
   console.log("Context validation passed (budgets, compaction, persistence, concurrency, and provider handoffs).\n");
 }
 

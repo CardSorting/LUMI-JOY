@@ -8,6 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added (Live Runtime Baselines)
+
+- Added `lumi --baseline` and `npm run baseline:update` to run capability smoke, hermetic benchmarks, and architecture guardrails before atomically generating `docs/LIVE_BASELINE.json`, `docs/BENCHMARK_REPORT.md`, and `docs/GRAND_ARCHITECTURAL_AUDIT.md` from one live worktree run.
+- Added measured aggregate duration and throughput to the benchmark result, real snapshot mutation/rewind measurement, warmed p95 rewind guardrails, and enforced latency, throughput, zero-GC slab, composition, and import-boundary checks.
+- Added a runtime-baseline regression harness that validates the Pass 192 manifest, report schema, generation semantics, and failure propagation without mutating checked-in reports.
+- Added a workspace-wide documentation validator that cross-checks current summaries and generated reports against the live JSON, verifies every relative Markdown link, preserves historical-measurement provenance, and rejects stale phase-ADR benchmark guidance.
+- Replaced the shallow Frogger keyword benchmark with a complete, temp-isolated 12-file Flappy Bird React + TypeScript + Vite synthesis workload covering strict semantic compilation, executable physics/scoring/collision/pause/restart simulation, deterministic seeds, Canvas animation lifecycle, keyboard and pointer controls, responsive styling, accessibility, exact manifest integrity, and disk containment.
+- Added explicit `flappy bird react vite` and `/flappy` local generation routes that materialize the runnable project and stage every file in the session VFS.
+- Split heterogeneous benchmark case timing from engine fast-path guardrail terminology so compiler-heavy application synthesis is reported as case latency/cases per second rather than turn latency/frames per second.
+
+### Fixed (Modern Smoke and Benchmark Completion)
+
+- Replaced the hard-coded 105-pass smoke message with nine evidence-bearing capability checks across an exact typed 142-component Pass 192 manifest, explicit frame/turn completion, snapshot rewind, fail-closed completion gating, command safety, bounded output, and integrity contracts.
+- Made roadmap completion gates reject unregistered, empty, optional-only, unevaluated, and failed required criteria instead of allowing vacuous or unevaluated success.
+- Exposed the full factory composition on `LumiMonolith`, removed unconditional smoke success, and made smoke, benchmark, baseline, and top-level CLI failures exit nonzero.
+- Made benchmark warmup and test prompts hermetic so provider credentials or network dispatch cannot silently change completion, and replaced the simulated rewind prompt with an actual snapshot rewind operation.
+- Made empty benchmark suites fail closed and based throughput on unrounded measured case time with warmup excluded. Added mutation coverage proving a corrupted Flappy animation contract is rejected.
+
 ### Added (Token-Aware Multi-Turn Context Lifecycle)
 
 - **Model-aware context admission**: Connected live provider requests to model-catalog window limits, output/safety reserves, proactive compaction thresholds, and a final turn-aware token guard.
@@ -21,13 +39,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added (Structured Agent Activity Streaming)
 
 - **Typed progress lifecycle**: Extended `EngineTickInput` with local cancellation and structured `onProgress` events carrying stable activity identity, lifecycle status, safe detail, timestamps, elapsed time, ordering, and metadata.
-- **Codex SDK activity adapter**: Added `CodexProgressAdapter` to preserve thread/turn/item lifecycle identity, deduplicate updates, expose readable reasoning summaries, plan counts, safe commands, file changes, MCP/web activity, response readiness, usage totals, and explicit terminal states.
+- **Codex SDK activity adapter**: Added `CodexProgressAdapter` to preserve thread/turn/item lifecycle identity, deduplicate updates, expose readable reasoning summaries, plan counts, safe commands, file changes, MCP/web activity, response-candidate state, usage totals, and explicit terminal states.
 - **Persistent terminal timeline**: Added `AgentActivityTimeline` and integrated it into fullscreen and fallback interactive sessions with elapsed time, bounded history, pinned turn summary, active animation, familiar terminal-state icons, and retained audit history.
 - **Progress security boundary**: Added shared `sanitizeProgressText()` defense-in-depth redaction for authorization headers, provider keys, GitHub tokens, JWTs, URL credentials, secret query parameters, environment assignments, and CLI flags.
 - **Architecture documentation**: Published the canonical [Agent Activity Streaming Strategy](.wiki/agent/streaming-activity-strategy.md) and [ADR-082](.wiki/adr/ADR-082-structured-agent-activity-streaming.md).
 
 ### Fixed (Model Dispatch and Interactive Execution)
 
+- Hardened turn completion as an exactly-once commit: completed message items remain candidates until `turn.completed`, retry failures remain nonterminal, progress sequences span retries, and late terminal events cannot rewrite the outcome.
+- Added explicit `EngineTickResult.outcome` values so resolved failures and cancellations cannot masquerade as successful frames.
+- Reclassified premature stream EOF, empty HTTP success content, and provider completion without a final assistant message as failures with deterministic regression coverage.
 - Routed Codex OAuth turns through the official `@openai/codex-sdk` streamed thread API rather than treating subscription OAuth as a direct API-key request.
 - Made guided Codex setup launch the system browser on a best-effort basis while always exposing a clickable/copyable login URL, `O` retry, automatic localhost callback, and manual code/URL fallback.
 - Reused valid existing Codex credentials without forcing another login and persisted the provider's selected default model.
@@ -187,7 +208,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **OpenAI Codex OAuth Manager (`packages/codemarie`)**: Added `CodexOAuthManager` ([codex-oauth-manager.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/resolution/codex-oauth-manager.ts)) for PKCE authorization URL generation, token exchange, automatic token refresh, and `ChatGPT-Account-Id` claims extraction (`ADR-048`).
 - **Codex Provider Bridge (`packages/codemarie`)**: Added `CodexProviderBridge` ([codex-provider-bridge.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/resolution/codex-provider-bridge.ts)) for identifying Codex model provider families and injecting Bearer OAuth access tokens & `ChatGPT-Account-Id` headers alongside standard API key providers (`ADR-048`).
 - **Interactive Model Provider & OAuth Setup Wizard (`lumi --setup`)**: Added `SetupWizard` ([setup-wizard.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/agents/extensions/setup/setup-wizard.ts)) for interactive provider status audits, API key entry (Anthropic, OpenAI, Gemini, DeepSeek), local HTTP OAuth callback redirect listening (`http://localhost:1455/auth/callback`), custom proxy endpoint setup, and connection verification diagnostics.
-- **Automated Engine Benchmark & Throughput Evaluation Harness (`lumi --benchmark`)**: Integrated `MasterBenchmarkOrchestrator` & `MonolithBenchmarkEvaluator` CLI suite, achieving **$0.24\text{ ms}$ mean turn tick latency** and **$3,759.4\text{ turns/sec}$ ($225.5k\text{ turns/min}$)** throughput.
+- **Automated Engine Benchmark & Throughput Evaluation Harness (`lumi --benchmark`)**: Integrated `MasterBenchmarkOrchestrator` & `MonolithBenchmarkEvaluator`; the recorded **$0.24\text{ ms}$ / $3,759.4\text{ turns/sec}$** figures are acceptance-time historical measurements. Current values are generated in `docs/LIVE_BASELINE.json`.
 - **Comprehensive Benchmark Field Note Document**: Published field note document ([BENCHMARK-PERFORMANCE-FIELD-NOTE.md](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/field-notes/BENCHMARK-PERFORMANCE-FIELD-NOTE.md)) detailing empirical throughput equations, latency metrics, and reproducibility guides.
 - **Interactive CLI REPL & Single-Turn Prompt CLI Router (`lumi`)**: Added interactive terminal REPL loop, prompt argument execution (`lumi "prompt"`), `/setup` command, and `/stats` router.
 - **Monolith Phase 31 Master Subsystem Synthesis**: Completed 105-pass master synthesis verification suite confirming total OpenAI Codex OAuth & provider bridge feature absorption with zero-barrel OOP class extension (`ADR-048`).

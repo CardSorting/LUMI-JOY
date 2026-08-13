@@ -2,6 +2,8 @@
 
 This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW workspace.
 
+ADRs preserve decision-time context and acceptance evidence; their embedded commands and fixed measurements are historical unless a document explicitly labels a current refinement. For current verification, use `npm run check`, `npm test`, `npm run build`, and the feature-specific commands in the [Contributing Guide](../../CONTRIBUTING.md). [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json) is the current measurement authority, with [`docs/BENCHMARK_REPORT.md`](../../docs/BENCHMARK_REPORT.md) and [`docs/GRAND_ARCHITECTURAL_AUDIT.md`](../../docs/GRAND_ARCHITECTURAL_AUDIT.md) as synchronized generated views.
+
 ## Active ADR Index
 
 | ADR ID | Title | Status | Date | Core Domain |

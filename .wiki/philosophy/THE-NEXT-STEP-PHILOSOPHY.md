@@ -7,13 +7,15 @@
 
 ---
 
+> **Evidence status (updated August 12, 2026 MDT / August 13 UTC):** This brief originated with the August 9 architecture experiment. Its original arithmetic remains below as historical rationale. Current verification is defined by [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json): Pass 192 composition 142/142, smoke 9/9, benchmark 5/5, Flappy project assertions 8/8, and guardrails 6/6. Host-specific timings must be regenerated rather than treated as permanent constants.
+
 ## 📌 Executive Summary
 
 For years, the software engineering industry approached AI agent runtime design through the lens of traditional enterprise web development—building microservice RPC queues, asynchronous event buses, multi-layer file locks, and JSON re-parsing abstractions ("framework soup"). The widespread assumption was that achieving sub-millisecond execution speeds for complex agentic reasoning loops would require hardware breakthroughs, custom TPU silicon, or novel physical primitives.
 
 **LUMI-NEW** proves that this assumption was fundamentally flawed. The bottleneck was never hardware compute capacity—it was **software friction**.
 
-By reframing an AI agent runtime not as a web application, but as a **Deterministic Game Engine Kernel** operating directly over a **16MB Zero-GC Contiguous ArrayBuffer Slab** with **$O(1)$ Atomic Pointer Snapshot Rewinding**, **LUMI-NEW** achieves **$0.22\text{ ms}$ turn tick latency** and **$4,132.2\text{ turns/second}$**.
+By reframing an AI agent runtime not as a web application, but as a **Deterministic Game Engine Kernel** operating directly over a **16MB Zero-GC Contiguous ArrayBuffer Slab** with **$O(1)$ snapshot restoration**, **LUMI-NEW** enforces a local fast-path mean below **$1.0\text{ ms}$**, throughput of at least **$1,000$ frames/second**, and warmed rewind p95 below **$0.1\text{ ms}$**. The latest recorded host observations are **$0.13\text{ ms}$**, **$7,787.13$ frames/second**, and **$0.018\text{ ms}$ p95**, respectively.
 
 This document details the architectural shift, mathematical friction breakdown, 3-generation evolution matrix, four core philosophical tenets, and future outlook for high-frequency agentic intelligence.
 
@@ -26,10 +28,10 @@ This document details the architectural shift, mathematical friction breakdown, 
 | **Primary Abstraction** | Stateless REST API wrappers (LangChain, AutoGPT) | Multi-package RPC monorepos (`pi-main`) | **Deterministic Game Engine Kernel** (`tick()`) |
 | **Execution Loop** | Blocking sequential HTTP calls | Loose async event handlers & IPC message queues | **Frame-perfect tick lifecycle** (`pre -> exec -> post`) |
 | **State Storage** | File system JSON / External DB | Distributed state objects & diff trees | **Contiguous 16MB ArrayBuffer Slab** (`ArenaAllocator`) |
-| **State Rewind** | Re-instantiating agents from scratch | JSON text re-parsing & file lock checks ($285\text{ ms}$) | **$O(1)$ Atomic Pointer Reassignment** (**$0.04\text{ ms}$**) |
+| **State Rewind** | Re-instantiating agents from scratch | JSON text re-parsing & file lock checks | **$O(1)$ in-memory restoration** (**$0.018\text{ ms}$ latest warmed p95; $<0.1\text{ ms}$ required**) |
 | **Memory Allocation** | Dynamic heap allocation per prompt | V8 Heap Object graphs with GC sweeps | **Zero-GC pre-allocated contiguous memory slab** |
-| **Mean Turn Latency** | $>500.00\text{ ms}$ | $14.20\text{ ms}$ | **$0.22\text{ ms}$ ($64.5\times$ Speedup)** |
-| **Execution Throughput** | $<2.0\text{ turns/sec}$ | $70.4\text{ turns/sec}$ | **$4,132.2\text{ turns/sec}$ ($58.7\times$ Boost)** |
+| **Mean Local Fast-Path Latency** | $>500.00\text{ ms}$ | $14.20\text{ ms}$ | **$0.13\text{ ms}$ latest observation; $<1.0\text{ ms}$ enforced** |
+| **Local Fast-Path Throughput** | $<2.0\text{ turns/sec}$ | $70.4\text{ turns/sec}$ | **$7,787.13$ frames/second latest observation; $\geq1,000$ enforced** |
 
 ---
 
@@ -48,7 +50,7 @@ Where:
 ### 1. Legacy Monorepo Latency (Gen 2: `pi-main`)
 $$L_{\text{total}} = 1.20\text{ ms} + 4.50\text{ ms} + 5.80\text{ ms} + 2.70\text{ ms} = \mathbf{14.20\text{ ms}}$$
 
-### 2. LUMI-NEW Engine Latency (Gen 3: William Andrew Cruz)
+### 2. August 9 Acceptance-Time Latency Model (Historical)
 - **Direct Synchronous Function Dispatch**: $L_{\text{dispatch}} \to 0.07\text{ ms}$ (bypasses network queues)
 - **Pre-allocated 16MB ArrayBuffer Slab**: $L_{\text{gc}} \to 0.00\text{ ms}$ (zero V8 GC pauses during turn execution)
 - **Atomic Pointer State Reassignment**: $L_{\text{parse}} \to 0.04\text{ ms}$ (zero JSON parsing)
@@ -74,7 +76,7 @@ $$\text{Speedup Factor } = \frac{14.20\text{ ms}}{0.22\text{ ms}} = \mathbf{64.5
 
 1. **Zero-Friction Execution**: Eliminate runtime garbage collection sweeps, dynamic heap allocations, and microservice RPC serialization.
 2. **Contiguous Memory Bus Alignment**: Keep active turn state, memory facts, and tool schemas inside pre-allocated contiguous ArrayBuffer slabs (`ArenaAllocator`).
-3. **State-Manifold Determinism**: Treat session state as an immutable pointer manifold where snapshot time-travel is an $O(1)$ memory offset reassignment ($0.04\text{ ms}$).
+3. **State-Manifold Determinism**: Treat session state as an immutable snapshot manifold where rewind restores frame and message state in $O(1)$ operations; the live gate requires a warmed p95 below $0.1\text{ ms}$.
 4. **Permissive Community Ownership**: Dedicate breakthroughs to the public prior-art record under permissive open-source terms (Apache 2.0 with Defensive Patent Termination) so no corporate entity can lock away community innovations.
 
 ---
@@ -82,20 +84,20 @@ $$\text{Speedup Factor } = \frac{14.20\text{ ms}}{0.22\text{ ms}} = \mathbf{64.5
 ## 🌐 Future Outlook: What Changes Going Forward
 
 ### 1. Ultra-High Frequency Agentic Reasoning
-Achieving **$4,132.2\text{ turns/second}$** enables agents to execute thousands of internal reasoning ticks in milliseconds. Rather than generating text blindly, agents can simulate execution, test hypotheses, and correct mistakes before delivering final answers to the user.
+Sustaining a guarded local fast path of at least **$1,000$ frames/second**—with **$7,787.13$ frames/second** observed in the latest recorded run—enables dense local state transitions. This figure describes deterministic local benchmark frames, not provider-backed reasoning or model token generation.
 
 ### 2. Monte Carlo Tree Search (MCTS) for Software Engineering
-With $O(1)$ state pointer rewinding ($0.04\text{ ms}$), agents can branch into hundreds of parallel execution paths, evaluate outcome quality, and instantly rewind without disk or memory overhead—bringing game-tree search algorithms directly into code generation engines.
+With $O(1)$ state restoration under a **$0.1\text{ ms}$ warmed-p95 guardrail**, agents can branch across local execution paths, evaluate outcome quality, and rewind without transcript re-parsing—bringing game-tree techniques into code generation engines.
 
-### 3. Sub-Millisecond Code & Application Synthesis
-Generating a full 60FPS Canvas HTML5/JS app in **$0.43\text{ ms}$** demonstrates that when template assembly and AST construction run entirely in contiguous memory without external dependency lookups, runtime execution speed approaches hardware bus limits.
+### 3. Complete, Verifiable Application Synthesis
+The current benchmark generates a **12-file Flappy Bird React + TypeScript + Vite project** and validates **8/8 assertions** covering its manifest, pinned toolchain, strict semantic compilation, executable physics and state transitions, deterministic seeds, React animation cleanup, controls, responsiveness, accessibility, and temp-root containment. The latest host run completed this intentionally compiler-heavy case in **$354.20\text{ ms}$**; it is reported as heterogeneous workload latency, not as engine turn latency.
 
 ### 5. Second-Order Effects on Global Open Research
 The long-term impact of releasing a sub-millisecond, zero-GC agent runtime into the public domain extends far beyond software benchmarks:
 
 1. **Democratization of Supercomputer-Class Agent Search**:
    - Complex agent reasoning techniques (such as Monte Carlo Tree Search, self-reflection, and multi-branch exploration) previously required expensive cloud server clusters to handle memory expansion and IPC latency.
-   - Sub-millisecond execution ($0.22\text{ ms}$) allows individual developers and researchers to run thousands of agent simulation ticks per second locally on standard laptops and micro-servers.
+   - Enforced sub-millisecond local frame execution allows individual developers and researchers to run dense deterministic simulations locally; host-specific capacity must be established from a fresh baseline.
 
 2. **Open-Access Foundation for Autonomous Robotics**:
    - Eliminating Garbage Collection pauses removes the primary software barrier preventing high-level LLM agents from controlling physical hardware, drone flight controllers, and robotics systems in hard real-time.

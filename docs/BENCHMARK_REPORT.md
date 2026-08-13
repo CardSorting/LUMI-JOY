@@ -1,85 +1,53 @@
-# LUMI Monolith Engine — Benchmark & Connection Resilience Performance Specification
+# LUMI Live Benchmark Baseline
 
-> **Benchmark Status**: `PASSED` (100% Test Pass Rate)  
-> **Timestamp**: August 13, 2026  
-> **Engine Version**: `v0.1.0`  
-> **Platform Target**: Mac Apple Silicon / Node.js Runtime  
-> **Command**: `node dist/index.js --benchmark`
+> **Live Baseline Status**: `PASSED`
+> **Generated At**: 2026-08-13T04:45:51.966Z
+> **Evolution Baseline**: Pass 192 + runtime hardening
+> **Repository Version**: `0.1.0`
+> **Runtime**: v23.5.0 · darwin/arm64
+> **Regenerate**: `npm run baseline:update`
 
----
+This report is generated from the current worktree by `lumi --baseline`. Do not edit measured values manually; the machine-readable source is [`LIVE_BASELINE.json`](LIVE_BASELINE.json).
 
-## Executive Performance Highlights
+## Live Performance Summary
 
-| Metric | Target SLA | Measured Performance | Compliance |
-| :--- | :--- | :--- | :--- |
-| **Mean Turn Latency** | `< 1.0 ms` | **0.23 ms** | `[PASS]` |
-| **Execution Throughput** | `> 1,000 turns/sec` | **3,937.01 turns/sec** (**236,221 turns/min**) | `[PASS]` |
-| **Self-Healing Failover Retry** | In-Turn Instant | **Immediate In-Turn Fallback Retry** | `[PASS]` |
-| **Snapshot State Rewind Latency** | `< 0.1 ms` | **0.12 ms** ($O(1)$ Slab Rollback) | `[PASS]` |
-| **VFS Perception & Reading Latency** | `< 0.1 ms` | **0.03 ms** | `[PASS]` |
-| **Slash Command Router Latency** | `< 0.1 ms` | **0.06 ms** | `[PASS]` |
-| **Contiguous Memory Slab** | `16,777,216 bytes` | **16MB Zero-GC ArrayBuffer** | `[PASS]` |
-| **Benchmark Suite Pass Rate** | `100%` | **100% (5 / 5 Tests Passed)** | `[PASS]` |
+| Metric | Live Measurement | Status |
+|---|---:|---|
+| Benchmark cases | 5/5 | PASSED |
+| Pass rate | 100.0% | PASS |
+| Mean heterogeneous case latency | 70.91 ms | observed |
+| Total suite duration | 354.56 ms | observed |
+| Workload throughput | 14.10 cases/sec | observed |
+| Per-minute throughput | 846 cases/min | observed |
 
----
+## Test Cases
 
-## 1. Detailed Benchmark Test Case Breakdown
+| ID | Case | Outcome | Latency | Assertions | Status |
+|---|---|---|---:|---:|---|
+| TC-01 | Turn Tick Latency & Fact Storage | completed | 0.16 ms | — | PASS |
+| TC-02 | VFS File Perception & Reading | completed | 0.06 ms | — | PASS |
+| TC-03 | Complete Flappy Bird React + TypeScript + Vite Synthesis | completed | 354.20 ms | 8/8 | PASS |
+| TC-04 | Slash Command Router Latency | completed | 0.07 ms | — | PASS |
+| TC-05 | Snapshot State Rewind Latency | completed | 0.07 ms | — | PASS |
 
-Captured live during automated execution of `MasterBenchmarkOrchestrator`:
+## Deep Case Evidence
 
-| Test ID | Test Suite Name | Evaluated Prompt | Target SLA | Empirical Latency | Result |
-| :---: | :--- | :--- | :---: | :---: | :---: |
-| **TC-01** | Turn Tick Latency & Fact Storage | `remember: engine = deterministic` | `< 1.0 ms` | **0.60 ms** | `[PASS]` |
-| **TC-02** | VFS File Perception & Reading | `view: package.json` | `< 0.1 ms` | **0.03 ms** | `[PASS]` |
-| **TC-03** | Code & Game Synthesis Throughput | `create a frogger game` | `< 1.0 ms` | **0.36 ms** | `[PASS]` |
-| **TC-04** | Slash Command Router Latency | `/stats` | `< 0.1 ms` | **0.06 ms** | `[PASS]` |
-| **TC-05** | Snapshot State Rewind Latency | `remember: state = rewindable` | `< 0.2 ms` | **0.12 ms** | `[PASS]` |
+### Complete Flappy Bird React + TypeScript + Vite Synthesis
 
----
+| Assertion | Evidence | Status |
+|---|---|---|
+| complete project manifest | 12/12 required files are unique and non-empty | PASS |
+| pinned React, TypeScript, and Vite contract | install, dev, typecheck, production build, and preview dependencies are pinned | PASS |
+| strict Vite and TypeScript configuration | strict project references, bundler resolution, React JSX, and deterministic Vite ports verified | PASS |
+| semantic TypeScript/TSX compilation | 4 application/configuration modules compiled with zero strict diagnostics | PASS |
+| gameplay state-machine simulation | ready, flap, scoring, pause/resume, collision, game-over, and restart transitions passed | PASS |
+| deterministic seeded simulation | two seeded 20-frame simulations remained byte-for-byte identical | PASS |
+| React animation, controls, and accessibility | animation cleanup, keyboard/pointer input, pause/restart, canvas rendering, and accessibility verified | PASS |
+| temp-root isolation and materialization | 12 files and 16068 bytes remained inside an isolated temporary root | PASS |
 
-## 2. Advanced Connection Resilience & Self-Healing Loop
+## Baseline Policy
 
-### 2.1 In-Turn Immediate Fallback Retry Loop
-- **Primary Model**: `gpt-5.6-terra`
-- **Fallback Models**: `gpt-5.6-luna`, `gpt-5.6-sol`, `gpt-5.6-codex`
-- **Immediate In-Turn Failover**: When a primary provider model suffers a transient socket drop, connection reset (ECONNRESET), or 503 outage, `AgentEngine.executeTick` immediately catches the exception, updates the active model via `ModelResolver.triggerFallback()`, and re-dispatches the turn on the fallback model within the **same execution turn frame**.
-- **User Impact**: Zero user-visible error screens or manual turn retries required.
-
-### 2.2 Full Jitter Exponential Backoff
-- **Strategy**: Randomized full jitter calculation (`Math.floor(Math.random() * backoff)`).
-- **Target Statuses**: `429`, `500`, `502`, `503`, `504`.
-- **Thundering Herd Protection**: Eliminates retry synchronization spikes across concurrent worker threads.
-
-### 2.3 Circuit Breaker & Health Probing
-- **States**: `closed` $\rightarrow$ `connecting` $\rightarrow$ `in_progress` $\rightarrow$ `completed`.
-- **Health Verification**: Atomic `isHealthy()` checks before issuing remote calls.
-
----
-
-## 3. Automated Benchmark Execution Output
-
-```
-========================================================
-   LUMI Monolith Benchmark & Throughput Test Suite      
-========================================================
-
-Benchmark Results:
-  Total Evaluated Tests:  5
-  Passed Tests:           5
-  Failed Tests:           0
-  Pass Rate:              100%
-  Mean Turn Latency:      0.23 ms
-  Total Test Time:        1.27 ms
-  Execution Throughput:   3937.01 turns/sec (236221 turns/min)
-
-Detailed Test Case Metrics:
-  [PASS] Turn Tick Latency & Fact Storage    -> Latency: 0.6 ms
-  [PASS] VFS File Perception & Reading       -> Latency: 0.03 ms
-  [PASS] Code & Game Synthesis Throughput    -> Latency: 0.36 ms
-  [PASS] Slash Command Router Latency        -> Latency: 0.06 ms
-  [PASS] Snapshot State Rewind Latency       -> Latency: 0.12 ms
-```
-
----
-
-*Specification generated by LUMI MasterBenchmarkOrchestrator v0.1.0*
+- A case passes only when its assertion matches and `EngineTickResult.outcome` is `completed`.
+- Aggregate case latency includes heterogeneous workloads such as strict TypeScript compilation; engine fast-path SLAs are measured separately by the architecture guardrails.
+- Throughput and latency are environment-sensitive live observations, not permanent guarantees.
+- The baseline command writes reports even on failure, then exits nonzero so the repository cannot silently bless a failing run.

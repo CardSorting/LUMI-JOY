@@ -4,18 +4,19 @@
 **Accepted**
 
 ## Context
-With **LUMI-NEW** reaching **$0.22\text{ ms}$ turn tick latency** and **$4,132.2\text{ turns/sec}$** execution throughput, protecting the codebase against accidental performance regressions, microservice bloat, or architectural drift from future contributors became a top priority. Manual code review alone is insufficient to guarantee hardware bus-level performance SLAs and zero-GC memory invariants.
+The August 9 acceptance experiment demonstrated a sub-millisecond local turn path. Protecting the codebase against accidental performance regressions, microservice bloat, or architectural drift therefore became a priority. Decision-time figures are historical; current evidence comes from the generated live baseline. The latest recorded run measured **$0.13\text{ ms}$** mean local fast-path latency, **$7,787.13$ frames/second**, and **$0.018\text{ ms}$ warmed rewind p95**, with all **6/6 guardrails** passing.
 
 ## Decision
 We implemented an automated, multi-layer repository protection gate centered around `ArchitectureGuardrailGate` ([architecture-guardrail-gate.ts](file:///Users/bozoegg/Desktop/LUMI-NEW/src/tooling/extensions/policy/architecture-guardrail-gate.ts)), `scripts/validate-repo.ts` (`npm test`), and GitHub Actions CI workflow ([repo-protection-ci.yml](file:///Users/bozoegg/Desktop/LUMI-NEW/.github/workflows/repo-protection-ci.yml)).
 
 ### Key Protection Rules Enforced
 
-1. **Performance SLA Guardrail**: Turn tick latency must remain $< 1.0\text{ ms}$ and state rewind latency $< 0.1\text{ ms}$.
-2. **Zero-GC Contiguous Slab Invariant**: Pre-allocated 16MB ArrayBuffer slab capacity must remain intact (`16,777,216 bytes`).
-3. **Zero-Barrel Import Enforcement**: Prohibition of intermediate `index.ts` re-export files (`ADR-012`).
-4. **Base Class Immutability**: Prohibition of destructive mutations in `src/*/base/`.
-5. **Agent Activity Security Boundary**: Stable lifecycle identity, explicit terminal settlement, bounded sanitization, secret/output exclusion, and process-local cancellation controls according to `ADR-082`.
+1. **Performance SLA Guardrail**: Dedicated local fast-path mean latency must remain $< 1.0\text{ ms}$ and throughput must remain $\geq1,000$ frames/second.
+2. **State Rewind Guardrail**: Rewind must restore frame/message state and remain $< 0.1\text{ ms}$ warmed p95 across 25 samples.
+3. **Zero-GC Contiguous Slab Invariant**: Pre-allocated 16MB ArrayBuffer slab capacity must remain intact (`16,777,216 bytes`).
+4. **Zero-Barrel Import Enforcement**: Prohibition of intermediate `index.ts` re-export files (`ADR-012`).
+5. **Base Class Immutability**: Prohibition of destructive mutations in `src/*/base/`.
+6. **Agent Activity Security Boundary**: Stable lifecycle identity, explicit terminal settlement, bounded sanitization, secret/output exclusion, and process-local cancellation controls according to `ADR-082`.
 
 ## Consequences
 
@@ -30,3 +31,5 @@ We implemented an automated, multi-layer repository protection gate centered aro
 ## Current Refinement: Streaming Regression Gate
 
 Changes to provider dispatch, `EngineProgressEvent`, the Codex adapter, cancellation, or terminal activity rendering require interactive authenticated completion and cancellation coverage in addition to `npm run check`, `npm test`, and `npm run build`. See [ADR-082](ADR-082-structured-agent-activity-streaming.md) and the [streaming strategy](../agent/streaming-activity-strategy.md).
+
+The five-case heterogeneous benchmark is intentionally separate from the sub-millisecond guardrail lane. It now includes a complete 12-file Flappy Bird React + TypeScript + Vite project with 8/8 deep assertions, so its compiler-heavy mean case latency is not a turn-tick SLA.

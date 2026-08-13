@@ -10,7 +10,7 @@
 
 ## 📌 Executive Summary
 
-This field note documents the empirical performance benchmarks, speed metrics, and execution throughput achieved by **LUMI-NEW** following the completion of **105 evolutionary passes** and the integration of the **Interactive Model Provider & OAuth Setup Wizard**.
+This field note preserves the August 9, 2026 experiment captured after the **105-pass** integration milestone and the **Interactive Model Provider & OAuth Setup Wizard**. It is an archival comparison, not the current repository baseline. The latest Pass 192 + runtime-hardening run verifies **142/142 components**, **9/9 smoke checks**, **5/5 benchmark cases**, **8/8 assertions** for a complete 12-file Flappy Bird React + TypeScript + Vite project, and **6/6 guardrails**. For exact current-worktree measurements, use [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json) and its synchronized generated reports; regenerate them with `npm run baseline:update`.
 
 Going from **$14.20\text{ ms}$** down to **$0.22\text{ ms}$** turn tick latency, $O(1)$ state pointer rewinds at **$0.04\text{ ms}$** ($7,125\times$ speedup), and an in-memory VFS perception speed of **$0.03\text{ ms}$**—all backed by a pre-allocated **16MB zero-GC contiguous slab**—transforms an LLM agent runtime into a kernel that operates at hardware bus speeds.
 
@@ -91,26 +91,29 @@ $$\bar{L} = \frac{1}{N} \sum_{i=1}^{N} L_i = \frac{0.51 + 0.03 + 0.43 + 0.07 + 0
 
 ## 🛠️ Reproducibility & Verification Guide
 
-To independently reproduce and verify these performance metrics on any machine:
+To independently measure and publish the current worktree on any machine:
 
 1. **Run Automated Benchmark & Throughput Test Suite**:
    ```bash
-   lumi --benchmark
-   # or
-   lumi -b
+   npm run benchmark
    ```
 
-2. **Run 105-Pass Empirical Smoke Test Suite**:
+2. **Run Current Capability Smoke Suite**:
    ```bash
-   lumi --smoke
-   # or
-   lumi -s
+   npm run smoke
    ```
 
-3. **Verify Strict TypeScript Type Safety**:
+3. **Regenerate the Live Baseline from Smoke, Benchmarks, and Guardrails**:
+   ```bash
+   npm run baseline:update
+   ```
+
+4. **Verify Strict TypeScript Type Safety**:
    ```bash
    npm run check
    ```
+
+The fixed measurements elsewhere in this field note intentionally remain the historical August 9 sample. The generated live reports are the authority for current values.
 
 ---
 
@@ -118,5 +121,6 @@ To independently reproduce and verify these performance metrics on any machine:
 
 - **Primary Inventor & Author**: **William Andrew Cruz** (`bozoegg` / `CardSorting`)
 - **Co-Author & Assistant**: Antigravity AI Pair Programming Agent
-- **Subsystem Component Count**: 82 active monolithic subsystems
-- **Verification Status**: **100% EMPIRICAL PASS (5/5)**
+- **Acceptance-Time Subsystem Count**: 82 monolithic subsystems in the August 9 snapshot
+- **Acceptance-Time Verification Status**: **100% EMPIRICAL PASS (5/5)**
+- **Current Verification Pointer**: [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json) (142/142 composition, 9/9 smoke, 5/5 benchmark, 8/8 Flappy assertions, 6/6 guardrails at the latest documented run)

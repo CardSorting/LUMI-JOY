@@ -2,7 +2,7 @@
 
 This guide defines how LUMI reports a live model request from provider dispatch through completion, failure, timeout, or user cancellation. It is the canonical reference for the progress contract, Codex SDK adapter, terminal presentation, security boundary, and verification expectations.
 
-The implementation follows the item lifecycle described by the [official Codex SDK documentation](https://learn.chatgpt.com/docs/codex-sdk) and the richer event taxonomy documented for the [Codex App Server](https://learn.chatgpt.com/docs/app-server). LUMI consumes the events exposed by its pinned `@openai/codex-sdk` version and does not invent unavailable deltas.
+The implementation follows the item lifecycle described by the [official Codex SDK documentation](https://learn.chatgpt.com/docs/codex-sdk) and the richer event taxonomy documented for the [Codex App Server](https://learn.chatgpt.com/docs/app-server). LUMI consumes the event union exposed by its exactly pinned `@openai/codex-sdk` `0.147.0`; it does not infer events from the current App Server schema or invent unavailable deltas.
 
 ## Goals
 
@@ -12,6 +12,19 @@ The implementation follows the item lifecycle described by the [official Codex S
 - Make cancellation, timeout, transport failure, and missing credentials explicit.
 - Expose safe operational context while withholding raw reasoning, tool output, credentials, and oversized payloads.
 - Give programmatic clients a typed progress contract independent of the terminal UI.
+
+## Lifecycle Vocabulary and Event Notation
+
+The same word, “completed,” appears at several scopes. It is never valid to promote a narrower completion to a broader one.
+
+| Scope | What becomes complete | What it does not prove |
+|---|---|---|
+| Item | One provider item has reached its authoritative final state. | The provider has stopped producing items or the turn has a usable final answer. |
+| Attempt | One provider/model dispatch has succeeded or failed. | The logical turn is terminal when a fallback attempt is still allowed. |
+| Turn | The provider has emitted a terminal turn event. | LUMI has accepted a non-empty final response. |
+| Frame | LUMI has committed one immutable `EngineTickResult.outcome`. | A resolved promise was successful; callers must inspect `outcome`. |
+
+Official App Server documentation uses JSON-RPC method names such as `item/completed` and `turn/completed`. The pinned TypeScript SDK consumed by this repository exposes dot-form discriminants such as `item.completed`, `turn.completed`, and `turn.failed`. This guide uses dot form when naming implementation events and slash form when quoting the App Server protocol.
 
 ## End-to-End Flow
 
@@ -37,14 +50,18 @@ sequenceDiagram
         Timeline->>Timeline: upsert by activityId
     end
     alt completed
+        SDK-->>Engine: item.completed(agent_message)
+        Engine->>Engine: retain latest response candidate
         SDK-->>Engine: turn.completed + usage
+        Engine->>Engine: validate non-empty candidate
+        Engine->>Adapter: publish accepted turn.completed
         Adapter-->>Timeline: turn / completed
-        Engine-->>TUI: EngineTickResult
+        Engine-->>TUI: EngineTickResult(outcome=completed)
     else cancelled, timed out, or failed
         Engine->>SDK: abort signal
         Adapter-->>Timeline: terminal event
         Timeline->>Timeline: settle active child rows
-        Engine-->>TUI: explicit terminal response
+        Engine-->>TUI: EngineTickResult(outcome=failed/cancelled)
     end
 ```
 
@@ -74,9 +91,30 @@ const result = await lumi.tick({
 | `timestamp` | Event creation time in Unix milliseconds. |
 | `elapsedMs` | Activity or overall-turn elapsed time when available. |
 | `sequence` | Monotonically increasing ordering value within the turn. |
-| `metadata` | Optional structured values such as item type, file list, exit code, plan totals, and token usage. |
+| `metadata` | Optional structured values including `scope` (`turn` or `activity`), retry `attempt`, item type, safe file list, exit code, plan totals, and token usage. |
 
-Consumers must upsert by `activityId` and ignore an event whose `sequence` is older than the currently stored event. `item.completed` is the authoritative item state; a renderer should not retain a running icon after the corresponding terminal event.
+Consumers must upsert by `activityId` and ignore an event whose `sequence` is older than the currently stored event. Sequence values remain increasing across in-turn retries. `item.completed` is the authoritative item state; a renderer should not retain a running icon after the corresponding terminal event.
+
+`EngineTickResult.outcome` is the authoritative frame result: `completed`, `failed`, or `cancelled`. A resolved promise does not imply success because LUMI can return safe failure or cancellation guidance in `response`.
+
+Telemetry records one `frame_terminal` event with that outcome and response length, marks non-completed spans as errors, and never copies the prompt or response body into frame telemetry.
+
+## Completion Commit Protocol
+
+LUMI separates item finalization, provider turn termination, and application acceptance. This mirrors familiar state-machine and commit-gate designs: collect a candidate, validate all required terminal facts, then publish one immutable outcome.
+
+| Observation | Meaning |
+|---|---|
+| `item.completed` for `agent_message` | Replaces the response candidate; it does not complete the turn. |
+| `turn.completed` | Satisfies the pinned-SDK provider-terminal gate; it is held until the response candidate is validated. |
+| Non-empty candidate plus `turn.completed` | Commits exactly one `completed` turn event and `EngineTickResult.outcome = "completed"`. |
+| Retriable first-attempt failure | Ends an attempt-scoped activity, advances the shared sequence, and leaves the overall turn active for the one permitted fallback attempt. |
+| Final `turn.failed`, stream error, premature EOF, empty response, or watchdog expiry | Commits exactly one `failed` outcome. Partial response text is discarded. |
+| Caller abort | Commits exactly one `cancelled` outcome. |
+
+The overall logical request keeps one stable turn activity ID even when fallback changes the model or provider. Turn terminals carry `metadata.scope = "turn"`; item and retry-attempt events carry `scope = "activity"`. The timeline accepts the first turn terminal and ignores all later events, preventing late callbacks or transport races from rewriting history. Silence, stream closure, an HTTP 200 status, and a completed message item are never sufficient on their own.
+
+The current App Server protocol represents `completed`, `interrupted`, and `failed` as statuses on `turn/completed`. The pinned SDK instead exposes distinct `turn.completed` and `turn.failed` event types. The adapter follows the pinned SDK at runtime and normalizes both success and non-success into LUMI's provider-independent terminal outcome.
 
 ## Codex Event Mapping
 
@@ -92,11 +130,11 @@ Consumers must upsert by `activityId` and ignore an event whose `sequence` is ol
 | `file_change` | Add/update/delete summary using workspace-relative paths; paths outside the workspace collapse to a basename. |
 | `mcp_tool_call` | MCP server and tool name without arguments or result payloads. |
 | `web_search` | Bounded, sanitized search query. |
-| `agent_message` | Drafting or response-ready state and response character count, not response contents. |
-| `turn.completed` | Commands, tool calls, changed files, input/output tokens, and total elapsed time. |
-| `turn.failed` or `error` | Explicit failure state with a sanitized, bounded explanation. |
+| `agent_message` | Drafting or response-candidate state and response character count, not response contents. |
+| `turn.completed` | Held until final-response validation, then commands, tool calls, changed files, input/output tokens, and total elapsed time. |
+| `turn.failed` or `error` | Attempt-scoped failure when another retry remains; otherwise an explicit turn failure. |
 
-Duplicate payloads for the same activity are dropped. Commands and tool calls are counted by item ID so an `item.updated` event received without a preceding visible `item.started` event is still represented correctly.
+Duplicate payloads for the same activity are dropped. Provider item and connection identities are namespaced by retry attempt so reused SDK IDs cannot overwrite prior-attempt history. Commands and tool calls are counted by item ID within the attempt, so an `item.updated` event received without a preceding visible `item.started` event is still represented correctly.
 
 ## Terminal Presentation
 
@@ -110,13 +148,18 @@ The fullscreen terminal adds an `Agent activity` card immediately after the user
 - A persistent audit trail next to the final response.
 
 The fallback readline interface prints deduplicated lifecycle lines to stderr and prints the final answer to stdout.
+Legacy percentage callbacks reach 100 only for a turn-scoped terminal; completed child items remain below 100. Benchmark cases also require `EngineTickResult.outcome === "completed"` in addition to response assertions.
 
 ## Cancellation, Timeout, and Failure Semantics
 
 - The TUI creates one `AbortController` per turn. `Esc` or `Ctrl+C` aborts only the active turn.
 - Codex turns use the caller signal combined with a ten-minute timeout signal.
 - Direct API-key requests combine the caller signal with the configured endpoint timeout.
+- A Codex stream with no event for more than 45 seconds is aborted by the inactivity watchdog and fails unless the bounded fallback attempt succeeds.
 - A cancelled or failed Codex thread is discarded and never reused for the next turn.
+- The engine permits at most two dispatch attempts for one logical request: the initial attempt and one fallback. They share one monotonically increasing progress sequence and do not emit an overall terminal before the final attempt settles.
+- Missing credentials are deterministic and are not retried as transport failures.
+- Empty successful HTTP bodies and `turn.completed` events without a completed assistant message are protocol failures, not successful turns.
 - Terminal turn states settle remaining active child rows as `stopped` or `interrupted`.
 - Duplicate prompt submission is rejected while a turn is active.
 - `LumiMonolith.tick()` restores the loop phase to `idle` in `finally`, including errors and cancellation.
@@ -160,7 +203,7 @@ git diff --check
 
 Also perform proportional interactive verification:
 
-1. Authenticated completion: confirm connection, analysis, response-ready, usage summary, and final answer.
+1. Authenticated completion: confirm connection, analysis, response-candidate state, provider terminal, usage summary, and final answer.
 2. Tool execution: confirm one command row updates in place and never prints aggregated output.
 3. Cancellation: start a long command, press `Esc`, confirm the turn and child row become terminal, then confirm no child process remains.
 4. Redaction: exercise representative header, key, token, URL, query-string, environment, and CLI-flag credentials.

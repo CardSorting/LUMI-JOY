@@ -22,3 +22,7 @@ Following **ADR-012**:
 - `src/tooling/extensions/policy/roadmap-completion-gate.ts` (`RoadmapCompletionGate`)
 - `src/tooling/extensions/policy/roadmap-checkpoint-digest.ts` (`RoadmapCheckpointDigest`)
 - `src/index.ts` (`LumiMonolith` master composition root)
+
+## Current Completion Semantics
+
+`RoadmapCompletionGate` is fail-closed. A gate is allowed to proceed only when it is registered, contains at least one criterion and at least one required criterion, and every required criterion has been explicitly evaluated and passed. Unregistered, empty, optional-only, unevaluated, or failed-required gates are incomplete. Criterion input and evaluation output are copied so later caller mutation cannot silently rewrite recorded gate evidence; duplicate or empty criterion identifiers are rejected at registration.

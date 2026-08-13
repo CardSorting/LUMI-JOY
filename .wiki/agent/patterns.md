@@ -22,28 +22,34 @@ sequenceDiagram
     Monolith->>Engine: tick(input)
     Engine->>Session: compact() history check
     
-    alt Intercepted Slash Command
+    alt Intercepted slash command
         Engine->>Engine: SlashRouter.handleCommand()
-        Engine-->>Monolith: EngineTickResult (isSlashCommand: true)
-    else Standard Game Engine Tick
+        Engine-->>Monolith: EngineTickResult(outcome, isSlashCommand=true)
+    else Standard game-engine tick
         Engine->>Session: incrementTurn() & addMessage(user)
         Engine->>Sensory: Ears.emit("turn_start")
-        
-        alt Prompt requires tool action
+
+        alt Local tool action
             Engine->>Registry: executeTool(name, args, cwd)
             Registry->>Registry: validateToolArgs(name, args)
             Registry->>Sensory: Hands / Eyes execution
-            Sensory-->>Registry: Tool Result
+            Sensory-->>Registry: tool result
             Registry-->>Engine: validated output
+        else Live provider turn
+            Engine->>Engine: dispatch provider attempt(s)
+            Engine->>Engine: validate provider terminal and final response
         end
 
-        Engine->>Session: addMessage(assistant response)
-        Engine->>Sensory: Ears.emit("turn_complete")
-        Engine-->>Monolith: EngineTickResult
+        Engine->>Engine: commit completed/failed/cancelled outcome
+        Engine->>Session: addMessage(assistant response or safe guidance)
+        Engine->>Sensory: Ears.emit("turn_complete", outcome)
+        Engine-->>Monolith: EngineTickResult(outcome)
     end
 
-    Monolith-->>User: Tick result with frameIndex & response
+    Monolith-->>User: frameIndex, outcome, response
 ```
+
+`turn_complete` above is a post-frame protocol telemetry envelope. It reports the already-decided `EngineTickResult.outcome`; it must never be used as evidence that the provider completed successfully.
 
 ---
 
@@ -52,9 +58,9 @@ sequenceDiagram
 ### Dependency Inversion Principle (DIP)
 All high-level monolith subsystems depend on contracts and abstract base classes defined in `src/core/contracts/` and `src/core/abstracts/`:
 
-- [IAgentEngine](file:///Users/bozoegg/Desktop/LUMI-NEW/src/core/contracts/agent.contracts.ts#L10) $\rightarrow$ [AbstractAgentEngine](file:///Users/bozoegg/Desktop/LUMI-NEW/src/core/abstracts/abstract-agent-engine.ts#L12)
-- [ISessionStore](file:///Users/bozoegg/Desktop/LUMI-NEW/src/core/contracts/session.contracts.ts#L18) $\rightarrow$ [AbstractSessionStore](file:///Users/bozoegg/Desktop/LUMI-NEW/src/core/abstracts/abstract-session-store.ts#L7)
-- [IHands](file:///Users/bozoegg/Desktop/LUMI-NEW/src/core/contracts/tooling.contracts.ts#L36), [IEars](file:///Users/bozoegg/Desktop/LUMI-NEW/src/core/contracts/tooling.contracts.ts#L41), [IToolRegistry](file:///Users/bozoegg/Desktop/LUMI-NEW/src/core/contracts/tooling.contracts.ts#L46)
+- [IAgentEngine](../../src/core/contracts/agent.contracts.ts) $\rightarrow$ [AbstractAgentEngine](../../src/core/abstracts/abstract-agent-engine.ts)
+- [ISessionStore](../../src/core/contracts/session.contracts.ts) $\rightarrow$ [AbstractSessionStore](../../src/core/abstracts/abstract-session-store.ts)
+- [IHands, IEars, and IToolRegistry](../../src/core/contracts/tooling.contracts.ts)
 
 ### Template Method Pattern
 The engine tick loop enforces an invariant execution sequence with overridable lifecycle hooks:
@@ -128,12 +134,24 @@ sequenceDiagram
     UI->>Engine: tick({ prompt, signal, onProgress })
     Engine->>Adapter: start()
     Engine->>SDK: thread.runStreamed(prompt, { signal })
-    SDK-->>Adapter: thread/turn/item events
-    Adapter-->>Timeline: EngineProgressEvent
+    SDK-->>Engine: thread/turn/item events
+    Engine->>Adapter: handle(event)
+    Adapter-->>Timeline: sanitized EngineProgressEvent
     Timeline->>Timeline: upsert activityId; reject stale sequence
-    SDK-->>Engine: turn.completed or failure
-    Adapter-->>Timeline: completed/failed/cancelled terminal
-    Engine-->>UI: EngineTickResult
+    SDK-->>Engine: item.completed(agent_message)
+    Engine->>Engine: retain response candidate
+    SDK-->>Engine: turn.completed or terminal failure
+    alt provider completed and candidate is non-empty
+        Engine->>Adapter: publish accepted turn completion
+        Adapter-->>Timeline: turn-scoped completed terminal
+        Engine-->>UI: EngineTickResult(outcome=completed)
+    else retry remains
+        Adapter-->>Timeline: attempt-scoped failed activity
+        Engine->>SDK: dispatch one fallback attempt
+    else cancelled or final failure
+        Adapter-->>Timeline: turn-scoped failed/cancelled terminal
+        Engine-->>UI: EngineTickResult(outcome=failed/cancelled)
+    end
 ```
 
 The reducer pattern is deliberately small:
@@ -152,8 +170,9 @@ function applyProgress(
 
 The important invariants are:
 
-- Reuse the provider item ID across `started`, `in_progress`, and terminal updates.
-- Treat provider completion as authoritative and settle every turn as `completed`, `failed`, or `cancelled`.
+- Reuse an attempt-scoped provider item ID across `started`, `in_progress`, and terminal updates; preserve one stable logical turn ID across retries.
+- Treat `item.completed` as authoritative only for its item. Successful turn completion requires a provider turn terminal and a validated non-empty response candidate.
+- Keep retriable failures activity-scoped. Commit exactly one immutable frame outcome and require callers to read `EngineTickResult.outcome`.
 - Keep local controls such as `AbortSignal` and callbacks outside serialized remote payloads.
 - Show only concise, sanitized activity summaries. Never place credentials, raw command output, tool payloads, complete model responses, or hidden reasoning in progress events.
 - Preserve fidelity: Codex SDK turns expose detailed item activity; API-key HTTP routes may expose only coarse request states.

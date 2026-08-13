@@ -16,17 +16,30 @@ export interface CodexProgressAdapterOptions {
   model: string;
   onProgress?: (event: EngineProgressEvent) => void;
   now?: () => number;
+  /** One-based retry attempt number for diagnostics. */
+  attempt?: number;
+  /** Keeps a retriable provider failure from terminating the overall turn. */
+  deferFailure?: boolean;
+  /** Shared turn-level sequencer; required when multiple attempts are visible. */
+  nextSequence?: () => number;
+  /** Stable logical turn identity shared across provider attempts. */
+  turnActivityId?: string;
 }
 
 /**
  * Converts the Codex SDK event stream into a stable, safe activity lifecycle.
- * Item IDs are preserved so UIs can upsert started/updated/completed events.
+ * Provider item IDs are preserved inside attempt-scoped identities so UIs can
+ * upsert lifecycle events without collisions across retries.
  */
 export class CodexProgressAdapter {
   private readonly cwd: string;
   private readonly model: string;
   private readonly onProgress?: (event: EngineProgressEvent) => void;
   private readonly now: () => number;
+  private readonly attempt: number;
+  private readonly deferFailure: boolean;
+  private readonly nextSequence?: () => number;
+  private readonly turnActivityId: string;
   private readonly turnStartedAt: number;
   private readonly itemStartedAt = new Map<string, number>();
   private readonly lastPayloadByActivity = new Map<string, string>();
@@ -43,41 +56,48 @@ export class CodexProgressAdapter {
     this.model = options.model;
     this.onProgress = options.onProgress;
     this.now = options.now ?? Date.now;
+    this.attempt = Math.max(1, options.attempt ?? 1);
+    this.deferFailure = options.deferFailure ?? false;
+    this.nextSequence = options.nextSequence;
+    this.turnActivityId = options.turnActivityId ?? "codex:turn";
     this.turnStartedAt = this.now();
   }
 
   start(): void {
     this.emit({
-      activityId: "codex:connection",
+      activityId: `codex:connection:${this.attempt}`,
       phase: "connecting",
-      status: "started",
-      message: "Starting Codex agent",
+      status: this.attempt === 1 ? "started" : "in_progress",
+      message: this.attempt === 1 ? "Starting Codex agent" : "Retrying Codex connection",
       detail: this.model,
-      metadata: { source: "codex-sdk" },
+      metadata: this.activityMetadata(),
     });
   }
 
   handle(event: ThreadEvent): void {
+    if (this.terminal) return;
     switch (event.type) {
       case "thread.started":
         this.emit({
-          activityId: "codex:connection",
+          activityId: `codex:connection:${this.attempt}`,
           phase: "connecting",
           status: "completed",
           message: "Connected to Codex",
           detail: this.model,
           elapsedMs: this.elapsedSinceTurnStart(),
-          metadata: { source: "codex-sdk" },
+          metadata: this.activityMetadata(),
         });
         return;
       case "turn.started":
         this.emit({
-          activityId: "codex:turn",
+          activityId: this.turnActivityId,
           phase: "thinking",
-          status: "started",
-          message: "Analyzing the request",
-          detail: "Understanding goals and workspace context",
-          metadata: { source: "codex-sdk" },
+          status: this.attempt === 1 ? "started" : "in_progress",
+          message: this.attempt === 1 ? "Analyzing the request" : "Re-analyzing after failover",
+          detail: this.attempt === 1
+            ? "Understanding goals and workspace context"
+            : `Provider attempt ${this.attempt}`,
+          metadata: this.turnMetadata(),
         });
         return;
       case "turn.completed":
@@ -98,39 +118,26 @@ export class CodexProgressAdapter {
   }
 
   cancel(message = "Agent turn cancelled by user"): void {
-    this.finish("cancelled", "cancelled", "Agent turn cancelled", message, { source: "codex-sdk" }, true);
+    this.finish("cancelled", "cancelled", "Agent turn cancelled", message);
   }
 
   timeout(message = "The agent exceeded the turn limit"): void {
-    this.finish("failed", "failed", "Agent turn timed out", message, { source: "codex-sdk" }, true);
+    this.finish("failed", "failed", "Agent turn timed out", message);
   }
 
   fail(message: string, detail?: string): void {
-    this.finish("failed", "failed", message, detail);
-  }
-
-  completeTurnFallback(finalResponseLength = 0, usage?: Usage): void {
-    if (this.terminal) return;
-    const detail: string[] = [];
-    if (this.commandCount > 0) detail.push(this.pluralize(this.commandCount, "command"));
-    if (this.toolCount > 0) detail.push(this.pluralize(this.toolCount, "tool call"));
-    if (this.changedFiles.size > 0) detail.push(this.pluralize(this.changedFiles.size, "file changed", "files changed"));
-    if (usage) {
-      detail.push(`${usage.input_tokens.toLocaleString()} in / ${usage.output_tokens.toLocaleString()} out tokens`);
-    } else if (finalResponseLength > 0) {
-      detail.push(`${finalResponseLength.toLocaleString()} chars received`);
+    if (this.deferFailure) {
+      this.finishAttempt(message, detail);
+      return;
     }
-    this.finish("completed", "completed", "Agent turn complete", detail.join(" · ") || "Response complete", {
-      source: "codex-sdk",
-      ...(usage ? { inputTokens: usage.input_tokens, outputTokens: usage.output_tokens } : {}),
-    });
+    this.finish("failed", "failed", message, detail);
   }
 
   private handleItem(
     lifecycle: "item.started" | "item.updated" | "item.completed",
     item: ThreadItem
   ): void {
-    const activityId = `codex:item:${item.id}`;
+    const activityId = `codex:item:${this.attempt}:${item.id}`;
     const timestamp = this.now();
     if (!this.itemStartedAt.has(activityId)) {
       this.itemStartedAt.set(activityId, timestamp);
@@ -149,7 +156,7 @@ export class CodexProgressAdapter {
           message: status === "completed" ? "Reasoning step complete" : "Reviewing the approach",
           detail: item.text || "Evaluating the next action",
           elapsedMs,
-          metadata: { source: "codex-sdk", itemType: item.type },
+          metadata: this.activityMetadata({ itemType: item.type }),
         });
         return;
       }
@@ -166,7 +173,7 @@ export class CodexProgressAdapter {
           detail: detailParts.join(" · "),
           elapsedMs,
           metadata: {
-            source: "codex-sdk",
+            ...this.activityMetadata(),
             itemType: item.type,
             completedSteps,
             totalSteps: item.items.length,
@@ -192,7 +199,7 @@ export class CodexProgressAdapter {
           detail: sanitizeProgressText(item.command, MAX_COMMAND_LENGTH),
           elapsedMs,
           metadata: {
-            source: "codex-sdk",
+            ...this.activityMetadata(),
             itemType: item.type,
             ...(item.exit_code === undefined ? {} : { exitCode: item.exit_code }),
           },
@@ -221,7 +228,7 @@ export class CodexProgressAdapter {
               : "Applying file changes",
           detail: changeSummary.join(" · ") || "Workspace update",
           elapsedMs,
-          metadata: { source: "codex-sdk", itemType: item.type, files },
+          metadata: this.activityMetadata({ itemType: item.type, files }),
         });
         return;
       }
@@ -242,7 +249,7 @@ export class CodexProgressAdapter {
               : "Running tool",
           detail: toolName,
           elapsedMs,
-          metadata: { source: "codex-sdk", itemType: item.type },
+          metadata: this.activityMetadata({ itemType: item.type }),
         });
         return;
       }
@@ -254,7 +261,7 @@ export class CodexProgressAdapter {
           message: status === "completed" ? "Web search complete" : "Searching the web",
           detail: item.query,
           elapsedMs,
-          metadata: { source: "codex-sdk", itemType: item.type },
+          metadata: this.activityMetadata({ itemType: item.type }),
         });
         return;
       case "agent_message":
@@ -265,7 +272,7 @@ export class CodexProgressAdapter {
           message: status === "completed" ? "Response ready" : "Drafting the response",
           detail: status === "completed" ? `${item.text.length.toLocaleString()} characters` : undefined,
           elapsedMs,
-          metadata: { source: "codex-sdk", itemType: item.type },
+          metadata: this.activityMetadata({ itemType: item.type }),
         });
         return;
       case "error":
@@ -276,7 +283,7 @@ export class CodexProgressAdapter {
           message: "Agent reported an error",
           detail: item.message,
           elapsedMs,
-          metadata: { source: "codex-sdk", itemType: item.type },
+          metadata: this.activityMetadata({ itemType: item.type }),
         });
         return;
     }
@@ -306,7 +313,7 @@ export class CodexProgressAdapter {
     if (this.changedFiles.size > 0) detail.push(this.pluralize(this.changedFiles.size, "file changed", "files changed"));
     detail.push(`${usage.input_tokens.toLocaleString()} in / ${usage.output_tokens.toLocaleString()} out tokens`);
     this.finish("completed", "completed", "Agent turn complete", detail.join(" · "), {
-      source: "codex-sdk",
+      ...this.turnMetadata(),
       inputTokens: usage.input_tokens,
       outputTokens: usage.output_tokens,
     });
@@ -317,19 +324,32 @@ export class CodexProgressAdapter {
     status: "completed" | "failed" | "cancelled",
     message: string,
     detail?: string,
-    metadata: EngineProgressMetadata = { source: "codex-sdk" },
-    force = false
+    metadata: EngineProgressMetadata = this.turnMetadata()
   ): void {
-    if (this.terminal && !force) return;
+    if (this.terminal) return;
     this.terminal = true;
     this.emit({
-      activityId: "codex:turn",
+      activityId: this.turnActivityId,
       phase,
       status,
       message,
       detail,
       elapsedMs: this.elapsedSinceTurnStart(),
       metadata,
+    });
+  }
+
+  private finishAttempt(message: string, detail?: string): void {
+    if (this.terminal) return;
+    this.terminal = true;
+    this.emit({
+      activityId: `codex:attempt:${this.attempt}`,
+      phase: "failed",
+      status: "failed",
+      message,
+      detail,
+      elapsedMs: this.elapsedSinceTurnStart(),
+      metadata: this.activityMetadata(),
     });
   }
 
@@ -345,7 +365,7 @@ export class CodexProgressAdapter {
       message,
       ...(detail ? { detail } : {}),
       timestamp: this.now(),
-      sequence: ++this.sequence,
+      sequence: this.nextSequence?.() ?? ++this.sequence,
     };
     try {
       this.onProgress?.(output);
@@ -365,6 +385,14 @@ export class CodexProgressAdapter {
 
   private elapsedSinceTurnStart(): number {
     return Math.max(0, this.now() - this.turnStartedAt);
+  }
+
+  private activityMetadata(extra: EngineProgressMetadata = {}): EngineProgressMetadata {
+    return { source: "codex-sdk", scope: "activity", attempt: this.attempt, ...extra };
+  }
+
+  private turnMetadata(extra: EngineProgressMetadata = {}): EngineProgressMetadata {
+    return { source: "codex-sdk", scope: "turn", attempt: this.attempt, ...extra };
   }
 
   private pluralize(count: number, singular: string, plural = `${singular}s`): string {

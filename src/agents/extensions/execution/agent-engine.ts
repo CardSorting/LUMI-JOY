@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
-import { Codex, type Thread } from "@openai/codex-sdk";
+import { Codex, type Thread, type Usage } from "@openai/codex-sdk";
 import { AbstractAgentEngine } from "../../../core/abstracts/abstract-agent-engine.js";
 import type {
   EngineProgressEvent,
@@ -25,6 +25,9 @@ import type { AgentSlashRouter } from "../resolution/agent-slash-router.js";
 import type { CodexProviderBridge } from "../resolution/codex-provider-bridge.js";
 import type { LlmProxyGateway } from "../resolution/llm-proxy-gateway.js";
 import { CodexProgressAdapter } from "./codex-progress-adapter.js";
+import {
+  FlappyBirdProjectSynthesizer,
+} from "./flappy-bird-project-synthesizer.js";
 import { sanitizeProgressText } from "../../../core/utilities/progress-sanitizer.js";
 
 const CODEX_TURN_TIMEOUT_MS = 10 * 60 * 1000;
@@ -60,6 +63,7 @@ export class AgentEngine extends AbstractAgentEngine {
   private readonly runtimeModelCatalog: ModelCatalog;
   private readonly runtimeBudgetCalculator: ContextBudgetCalculator;
   private readonly runtimeTokenTruncator: TokenTruncator;
+  private readonly flappyBirdProjectSynthesizer = new FlappyBirdProjectSynthesizer();
   private turnQueue: Promise<void> = Promise.resolve();
 
   constructor(
@@ -135,6 +139,7 @@ export class AgentEngine extends AbstractAgentEngine {
       if (slashResult.handled) {
         return {
           frameIndex: this.sessionContext.turnCount,
+          outcome: "completed",
           activeModel: this.modelResolver.getActiveModel(),
           isFallbackModel: false,
           isSlashCommand: true,
@@ -157,10 +162,25 @@ export class AgentEngine extends AbstractAgentEngine {
     // and compact context immediately before authentication/dispatch.
     let responseText = "";
     let responseUsedCodexThread = false;
+    let turnOutcome: EngineTickResult["outcome"] = "completed";
 
-    // Keep the built-in Frogger demo available without hijacking other game requests.
+    // Explicit local game-generation routes remain deterministic and never
+    // hijack generic provider-bound creation requests.
     const lowerPrompt = promptText.toLowerCase();
-    if (lowerPrompt.includes("frogger")) {
+    if (
+      lowerPrompt === "flappy bird"
+      || lowerPrompt === "flappy bird react vite"
+      || lowerPrompt === "/flappy"
+    ) {
+      const project = this.flappyBirdProjectSynthesizer.writeProject(this.sessionContext.cwd);
+      for (const file of project.files) {
+        this.sessionVfs.stageWrite(path.join(project.directoryName, file.path), file.content);
+      }
+      responseText = `\x1b[1;32m[✓] Created complete Flappy Bird React + TypeScript + Vite project!\x1b[0m\n` +
+        `  Project: \x1b[36m${project.outputDirectory}\x1b[0m\n` +
+        `  Files: ${project.writtenFiles.length} (strict TypeScript, Canvas gameplay, responsive controls, accessibility)\n` +
+        `  Run: \x1b[33mcd ${project.outputDirectory} && npm install && npm run dev\x1b[0m`;
+    } else if (lowerPrompt === "frogger" || lowerPrompt === "frogger demo" || lowerPrompt === "/frogger") {
       const gameFilePath = path.join(this.sessionContext.cwd, "index.html");
       const froggerHtml = this.generateFroggerHtml();
       fs.writeFileSync(gameFilePath, froggerHtml, "utf-8");
@@ -170,17 +190,6 @@ export class AgentEngine extends AbstractAgentEngine {
       responseText = `\x1b[1;32m[✓] Created Frogger Arcade Game!\x1b[0m\n` +
         `  File location: \x1b[36m${gameFilePath}\x1b[0m\n` +
         `  Features: Canvas 60FPS renderer, Frog player, Car obstacles, Floating river logs, Score & Lives system.\n` +
-        `  To play: Open \x1b[33m${gameFilePath}\x1b[0m in any web browser!`;
-    } else if (lowerPrompt.includes("racing") || lowerPrompt.includes("race game") || lowerPrompt.includes("racing game") || lowerPrompt.includes("car game")) {
-      const gameFilePath = path.join(this.sessionContext.cwd, "index.html");
-      const racingHtml = this.generateRacingGameHtml();
-      fs.writeFileSync(gameFilePath, racingHtml, "utf-8");
-
-      this.sessionVfs.stageWrite("index.html", racingHtml);
-
-      responseText = `\x1b[1;32m[✓] Created Cyberpunk Turbo Racing Arcade Game!\x1b[0m\n` +
-        `  File location: \x1b[36m${gameFilePath}\x1b[0m\n` +
-        `  Features: Canvas 60FPS Pseudo-3D Engine, WASD/Arrow Steering, Turbo Nitro Boost, AI Traffic Cars, Speedometer HUD & Web Audio SFX.\n` +
         `  To play: Open \x1b[33m${gameFilePath}\x1b[0m in any web browser!`;
     } else if (promptText.startsWith("remember:")) {
       const fact = promptText.substring(9).trim();
@@ -194,8 +203,9 @@ export class AgentEngine extends AbstractAgentEngine {
       let liveResponse: string | null = null;
       let liveError: string | null = null;
       let liveFailureKind: "cancelled" | "timeout" | "provider" | null = null;
-      let liveProgressActivityId = "provider:turn";
+      const liveProgressActivityId = "lumi:turn";
       let liveProgressSequence = 0;
+      const nextProgressSequence = (): number => ++liveProgressSequence;
       const liveStartedAt = Date.now();
       let progressManagedByCodex = false;
       let providerTimeoutSignal: AbortSignal | null = null;
@@ -213,18 +223,28 @@ export class AgentEngine extends AbstractAgentEngine {
                 activeModel,
                 preparedContext.messages,
                 input.signal,
-                input.onProgress
+                input.onProgress,
+                attempt + 1,
+                attempt < 1,
+                nextProgressSequence
               );
               responseUsedCodexThread = liveResponse !== null;
             } else if (auth.authType === "api-key") {
               // A stateless API turn is invisible to an existing SDK thread.
               // Rehydrate from the canonical local context before any later SDK turn.
-              this.resetCodexThread();
-              liveProgressActivityId = "openai:turn";
+              const providerName = typeof this.codexProviderBridge?.resolveProviderName === "function"
+                ? this.codexProviderBridge.resolveProviderName(activeModel)
+                : "openai";
+              const defaultUrl = typeof this.codexProviderBridge?.getDefaultEndpointForModel === "function"
+                ? this.codexProviderBridge.getDefaultEndpointForModel(activeModel)
+                : "https://api.openai.com/v1/chat/completions";
               const requestStartedAt = Date.now();
-              const timeoutSignal = AbortSignal.timeout(
-                this.proxyGateway?.getEffectiveEndpoint("openai", "https://api.openai.com/v1/chat/completions").timeoutMs ?? 30000
-              );
+              const endpoint = this.proxyGateway?.getEffectiveEndpoint(providerName, defaultUrl) ?? {
+                url: defaultUrl,
+                headers: {},
+                timeoutMs: 30000,
+              };
+              const timeoutSignal = AbortSignal.timeout(endpoint.timeoutMs);
               providerTimeoutSignal = timeoutSignal;
               const requestSignal = input.signal
                 ? AbortSignal.any([input.signal, timeoutSignal])
@@ -232,18 +252,13 @@ export class AgentEngine extends AbstractAgentEngine {
               this.reportProgress(input.onProgress, {
                 activityId: liveProgressActivityId,
                 phase: "connecting",
-                status: "started",
-                message: `Connecting to ${activeModel}`,
+                status: attempt === 0 ? "started" : "in_progress",
+                message: attempt === 0 ? `Connecting to ${activeModel}` : `Retrying with ${activeModel}`,
                 detail: "Sending authenticated model request",
                 timestamp: requestStartedAt,
-                sequence: ++liveProgressSequence,
-                metadata: { source: "openai-api" },
+                sequence: nextProgressSequence(),
+                metadata: { source: `${providerName}-api`, scope: "turn", attempt: attempt + 1 },
               });
-              const endpoint = this.proxyGateway?.getEffectiveEndpoint("openai", "https://api.openai.com/v1/chat/completions") ?? {
-                url: "https://api.openai.com/v1/chat/completions",
-                headers: {},
-                timeoutMs: 30000,
-              };
 
               const payload = {
                 model: activeModel,
@@ -275,7 +290,11 @@ export class AgentEngine extends AbstractAgentEngine {
               const data = (await res.json()) as {
                 choices?: Array<{ message?: { content?: string } }>;
               };
-              liveResponse = data.choices?.[0]?.message?.content?.trim() || null;
+              const responseContent = data.choices?.[0]?.message?.content?.trim() ?? "";
+              if (!responseContent) {
+                throw new Error(`${activeModel} returned a successful response without assistant content`);
+              }
+              liveResponse = responseContent;
               this.reportProgress(input.onProgress, {
                 activityId: liveProgressActivityId,
                 phase: "completed",
@@ -284,8 +303,8 @@ export class AgentEngine extends AbstractAgentEngine {
                 detail: activeModel,
                 timestamp: Date.now(),
                 elapsedMs: Date.now() - requestStartedAt,
-                sequence: ++liveProgressSequence,
-                metadata: { source: "openai-api" },
+                sequence: nextProgressSequence(),
+                metadata: { source: `${providerName}-api`, scope: "turn", attempt: attempt + 1 },
               });
             } else {
               this.reportProgress(input.onProgress, {
@@ -296,9 +315,12 @@ export class AgentEngine extends AbstractAgentEngine {
                 detail: `No credentials are available for ${activeModel}`,
                 timestamp: Date.now(),
                 elapsedMs: Date.now() - liveStartedAt,
-                sequence: ++liveProgressSequence,
-                metadata: { source: "lumi" },
+                sequence: nextProgressSequence(),
+                metadata: { source: "lumi", scope: "turn", attempt: attempt + 1 },
               });
+              // Credentials are deterministic local state, not a transient
+              // transport failure. Retrying the same resolution is misleading.
+              break;
             }
             if (liveResponse) break;
           } catch (error) {
@@ -321,8 +343,8 @@ export class AgentEngine extends AbstractAgentEngine {
                 message: `Connection failover from ${previousModel}`,
                 detail: `Failing over to ${fallbackModel}...`,
                 timestamp: Date.now(),
-                sequence: ++liveProgressSequence,
-                metadata: { source: "lumi" },
+                sequence: nextProgressSequence(),
+                metadata: { source: "lumi", scope: "turn", attempt: attempt + 1 },
               });
               liveError = null;
               continue;
@@ -341,8 +363,8 @@ export class AgentEngine extends AbstractAgentEngine {
                 detail: liveError,
                 timestamp: Date.now(),
                 elapsedMs: Date.now() - liveStartedAt,
-                sequence: ++liveProgressSequence,
-                metadata: { source: "openai-api" },
+                sequence: nextProgressSequence(),
+                metadata: { source: "openai-api", scope: "turn", attempt: attempt + 1 },
               });
             }
             break;
@@ -353,13 +375,17 @@ export class AgentEngine extends AbstractAgentEngine {
       if (liveResponse) {
         responseText = liveResponse;
       } else if (liveFailureKind === "cancelled") {
+        turnOutcome = "cancelled";
         responseText = "[Cancelled] Agent turn cancelled by user.";
       } else if (liveFailureKind === "timeout") {
+        turnOutcome = "failed";
         responseText = `[Timed out] ${liveError}. You can retry with a narrower request.`;
       } else if (liveError) {
+        turnOutcome = "failed";
         responseText = `Live model request failed for ${this.modelResolver.getActiveModel()}: ${liveError}\n` +
           `[Authentication is configured. Run \x1b[33m/health\x1b[0m for diagnostics or \x1b[33m/setup\x1b[0m to reconnect.]`;
       } else {
+        turnOutcome = "failed";
         responseText = `Processed turn prompt: "${promptText}".\n` +
           `[Note: Run \x1b[33mlumi --setup\x1b[0m or \x1b[33m/setup\x1b[0m to connect API keys or OpenAI Codex OAuth for full live AI responses.]`;
       }
@@ -392,8 +418,9 @@ export class AgentEngine extends AbstractAgentEngine {
 
     return {
       frameIndex: this.sessionContext.turnCount,
+      outcome: turnOutcome,
       activeModel: this.modelResolver.getActiveModel(),
-      isFallbackModel: false,
+      isFallbackModel: this.modelResolver.getActiveModel() !== this.config.modelName,
       isSlashCommand: false,
       composedPrompt: promptText,
       response: responseText,
@@ -410,7 +437,10 @@ export class AgentEngine extends AbstractAgentEngine {
     activeModel: string,
     contextMessages: readonly SessionMessage[],
     signal?: AbortSignal,
-    onProgress?: (event: EngineProgressEvent) => void
+    onProgress?: (event: EngineProgressEvent) => void,
+    attempt = 1,
+    deferFailure = false,
+    nextSequence?: () => number
   ): Promise<string> {
     const cwd = this.sessionContext.cwd;
     const sessionStore = this.sessionStore as PersistentSessionStore;
@@ -454,23 +484,23 @@ export class AgentEngine extends AbstractAgentEngine {
       cwd,
       model: activeModel,
       onProgress,
+      attempt,
+      deferFailure,
+      nextSequence,
+      turnActivityId: "lumi:turn",
     });
     progress.start();
 
     let lastEventAt = Date.now();
     let finalResponse = "";
-    let turnCompleted = false;
-    const activeTools = new Set<string>();
+    let completionUsage: Usage | null = null;
 
     const watchdogInterval = setInterval(() => {
-      if (turnCompleted || watchdogAbort.signal.aborted) return;
+      if (completionUsage || watchdogAbort.signal.aborted) return;
       const idleMs = Date.now() - lastEventAt;
 
-      // Watchdog Rule A: Response message ready, no tools actively running, stream idle for 5s
-      if (activeTools.size === 0 && finalResponse.trim().length > 0 && idleMs > 5_000) {
-        watchdogAbort.abort(new Error("inactivity_watchdog_response_ready"));
-      } else if (idleMs > 45_000) {
-        // Watchdog Rule B: Entire stream frozen for 45s without any events
+      // Watchdog: Entire stream frozen for 45s without any events
+      if (idleMs > 45_000) {
         watchdogAbort.abort(new Error("inactivity_watchdog_stream_frozen"));
       }
     }, 500);
@@ -484,45 +514,43 @@ export class AgentEngine extends AbstractAgentEngine {
 
       for await (const event of events) {
         lastEventAt = Date.now();
-        progress.handle(event);
 
-        if (event.type === "item.started" || event.type === "item.updated" || event.type === "item.completed") {
-          if (event.item.type === "agent_message" && event.item.text) {
-            finalResponse = event.item.text;
-          } else if (
-            event.item.type === "command_execution" ||
-            event.item.type === "mcp_tool_call" ||
-            event.item.type === "web_search"
-          ) {
-            if (event.type === "item.completed") {
-              activeTools.delete(event.item.id);
-            } else {
-              activeTools.add(event.item.id);
-            }
-          }
+        // Match the SDK's buffered run() semantics: only a completed message
+        // may become the response candidate. The overall turn is still active
+        // until the provider emits turn.completed.
+        if (
+          event.type === "item.completed" &&
+          event.item.type === "agent_message" &&
+          event.item.text
+        ) {
+          finalResponse = event.item.text;
         }
 
         if (event.type === "turn.completed") {
-          turnCompleted = true;
+          completionUsage = event.usage;
           break;
-        } else if (event.type === "turn.failed") {
+        }
+
+        progress.handle(event);
+        if (event.type === "turn.failed") {
           throw new Error(event.error.message);
         } else if (event.type === "error") {
           throw new Error(event.message);
         }
       }
 
+      if (!completionUsage) {
+        throw new Error("Codex stream ended before turn completion");
+      }
       const response = finalResponse.trim();
       if (!response) {
         throw new Error("Codex completed the turn without a final response");
       }
+      // Publish the terminal only after both completion gates pass: the SDK
+      // terminal event and a non-empty completed agent message.
+      progress.handle({ type: "turn.completed", usage: completionUsage });
       return response;
     } catch (error) {
-      if (watchdogAbort.signal.aborted && finalResponse.trim().length > 0) {
-        progress.completeTurnFallback(finalResponse.trim().length);
-        return finalResponse.trim();
-      }
-
       // A failed or cancelled child should never be reused as the next turn's transport.
       this.resetCodexThread();
 

@@ -50,9 +50,26 @@ The fullscreen shell now shows a persistent activity timeline with elapsed time 
 
 Do not kill the process merely because no new activity row appeared for a short interval. Providers may spend time between lifecycle events. If elapsed time stops updating and cancellation does not respond, capture the terminal and logs as a UI event-loop defect.
 
+## The agent emits one frame and then appears finished
+
+A provider frame can finalize an item without finalizing the turn. The most common integration bug is returning as soon as an `agent_message` reaches `item.completed` (or App Server `item/completed`). That event makes the message authoritative as an item and stores it as the latest response candidate; later tool, review, or message items may still arrive.
+
+Use this diagnostic matrix:
+
+| Observation | Correct interpretation |
+|---|---|
+| Completed message item, no turn terminal | Keep consuming the stream; do not publish success. |
+| Provider turn terminal, no non-empty completed message | Fail the attempt as a protocol-invalid completion. |
+| First attempt fails and fallback is starting | End only the attempt activity; keep the logical turn active. |
+| Stream ends before a provider terminal | Fail the attempt; stream EOF is not completion. |
+| `tick()` resolves with failure guidance | Inspect `result.outcome`; promise resolution is not success. |
+| `result.outcome === "completed"` | The frame has committed its one immutable successful outcome. |
+
+For the pinned Codex SDK, the success gate is a non-empty completed `agent_message` plus `turn.completed`. The engine waits up to 45 seconds between Codex stream events before its inactivity watchdog aborts the attempt; one bounded fallback may run before the logical turn fails.
+
 ## Activity row stays active after failure or cancellation
 
-The terminal event must be one of `completed`, `failed`, or `cancelled`. `AgentActivityTimeline` settles any still-running child rows when it receives a turn-level cancellation or failure.
+The terminal event must be one of `completed`, `failed`, or `cancelled`. `AgentActivityTimeline` settles any still-running child rows when it receives any turn-level terminal.
 
 For custom consumers:
 
@@ -76,7 +93,7 @@ Run `/health`, confirm the selected model/provider pair, and reconnect only when
 
 ## Progress integration rules
 
-`EngineTickInput.onProgress` receives safe lifecycle metadata, not response streaming. Never expect it to contain full assistant messages, raw command output, tool arguments/results, credentials, or hidden chain-of-thought. Obtain the final answer from `EngineTickResult.response`.
+`EngineTickInput.onProgress` receives safe lifecycle metadata, not response streaming. Never expect it to contain full assistant messages, raw command output, tool arguments/results, credentials, or hidden chain-of-thought. Read `EngineTickResult.outcome` first; only a `completed` result makes `EngineTickResult.response` a successful final answer. Failed and cancelled results use that field for safe user-facing guidance.
 
 See [Agent Activity Streaming Strategy](streaming-activity-strategy.md) for the complete contract and [API Reference](api-reference.md) for integration examples.
 

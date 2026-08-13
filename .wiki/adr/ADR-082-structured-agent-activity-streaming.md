@@ -16,7 +16,7 @@ This created four problems:
 3. Cancellation and provider errors could leave the visible state ambiguous or retain an active child row.
 4. Showing arbitrary tool details without a dedicated security boundary risked credential or output leakage.
 
-The official Codex event model distinguishes thread, turn, and item lifecycles. LUMI needed to preserve those semantics while remaining provider-independent and avoiding raw reasoning disclosure.
+The official Codex event model distinguishes thread, turn, and item lifecycles. LUMI needed to preserve those semantics while remaining provider-independent and avoiding raw reasoning disclosure. In particular, the official App Server contract makes `item/completed` authoritative for one item and publishes the final turn status through `turn/completed`; those scopes cannot be collapsed into one generic “frame complete” signal.
 
 ## Decision
 
@@ -28,7 +28,9 @@ Phases describe what the user sees; statuses describe the activity lifecycle. Th
 
 ### 2. Codex SDK lifecycle adapter
 
-`CodexProgressAdapter` maps `thread.started`, `turn.started`, `item.started`, `item.updated`, `item.completed`, `turn.completed`, `turn.failed`, and stream errors into the public contract. The SDK item ID becomes the stable activity identity. Duplicate payloads are dropped, and `item.completed` is treated as authoritative.
+`CodexProgressAdapter` maps `thread.started`, `turn.started`, `item.started`, `item.updated`, `item.completed`, `turn.completed`, `turn.failed`, and stream errors from the exactly pinned `@openai/codex-sdk` `0.147.0` event union into the public contract. The SDK item ID becomes a retry-attempt-scoped stable activity identity. Duplicate payloads are dropped, and `item.completed` is authoritative only for that item.
+
+The official App Server documentation uses slash-form JSON-RPC methods (`item/completed`, `turn/completed`) and currently reports successful, interrupted, or failed final status on `turn/completed`. The pinned SDK uses dot-form TypeScript discriminants and separate `turn.completed` and `turn.failed` events. Runtime code follows the installed SDK contract; documentation keeps the two notations explicit.
 
 Readable SDK reasoning summaries may be shown after sanitization and truncation. Raw chain-of-thought is not a supported UI payload.
 
@@ -40,12 +42,18 @@ The footer remains a compact current-state control surface, not the sole progres
 
 ### 4. Explicit terminal behavior
 
+- Completion is scoped: item completion finalizes one item, attempt completion finalizes one dispatch, turn completion finalizes provider work, and frame completion commits the public application result.
+- Completion is a two-gate commit: the provider must emit `turn.completed` and the stream must contain a non-empty completed `agent_message`. The adapter publishes completion only after both gates pass.
+- Retry-attempt failures are activity-scoped and nonterminal while the single fallback remains. The initial attempt and fallback share one progress sequence and one logical turn identity.
+- The first turn-scoped terminal is immutable; late events cannot rewrite it.
+- `EngineTickResult.outcome` carries the authoritative `completed`, `failed`, or `cancelled` result independently from promise resolution and display text.
 - Caller cancellation and provider timeout are combined with `AbortSignal.any()`.
 - Codex uses a ten-minute turn limit; API-key requests use endpoint timeouts.
 - Failed/cancelled Codex threads are discarded.
 - Duplicate submissions are blocked during an active turn.
 - Loop phase resets in a `finally` block.
 - Missing credentials emit an explicit failed activity rather than silently appearing idle.
+- Premature stream EOF, empty HTTP success content, and a provider completion without a final message are explicit failures.
 
 ### 5. Observability security boundary
 

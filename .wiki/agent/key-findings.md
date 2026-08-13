@@ -44,11 +44,14 @@ A transient spinner label hid the difference between authentication, connection,
 
 The durable solution is an identity-based activity lifecycle:
 
-- Provider item IDs become stable `activityId` values.
+- Provider item IDs become attempt-scoped stable `activityId` values, while the logical turn keeps one ID across fallback.
 - `started`, `in_progress`, and terminal events update one persistent row.
-- A per-turn `sequence` prevents late updates from rolling the UI backward.
-- Turn-level completion, failure, and cancellation settle all visible work.
+- A per-turn `sequence` continues across attempts and prevents late updates from rolling the UI backward.
+- `item.completed` finalizes one item, not the turn. A completed assistant message remains a candidate until the provider turn terminates and LUMI validates non-empty final text.
+- Retriable attempt failures remain child activity failures; the first turn-scoped terminal is the immutable frame outcome.
 - The final response remains separate from the progress channel.
+
+The public success boundary is `EngineTickResult.outcome === "completed"`. Promise resolution and non-empty display guidance are deliberately not success signals.
 
 This provides useful visibility without exposing raw command output, tool data, credentials, or hidden reasoning. It also keeps provider fidelity honest: Codex SDK dispatch can show item-level work, while basic HTTP dispatch reports only request-level status.
 

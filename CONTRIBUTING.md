@@ -20,7 +20,10 @@ Thank you for your interest in contributing to **LUMI-NEW**! We welcome contribu
 - Specialized capabilities inherit downward (`class Child extends Parent`) in `src/*/extensions/`.
 
 ### 4. Mandatory Performance SLAs & Security Guardrails (`ADR-051`)
-- **Sub-Millisecond Latency SLA**: Mean turn tick latency MUST remain **$< 1.0\text{ ms}$** (current baseline: **$0.22\text{ ms}$**).
+- **Sub-Millisecond Fast-Path SLA**: Mean latency in the dedicated deterministic guardrail workload MUST remain **$< 1.0\text{ ms}$**. The compiler-heavy heterogeneous benchmark has a separate mean case latency and is not judged against this threshold.
+- **Throughput SLA**: The dedicated local guardrail workload MUST remain **$\geq1,000$ frames/second**.
+- **State Rewind SLA**: Rewind MUST restore frame/message state and remain **$<0.1\text{ ms}$ warmed p95** across 25 samples.
+- **Live Baseline Publication**: Use `npm run baseline:update` to measure the current worktree and atomically regenerate `docs/LIVE_BASELINE.json` and its Markdown views; never hand-edit measured values.
 - **Zero-GC Slab Memory Invariant**: `PersistentSessionStore` slab allocation MUST remain fixed at **$16\text{ MB}$** (`16,777,216 bytes`).
 - **Zero-Barrel Imports (`ADR-012`)**: Intermediate `index.ts` re-export barrel files inside `src/*/extensions/` are strictly prohibited.
 - **Erasable TypeScript Syntax**: Forbidden syntax includes `enum`, `namespace`, parameter properties in constructors (`constructor(public x: string)`), `import =`, `export =`. Use `verbatimModuleSyntax` with top-level explicit type imports.
@@ -28,8 +31,11 @@ Thank you for your interest in contributing to **LUMI-NEW**! We welcome contribu
 ### 5. Agent Activity Streaming Contract (`ADR-082`)
 
 - Preserve stable `activityId` values across started, updated, and completed notifications; renderers must upsert rather than append duplicates.
-- Treat `item.completed` as authoritative and use monotonically increasing `sequence` values to reject stale updates.
+- Treat `item.completed` as authoritative for that item only; it cannot complete the provider turn or engine frame. Use monotonically increasing `sequence` values to reject stale updates.
 - Keep `phase` (what kind of work) separate from `status` (where it is in its lifecycle).
+- Publish success only after the provider turn terminal and non-empty final-response validation. A partial message, completed item, stream EOF, HTTP 200, or resolved promise is not sufficient.
+- Keep a retriable attempt failure activity-scoped. Preserve one logical turn ID and one increasing sequence across the initial dispatch and fallback.
+- Read and propagate `EngineTickResult.outcome`; failed and cancelled results may resolve with safe guidance in `response`.
 - Never place raw chain-of-thought, command output, MCP arguments/results, credentials, or full assistant responses in progress events.
 - Sanitize and bound every user/provider-derived label through `sanitizeProgressText()` even if an upstream adapter already sanitized it.
 - Cancellation, timeout, provider failure, and missing credentials must emit explicit terminal activities and settle active child rows.
@@ -69,22 +75,29 @@ npm test
 # Launch interactive setup wizard (Model Providers & Codex OAuth)
 lumi --setup
 
-# Run engine benchmark & throughput evaluation suite
-lumi --benchmark
+# Run the hermetic engine benchmark and throughput suite
+npm run benchmark
 
-# Execute 105-pass empirical smoke test suite
-lumi --smoke
+# Verify current composition and critical runtime capability contracts
+npm run smoke
+
+# Run smoke, benchmark, and architecture guardrails and publish the live baseline
+npm run baseline:update
 ```
+
+The latest checked-in run (2026-08-13T04:45:51.966Z) passed 142/142 composition entries, 9/9 smoke checks, 5/5 benchmark cases, 8/8 deep assertions for the generated 12-file Flappy Bird React + TypeScript + Vite project, and 6/6 guardrails. Treat timings as host-sensitive; consult `docs/LIVE_BASELINE.json` instead of copying them into source documentation.
 
 ### 5. Streaming Regression Checklist
 
 Changes to `EngineProgressEvent`, `AgentEngine`, the Codex adapter, cancellation, or the TUI require interactive coverage in addition to the standard commands:
 
-1. Authenticated completion with visible connection, analysis, response, and usage states.
+1. Authenticated completion with a completed message candidate, provider turn terminal, validated answer, and `outcome: "completed"`.
 2. Tool execution with one identity-updated row and no command output leakage.
 3. `Esc` cancellation of a long-running command with no orphan child process.
-4. Provider failure, missing credentials, and timeout terminal states.
-5. Credential-redaction cases covering headers, keys, JWTs, URLs, query strings, environment assignments, and CLI flags.
+4. Completed message followed by more item activity, proving the message frame does not end the turn.
+5. Provider terminal without a final message, premature EOF, empty HTTP success, timeout, and missing-credential failures.
+6. Retriable first-attempt failure followed by fallback success, plus exhausted-retry failure; only one turn-scoped terminal may appear.
+7. Credential-redaction cases covering headers, keys, JWTs, URLs, query strings, environment assignments, and CLI flags.
 
 ---
 

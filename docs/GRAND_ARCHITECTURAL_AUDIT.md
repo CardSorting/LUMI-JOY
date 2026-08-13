@@ -1,104 +1,63 @@
-# LUMI Monolith Engine — Benchmark & Architectural Audit Specification
+# LUMI Live Architectural Audit
 
-> **Audit & Benchmark Status**: `PASSED` (100% Guardrail & Benchmark Pass Rate)  
-> **Timestamp**: August 13, 2026  
-> **Engine Version**: `v0.1.0`  
-> **Active Model**: `gpt-5.6-terra`  
-> **Benchmark Suite Report**: [`BENCHMARK_REPORT.md`](file:///Users/bozoegg/Desktop/LUMI-NEW/docs/BENCHMARK_REPORT.md)
+> **Live Baseline Status**: `PASSED`
+> **Generated At**: 2026-08-13T04:45:51.966Z
+> **Evolution Baseline**: Pass 192 + runtime hardening (ADR-082)
+> **Configured Model**: `gpt-5.6-terra`
+> **Regenerate**: `npm run baseline:update`
 
----
+This audit and [the benchmark report](BENCHMARK_REPORT.md) are generated atomically from the same live run. [`LIVE_BASELINE.json`](LIVE_BASELINE.json) is the machine-readable source of truth.
 
-## Executive Performance Summary
+## Verification Summary
 
-| Metric | Target SLA | Empirical Performance | Verdict |
-| :--- | :--- | :--- | :--- |
-| **Mean Turn Latency** | `< 1.0 ms` | **0.23 ms** | `[PASS]` |
-| **Execution Throughput** | `> 1,000 turns/sec` | **3,937.01 turns/sec** (**236,221 turns/min**) | `[PASS]` |
-| **Type Safety (`tsc --noEmit`)** | `0 errors` | `0 errors` | `[PASS]` |
-| **Contiguous Slab Memory Invariant** | `16,777,216 bytes` | `16,777,216 bytes` (Zero-GC ArrayBuffer) | `[PASS]` |
-| **State Rewind Latency SLA** | `< 0.1 ms` | **0.12 ms** ($O(1)$ Slab Rollback) | `[PASS]` |
-| **Connection Circuit Breaker** | Self-Healing | **In-Turn Immediate Fallback Retry** | `[PASS]` |
-| **Barrel Imports Check (ADR-012)** | `0 barrel files` | `0 barrel files` | `[PASS]` |
-| **Base Class Immutability** | `3 / 3 intact` | `3 / 3 intact` | `[PASS]` |
-| **Game Synthesis & Delivery** | Instant Generation | `index.html` (Cyberpunk Turbo Racer) | `[PASS]` |
+| Verification Lane | Live Result | Status |
+|---|---:|---|
+| Runtime smoke checks | 9/9 | PASS |
+| Architecture and performance guardrails | 6/6 | PASS |
+| Required current capabilities | 142/142 | PASS |
+| Composed runtime components | 142 | observed |
+| Benchmark cases | 5/5 | PASS |
+| Mean heterogeneous case latency | 70.91 ms | observed |
+| Workload throughput | 14.10 cases/sec | observed |
 
----
+## Runtime Smoke Evidence
 
-## 1. Empirical Benchmark Test Cases
+| Category | Capability | Duration | Status | Evidence |
+|---|---|---:|---|---|
+| composition | Current evolution capabilities are composed | 0.03 ms | PASS | 142 required capabilities across 142 components |
+| architecture | Core abstract contracts remain connected | 0.07 ms | PASS | agent, session, hands, ears, and tool-registry contracts verified |
+| execution | Local frame commits an explicit successful outcome | 1.08 ms | PASS | frame 1 completed in 0.77 ms |
+| state | Snapshot rewind restores frame and message state | 0.27 ms | PASS | restored frame 1 with 2 messages |
+| governance | Completion gate fails closed without evaluated evidence | 0.14 ms | PASS | 5 fail-closed states rejected; 2/2 evaluated required criteria accepted |
+| safety | Modern command safety and diagnostics are active | 0.26 ms | PASS | interactive editor blocking and port-collision guidance verified |
+| observability | Command output summaries remain bounded | 0.08 ms | PASS | head/tail output retention verified |
+| governance | Strategic integrity audit contract is complete | 0.04 ms | PASS | architect, critic, and SRE review sections verified |
+| health | Subsystem health aggregation remains optimal | 0.07 ms | PASS | 3/3 registered subsystems healthy |
 
-Detailed test metrics captured live by `MasterBenchmarkOrchestrator` (`node dist/index.js --benchmark`):
+## Architecture and Performance Guardrails
 
-| Test ID | Test Case Name | Evaluated Prompt | SLA Target | Measured Latency | Status |
-| :---: | :--- | :--- | :---: | :---: | :---: |
-| **TC-01** | Turn Tick Latency & Fact Storage | `remember: engine = deterministic` | `< 1.0 ms` | **0.60 ms** | `[PASS]` |
-| **TC-02** | VFS File Perception & Reading | `view: package.json` | `< 0.1 ms` | **0.03 ms** | `[PASS]` |
-| **TC-03** | Code & Game Synthesis Throughput | `create a frogger game` | `< 1.0 ms` | **0.36 ms** | `[PASS]` |
-| **TC-04** | Slash Command Router Latency | `/stats` | `< 0.1 ms` | **0.06 ms** | `[PASS]` |
-| **TC-05** | Snapshot State Rewind Latency | `remember: state = rewindable` | `< 0.2 ms` | **0.12 ms** | `[PASS]` |
+| Rule | Live Measurement | Required Threshold | Status |
+|---|---:|---:|---|
+| Zero-GC Contiguous Slab Memory Invariant | 16777216 bytes | 16777216 bytes | PASS |
+| Performance SLA: Sub-Millisecond Turn Tick Latency | 0.13 ms | < 1 ms | PASS |
+| Performance SLA: Execution Throughput | 7787.13 frames/sec | >= 1000 frames/sec | PASS |
+| Performance SLA: State Rewind Latency | 0.018 ms p95 | < 0.1 ms p95 | PASS |
+| Architecture Rule: Zero Barrel Imports (ADR-012) | 0 barrel files | 0 barrel files | PASS |
+| Architecture Rule: Base Class Immutability (ADR-012) | 3 / 3 files intact | 3 files intact | PASS |
 
----
+## Completion Semantics
 
-## 2. Invariant & Substrate Deep Dive
+- A completed provider item is not a completed logical turn.
+- Retriable attempt failures remain activity-scoped while fallback is active.
+- Public frame success requires `EngineTickResult.outcome === "completed"`.
+- The first turn-scoped terminal is immutable.
 
-### 2.1 Zero-GC Contiguous Memory Slab Invariant
-- **Capacity**: `16 MB` (`16,777,216 bytes`)
-- **Substrate**: `ArenaAllocator` (`ArrayBuffer` slice allocation)
-- **Behavior**: All message string content appended during frame turn ticks is allocated directly into contiguous ArrayBuffer slab memory.
-- **Rewind SLA**: $O(1)$ pointer rollback in `< 0.12 ms` without triggering V8 Garbage Collection pauses.
-
-### 2.2 Sub-Millisecond Turn Tick SLA
-- **Target**: `< 1.0 ms` per frame tick
-- **Measured Average**: **0.23 ms**
-- **Execution Path**: Zero-overhead `telemetryTracer` span wrapper with microsecond precision timing buffer (`MicrosecondTimingBuffer`).
-
----
-
-## 3. Connection Hardening & Self-Healing Architecture
-
-> [!IMPORTANT]
-> **Brittle Connection Protection**: Streaming events and API connections are protected by in-turn immediate fallback retries, exponential backoff with full randomized jitter, transport circuit breaker health checks, and active-tool disambiguated stream watchdogs.
-
-### 3.1 Dual-Rule Stream Watchdog
-1. **Rule A (Response-Ready Idle Settlement)**:
-   - When no tools are actively running (`activeTools.size === 0`) AND response text (`finalResponse`) has been received, if stream output goes idle for `> 5,000ms`, the watchdog completes the turn and resolves the response text.
-2. **Rule B (Total Stream Freeze Shield)**:
-   - If the entire event stream freezes without any stdout activity for `> 45,000ms`, the watchdog aborts the stream and safely falls back to completed response delivery.
-
-### 3.2 Immediate In-Turn Fallback Retry Loop
-- **In-Turn Resilience**: When primary model dispatch (`gpt-5.6-terra`) fails due to transient network drops, socket resets, or 503 gateway outages, `AgentEngine.executeTick` immediately catches the error, logs a progress update, switches active model via `ModelResolver.triggerFallback()`, and re-dispatches on the fallback model (`gpt-5.6-luna`) within the **same turn tick**.
-
----
-
-## 4. Game Generation & Delivery
-
-### 4.1 Cyberpunk Turbo Racing Arcade Game
-- **File Location**: [`index.html`](file:///Users/bozoegg/Desktop/LUMI-NEW/index.html)
-- **Engine Architecture**: HTML5 Canvas 60FPS Retro Pseudo-3D Perspective Projection Engine.
-- **Key Features**:
-  - WASD / Arrow Key steering + Turbo Nitro Boost (`Space`).
-  - Horizon neon sun, synthwave mountains, curving road bends, and elevation hills.
-  - Multi-lane AI traffic cars with collision detection and speed penalties.
-  - HUD Overlay: Speedometer (MPH), Nitro fill meter, Lap Timer, and Lap Counter (3 Laps).
-  - Synthesized Web Audio API sound effects (engine pitch, nitro roar, tire squeals).
-
----
-
-## 5. Automated Benchmark & Guardrail Commands
+## Reproduction
 
 ```bash
-# Run Automated Benchmark & Throughput Test Suite
-node dist/index.js --benchmark
-
-# Verify TypeScript Type Safety
+npm run baseline:update
 npm run check
-
-# Execute Full Repository Guardrail Audit
 npm test
-
-# Build Monolith Distribution Bundle
 npm run build
+git diff --check
 ```
-
----
-
-*Specification generated by LUMI MasterBenchmarkOrchestrator v0.1.0*

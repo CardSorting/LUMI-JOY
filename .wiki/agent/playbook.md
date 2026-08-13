@@ -8,6 +8,8 @@ LUMI-NEW is a greenfield 3-tier monolithic agent framework built in TypeScript f
 
 Tiers expand organically as needed to support specialized subsystem features, with the primary constraint being strict alignment with the Deterministic Game Engine Strategy.
 
+Current generated verification is **Pass 192 + runtime hardening**: 142/142 exact composition entries, 9/9 smoke checks, 5/5 benchmark cases, 8/8 assertions for a complete 12-file Flappy Bird React + TypeScript + Vite project, and 6/6 guardrails. Use [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json) for exact current measurements.
+
 ### Deterministic Game Engine Subsystems
 
 - **Core Contracts & Abstracts (`src/core/`)**
@@ -46,11 +48,14 @@ npm run build
 # Launch interactive Setup Wizard (Model Providers & Codex OAuth)
 lumi --setup
 
-# Run automated engine benchmark & throughput evaluation suite
-lumi --benchmark
+# Run the hermetic engine benchmark & throughput evaluation suite
+npm run benchmark
 
-# Execute 105-pass monolithic agent smoke test suite
-lumi --smoke
+# Verify current composition and critical runtime contracts
+npm run smoke
+
+# Publish synchronized live baseline reports after smoke and guardrails pass
+npm run baseline:update
 
 # Run interactive REPL session
 lumi
@@ -63,21 +68,26 @@ When changing model dispatch or the interactive shell:
 1. Preserve `EngineTickInput.signal` and `onProgress` through every local call boundary.
 2. Map provider events to stable `activityId` values; upsert started/updated/completed states rather than appending duplicates.
 3. Sanitize every message and detail. Progress must not contain raw output, credentials, tool payloads, or hidden reasoning.
-4. Emit or synthesize exactly one turn terminal: `completed`, `failed`, or `cancelled`.
-5. Clear elapsed timers and active abort-controller references in `finally`.
-6. Verify a successful authenticated prompt, an `Esc` cancellation, and a subsequent prompt in the same session.
+4. Emit or synthesize exactly one immutable turn terminal: `completed`, `failed`, or `cancelled`. A completed item, partial response, HTTP 200, stream EOF, or silence is not a turn terminal.
+5. Keep retry-attempt failures activity-scoped and share one increasing sequence across the full logical turn.
+6. Set `EngineTickResult.outcome`; never make consumers infer success from a resolved promise or response text.
+7. Clear elapsed timers and active abort-controller references in `finally`.
+8. Verify success, empty completion, premature EOF, retry, final failure, cancellation, and a subsequent prompt in the same session.
 
 Provider fidelity is intentionally asymmetric: Codex OAuth is dispatched through `@openai/codex-sdk` and provides full lifecycle events, while API-key HTTP routes provide coarse request status. Do not manufacture detailed tool activity for a route that does not expose it.
 
 ## Key Documentation & Strategy Links
 
-- [Benchmark Performance Field Note](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/field-notes/BENCHMARK-PERFORMANCE-FIELD-NOTE.md)
-- [The Osmosis Learning Methodology & Strategy Guide](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/osmosis-methodology.md)
-- [ADR-001: 3-Tier Monolithic Agent Architecture](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-001-3-tier-monolithic-agent-architecture.md)
-- [ADR-049: Interactive Setup Wizard & Provider Bridge](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-049-interactive-setup-wizard-and-provider-bridge.md)
+- [Current Machine-Readable Baseline](../../docs/LIVE_BASELINE.json)
+- [Generated Benchmark Evidence](../../docs/BENCHMARK_REPORT.md)
+- [Generated Architectural Audit](../../docs/GRAND_ARCHITECTURAL_AUDIT.md)
+- [Benchmark Performance Field Note](../field-notes/BENCHMARK-PERFORMANCE-FIELD-NOTE.md)
+- [The Osmosis Learning Methodology & Strategy Guide](osmosis-methodology.md)
+- [ADR-001: 3-Tier Monolithic Agent Architecture](../adr/ADR-001-3-tier-monolithic-agent-architecture.md)
+- [ADR-049: Interactive Setup Wizard & Provider Bridge](../adr/ADR-049-interactive-setup-wizard-and-provider-bridge.md)
 - [ADR-082: Structured Agent Activity Streaming](../adr/ADR-082-structured-agent-activity-streaming.md)
-- [ADR-050: Automated Benchmark & Throughput Evaluation](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-050-automated-benchmark-and-throughput-evaluation.md)
-- [API Reference](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/api-reference.md)
+- [ADR-050: Automated Benchmark & Throughput Evaluation](../adr/ADR-050-automated-benchmark-and-throughput-evaluation.md)
+- [API Reference](api-reference.md)
 - [Agent Activity Streaming Strategy](streaming-activity-strategy.md)
 - [Troubleshooting & Verification](troubleshooting.md)
-- [Agent Memory & Constraints](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/agent/agent-memory.md)
+- [Agent Memory & Constraints](agent-memory.md)

@@ -30,6 +30,8 @@ This document defines non-negotiable architectural and syntax constraints for al
 6. **Structured Progress Safety**:
    - Reuse stable activity IDs and monotonically increasing sequence numbers.
    - End every turn with `completed`, `failed`, or `cancelled`.
+   - Commit completion only after a provider turn terminal and a validated final response; intermediate messages are candidates, not answers.
+   - Keep retry failures activity-scoped and expose the authoritative result through `EngineTickResult.outcome`.
    - Never place credentials, raw command output, tool payloads, complete model responses, or hidden reasoning in progress events.
    - Keep `AbortSignal` and callbacks local; do not serialize them across remote session boundaries.
 

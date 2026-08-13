@@ -48,32 +48,61 @@ export class ArchitectureGuardrailGate {
     // 2. Check Performance SLA Limits via Benchmark Evaluator
     const benchRes = await monolith.masterBenchmarkOrchestrator.runGrandBenchmarkSuite(monolith);
     const meanLatency = benchRes.suiteResult.meanLatencyMs;
-    const isLatencyValid = meanLatency <= this.maxTurnLatencyMs;
+    const isLatencyValid = meanLatency < this.maxTurnLatencyMs;
     results.push({
       ruleName: "Performance SLA: Sub-Millisecond Turn Tick Latency",
       passed: isLatencyValid,
       measuredValue: `${meanLatency} ms`,
       threshold: `< ${this.maxTurnLatencyMs} ms`,
       details: isLatencyValid
-        ? "Mean turn latency satisfies < 1.0ms SLA SLA requirement."
+        ? "Mean turn latency satisfies the < 1.0ms SLA requirement."
         : `FAIL: Performance regression detected! Latency ${meanLatency}ms exceeds 1.0ms limit.`,
     });
 
-    // 3. Check State Rewind Performance SLA
-    const rewindTest = benchRes.suiteResult.results.find((r) => r.testName.includes("Rewind"));
-    const rewindLatency = rewindTest ? rewindTest.durationMs : 0.05;
-    const isRewindValid = rewindLatency <= this.maxRewindLatencyMs;
+    // 3. Check live throughput from the same benchmark run.
+    const isThroughputValid = benchRes.throughputTps >= this.minThroughputTps;
+    results.push({
+      ruleName: "Performance SLA: Execution Throughput",
+      passed: isThroughputValid,
+      measuredValue: `${benchRes.throughputTps} frames/sec`,
+      threshold: `>= ${this.minThroughputTps} frames/sec`,
+      details: isThroughputValid
+        ? "Live deterministic frame throughput satisfies the repository SLA."
+        : `FAIL: Throughput ${benchRes.throughputTps} frames/sec is below ${this.minThroughputTps}.`,
+    });
+
+    // 4. Measure actual rewind work; never substitute a fixed fallback value.
+    const rewindSnapshot = monolith.createSnapshot();
+    const rewindMutation = await monolith.tick({ prompt: "remember: guardrail_rewind = mutated" });
+    const rewindSamples: number[] = [];
+    if (rewindMutation.outcome === "completed") {
+      monolith.rewindToSnapshot(rewindSnapshot);
+      for (let sample = 0; sample < 25; sample++) {
+        const rewindStartedAt = performance.now();
+        monolith.rewindToSnapshot(rewindSnapshot);
+        rewindSamples.push(performance.now() - rewindStartedAt);
+      }
+    }
+    rewindSamples.sort((left, right) => left - right);
+    const p95Index = Math.max(0, Math.ceil(rewindSamples.length * 0.95) - 1);
+    const rewindLatency = rewindSamples.length > 0
+      ? Number((rewindSamples[p95Index].toFixed(3)))
+      : Number.POSITIVE_INFINITY;
+    const rewindRestored = rewindMutation.outcome === "completed"
+      && monolith.sessionContext.turnCount === rewindSnapshot.frameIndex
+      && monolith.sessionStore.getMessages().length === rewindSnapshot.messages.length;
+    const isRewindValid = rewindRestored && rewindLatency < this.maxRewindLatencyMs;
     results.push({
       ruleName: "Performance SLA: State Rewind Latency",
       passed: isRewindValid,
-      measuredValue: `${rewindLatency} ms`,
-      threshold: `< ${this.maxRewindLatencyMs} ms`,
+      measuredValue: `${rewindLatency} ms p95`,
+      threshold: `< ${this.maxRewindLatencyMs} ms p95`,
       details: isRewindValid
-        ? "O(1) pointer state rewind performance verified."
-        : `FAIL: Snapshot state rewind latency ${rewindLatency}ms exceeds 0.1ms limit.`,
+        ? "Snapshot rewind state restoration and warmed 25-sample p95 latency verified."
+        : `FAIL: Snapshot state rewind p95 latency ${rewindLatency}ms exceeds 0.1ms limit or state restoration failed.`,
     });
 
-    // 4. Check Forbidden Barrel Import Violations (No intermediate index.ts files in extensions)
+    // 5. Check Forbidden Barrel Import Violations (No intermediate index.ts files in extensions)
     const srcDir = path.join(process.cwd(), "src");
     const barrelViolations = this.scanForbiddenBarrelImports(srcDir);
     const isBarrelClean = barrelViolations.length === 0;
@@ -87,7 +116,7 @@ export class ArchitectureGuardrailGate {
         : `FAIL: Forbidden barrel files detected: ${barrelViolations.join(", ")}`,
     });
 
-    // 5. Check Base Class Immutability Rule
+    // 6. Check Base Class Immutability Rule
     const baseFiles = [
       path.join(srcDir, "agents", "base", "agent-config.ts"),
       path.join(srcDir, "sessions", "base", "session-context.ts"),

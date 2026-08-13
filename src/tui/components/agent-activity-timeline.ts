@@ -24,6 +24,7 @@ export class AgentActivityTimeline implements Component {
   private readonly text = new Text("", 0, 0);
   private elapsedMs = 0;
   private terminalStatus: "completed" | "failed" | "cancelled" | null = null;
+  private highestSequence = -1;
 
   constructor(options: AgentActivityTimelineOptions) {
     this.model = sanitizeProgressText(options.model, 80);
@@ -32,6 +33,9 @@ export class AgentActivityTimeline implements Component {
   }
 
   update(event: EngineProgressEvent): void {
+    // A turn terminal is immutable. Late provider events, retry races, and
+    // renderer callbacks cannot rewrite the visible outcome after settlement.
+    if (this.terminalStatus) return;
     const safeEvent: EngineProgressEvent = {
       ...event,
       message: sanitizeProgressText(event.message, 96),
@@ -42,22 +46,27 @@ export class AgentActivityTimeline implements Component {
         : Math.max(0, event.elapsedMs),
       sequence: Number.isFinite(event.sequence) ? event.sequence : 0,
     };
+    if (safeEvent.sequence < this.highestSequence) return;
     const existing = this.entries.get(safeEvent.activityId);
     if (existing && existing.sequence > safeEvent.sequence) return;
     if (!existing) this.order.push(event.activityId);
     this.entries.set(safeEvent.activityId, safeEvent);
+    this.highestSequence = Math.max(this.highestSequence, safeEvent.sequence);
     this.elapsedMs = Math.max(
       this.elapsedMs,
       safeEvent.timestamp - this.startedAt,
       safeEvent.elapsedMs ?? 0
     );
-    if (safeEvent.status === "completed" && safeEvent.phase === "completed") {
+    const isTurnEvent = safeEvent.metadata?.scope === undefined
+      ? safeEvent.activityId.endsWith(":turn")
+      : safeEvent.metadata.scope === "turn";
+    if (isTurnEvent && safeEvent.status === "completed" && safeEvent.phase === "completed") {
       this.terminalStatus = "completed";
       this.settleActiveEntries(safeEvent, "completed");
-    } else if (safeEvent.status === "failed" && safeEvent.activityId.endsWith(":turn")) {
+    } else if (isTurnEvent && safeEvent.status === "failed") {
       this.terminalStatus = "failed";
       this.settleActiveEntries(safeEvent, "failed");
-    } else if (safeEvent.status === "cancelled") {
+    } else if (isTurnEvent && safeEvent.status === "cancelled") {
       this.terminalStatus = "cancelled";
       this.settleActiveEntries(safeEvent, "cancelled");
     }
@@ -80,7 +89,7 @@ export class AgentActivityTimeline implements Component {
       timestamp: this.startedAt + elapsedMs,
       elapsedMs,
       sequence: Number.MAX_SAFE_INTEGER,
-      metadata: { source: "lumi" },
+      metadata: { source: "lumi", scope: "turn" },
     });
   }
 
@@ -95,13 +104,45 @@ export class AgentActivityTimeline implements Component {
       timestamp: this.startedAt + elapsedMs,
       elapsedMs,
       sequence: Number.MAX_SAFE_INTEGER,
-      metadata: { source: "lumi" },
+      metadata: { source: "lumi", scope: "turn" },
     });
-    this.terminalStatus = "failed";
+  }
+
+  cancelIfNeeded(message: string, elapsedMs: number): void {
+    if (this.terminalStatus) return;
+    this.update({
+      activityId: "lumi:turn",
+      phase: "cancelled",
+      status: "cancelled",
+      message: "Request cancelled",
+      detail: message,
+      timestamp: this.startedAt + elapsedMs,
+      elapsedMs,
+      sequence: Number.MAX_SAFE_INTEGER,
+      metadata: { source: "lumi", scope: "turn" },
+    });
+  }
+
+  settleIfNeeded(
+    outcome: "completed" | "failed" | "cancelled",
+    message: string,
+    elapsedMs: number
+  ): void {
+    if (outcome === "completed") {
+      this.completeIfNeeded(elapsedMs);
+    } else if (outcome === "cancelled") {
+      this.cancelIfNeeded(message, elapsedMs);
+    } else {
+      this.failIfNeeded(message, elapsedMs);
+    }
   }
 
   isTerminal(): boolean {
     return this.terminalStatus !== null;
+  }
+
+  getTerminalStatus(): "completed" | "failed" | "cancelled" | null {
+    return this.terminalStatus;
   }
 
   invalidate(): void {
@@ -124,7 +165,14 @@ export class AgentActivityTimeline implements Component {
           : `\x1b[1;33mWorking ${elapsed}\x1b[0m`;
     const header = `\x1b[1;37mAgent activity\x1b[0m  ·  ${state}  ·  \x1b[36m${this.model}\x1b[0m`;
 
-    const overallId = this.order.find((id) => id.endsWith(":turn"));
+    let overallId: string | undefined;
+    for (const id of this.order) {
+      const event = this.entries.get(id);
+      const isTurnEvent = event?.metadata?.scope === undefined
+        ? id.endsWith(":turn")
+        : event.metadata.scope === "turn";
+      if (isTurnEvent) overallId = id;
+    }
     const activityIds = overallId ? this.order.filter((id) => id !== overallId) : this.order;
     const activityBudget = Math.max(0, this.maxVisibleActivities - (overallId ? 1 : 0));
     const visibleIds = [

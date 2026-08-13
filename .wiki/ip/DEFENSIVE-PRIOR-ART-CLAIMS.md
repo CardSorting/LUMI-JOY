@@ -7,6 +7,8 @@
 
 ---
 
+> **Measurement provenance:** The fixed figures in these claims are part of the August 9, 2026 disclosure and remain unchanged for legal provenance. They must not be cited as current-worktree measurements. The current generated authority is [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json), backed by synchronized benchmark and architectural-audit reports.
+
 ## 📌 Claim 1: Contiguous ArrayBuffer Slab Memory Allocation for AI Agents
 
 **Disclosed Prior Art (Inventor: William Andrew Cruz)**:  

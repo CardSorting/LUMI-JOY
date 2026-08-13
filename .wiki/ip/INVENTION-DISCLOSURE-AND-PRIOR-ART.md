@@ -7,6 +7,8 @@
 
 ---
 
+> **Measurement provenance:** Numerical performance impacts in this disclosure are the August 9, 2026 prior-art measurements and are preserved as part of the dated disclosure record. They are not assertions about the current worktree. Current verification is Pass 192 + runtime hardening with 142/142 components, 9/9 smoke checks, 5/5 benchmark cases, 8/8 Flappy project assertions, and 6/6 guardrails; exact current measurements are generated in [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json).
+
 ## 📌 Executive Statement
 
 This document serves as the formal public prior-art invention disclosure for the architectural discoveries and execution substrate innovations conceived by **William Andrew Cruz** and embodied within **LUMI-NEW** (`/Users/bozoegg/Desktop/LUMI-NEW`).
@@ -54,5 +56,6 @@ By publishing this specification under the **Apache License, Version 2.0**, the 
 
 - 🎓 [Academic Whitepaper](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md)
 - 📊 [Benchmark Performance Field Note](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/field-notes/BENCHMARK-PERFORMANCE-FIELD-NOTE.md)
+- 📈 [Current Machine-Readable Runtime Baseline](../../docs/LIVE_BASELINE.json)
 - 📄 [Apache License 2.0](file:///Users/bozoegg/Desktop/LUMI-NEW/LICENSE)
 - 📋 [Attribution NOTICE](file:///Users/bozoegg/Desktop/LUMI-NEW/NOTICE)

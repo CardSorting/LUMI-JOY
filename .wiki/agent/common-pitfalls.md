@@ -26,12 +26,14 @@ This document highlights common pitfalls and non-negotiable rules for AI agents 
    - For virtual file edits, stage changes via `SessionVfs` before committing.
 
 5. **Always Preserve Single Composition Root**:
-   - `src/index.ts` ([LumiMonolith](file:///Users/bozoegg/Desktop/LUMI-NEW/src/index.ts#L57)) backed by `MonolithFactory` in `src/factories/monolith-factory.ts` MUST remain the single parent composition root.
+   - [`src/index.ts`](../../src/index.ts) (`LumiMonolith`) backed by [`MonolithFactory`](../../src/factories/monolith-factory.ts) MUST remain the single parent composition root.
 
 6. **Do Not Flatten Agent Work into One Spinner String**:
    - Emit `EngineProgressEvent` values with a stable `activityId`, explicit `phase` and `status`, a timestamp, and a monotonically increasing per-turn `sequence`.
    - Update the existing activity when the same ID is received. Appending every SDK update creates duplicate and misleading rows.
    - Never infer a terminal outcome from silence. Every turn must end as `completed`, `failed`, or `cancelled`.
+   - Never treat `item.completed`, partial response text, stream EOF, or HTTP 200 as turn completion. Require the provider turn terminal and validate the final response before publishing success.
+   - Retry attempts are child activities. They must not fail the overall turn while a fallback is still running.
 
 7. **Do Not Leak Provider Payloads Through Progress**:
    - Progress is a safe status surface, not a debug dump or response transport.

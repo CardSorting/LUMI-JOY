@@ -27,14 +27,14 @@ These capabilities are absorbed into single-responsibility monolithic extension 
 
 ### Pass 105: Phase 31 Grand Subsystem Synthesis & Verification
 - **Location**: `src/factories/grand-monolith-synthesizer.ts` & `src/index.ts`
-- **Responsibilities**: Verifies end-to-end integration and cohesion across all 105 evolutionary passes.
+- **Responsibilities**: Established the original 105-pass synthesis checkpoint. The current synthesizer now verifies the Pass 192 composition through an exact typed component manifest that rejects missing, uninitialized, unexpected, and duplicate entries, while preserving the Pass 105 milestone as historical context.
 
 ---
 
 ## 3. Verification & Compliance
 
 - **TypeScript Type Safety**: Verified with `npm run check` (0 errors).
-- **Runtime Execution**: Verified via `npx tsx src/index.ts` (105 passes verified cleanly).
+- **Runtime Execution at Acceptance**: Verified against the original 105-pass checkpoint. Current-worktree verification uses `npm run smoke`; live measurements and architecture guardrails use `npm run baseline:update`.
 
 ---
 

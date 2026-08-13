@@ -20,9 +20,18 @@ export class EnvironmentKeyResolver {
   };
 
   resolveKey(provider: string): string | null {
-    const envVar = this.providerEnvMap[provider.toLowerCase()];
-    if (!envVar) return null;
-    return process.env[envVar] ?? null;
+    const p = provider.toLowerCase();
+    const envVar = this.providerEnvMap[p];
+    if (envVar && process.env[envVar]) {
+      return process.env[envVar]!;
+    }
+    if (p === "openai" || p === "codex" || p.includes("gpt")) {
+      return process.env.OPENAI_API_KEY || null;
+    }
+    if (p === "google" || p === "gemini") {
+      return process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || null;
+    }
+    return null;
   }
 
   getProviderStatuses(): ProviderKeyStatus[] {

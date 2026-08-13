@@ -9,17 +9,23 @@ Validating execution performance, turn tick latency, and system throughput acros
 ## Decision
 We integrated `MasterBenchmarkOrchestrator` & `MonolithBenchmarkEvaluator` directly into the `LUMI` CLI via `lumi --benchmark` (`-b`).
 
+The current implementation also exposes `lumi --baseline`. It runs the capability smoke suite, hermetic benchmark cases, and architecture guardrails as separate gates, then atomically writes `docs/LIVE_BASELINE.json`, `docs/BENCHMARK_REPORT.md`, and `docs/GRAND_ARCHITECTURAL_AUDIT.md`. The JSON artifact is the machine-readable source of truth; measured Markdown values are generated rather than maintained manually.
+
 ### Key Architectural Invariants
 
 1. **Automated Suite Evaluation**:
    - Executes 5 multi-subsystem domain test cases covering memory storage, VFS perception, interactive application generation, slash command routing, and state snapshot rewinding.
-   - Measures turn tick latency via `performance.now()`.
+   - Replaced the shallow Frogger response-keyword case with a temp-isolated 12-file Flappy Bird React + TypeScript + Vite synthesis workload.
+   - The Flappy workload checks the exact project manifest, pinned package/build contract, strict compiler configuration, zero semantic TypeScript/TSX diagnostics, executable gameplay state transitions, seeded determinism, React animation cleanup, keyboard/pointer controls, responsive styling, accessibility, materialization, and temp-root containment.
+   - Measures each heterogeneous case via `performance.now()`. Aggregate case latency and cases/second are reported separately from the engine fast-path latency and frames/second guardrails.
 
-2. **Empirical Performance Achievements**:
+2. **Acceptance-Time Empirical Performance Achievements**:
    - **Mean Turn Tick Latency**: **$0.22\text{ ms}$** ($64.5\times$ speedup vs legacy).
    - **Execution Throughput**: **$4,132.23\text{ turns/sec}$** ($247,934\text{ turns/min}$).
    - **State Snapshot Rewind**: **$0.04\text{ ms}$** ($O(1)$ pointer rewind).
    - **Suite Pass Rate**: **$100\%\text{ (5/5 PASS)}$**.
+
+   These are August 9 acceptance-time measurements. They are retained as historical evidence rather than copied forward as the current baseline.
 
 3. **Field Note Documentation**:
    - Published field note report ([BENCHMARK-PERFORMANCE-FIELD-NOTE.md](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/field-notes/BENCHMARK-PERFORMANCE-FIELD-NOTE.md)) detailing throughput mathematical equations, zero-GC slab memory allocation, and reproducibility steps.
@@ -28,5 +34,18 @@ We integrated `MasterBenchmarkOrchestrator` & `MonolithBenchmarkEvaluator` direc
 
 ### Positive
 - One-command performance validation (`lumi --benchmark`).
+- One-command live baseline publication (`npm run baseline:update`) with nonzero failure semantics and synchronized machine-readable and human-readable artifacts.
 - Empirical proof of $O(1)$ zero-drift snapshot state rewinding and zero-GC ArrayBuffer slab memory allocation.
 - Continuous throughput monitoring prevents performance regression.
+
+## Current Verification (August 13, 2026 UTC)
+
+- Exact Pass 192 composition: **142/142**.
+- Runtime capability smoke: **9/9**.
+- Heterogeneous benchmark: **5/5**.
+- Complete Flappy Bird React + TypeScript + Vite synthesis: **12/12 generated files**, **8/8 assertions**, **$354.20\text{ ms}$ observed**.
+- Architecture/performance guardrails: **6/6**.
+- Dedicated local fast path: **$0.13\text{ ms}$ mean** and **$7,787.13$ frames/second** observed against requirements of $<1.0\text{ ms}$ and $\geq1,000$ frames/second.
+- Snapshot rewind: **$0.018\text{ ms}$ warmed p95** observed against a $<0.1\text{ ms}$ requirement.
+
+The heterogeneous suite reports mean case latency and cases/second because it includes strict compiler work. It must not be compared directly with the dedicated frame-performance guardrail. See [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json) and the generated [benchmark report](../../docs/BENCHMARK_REPORT.md).

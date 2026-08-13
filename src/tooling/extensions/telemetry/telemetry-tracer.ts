@@ -36,7 +36,6 @@ export class TelemetryTracer {
 
     try {
       const result = await callback(span);
-      span.status = "ok";
       return result;
     } catch (err) {
       span.status = "error";

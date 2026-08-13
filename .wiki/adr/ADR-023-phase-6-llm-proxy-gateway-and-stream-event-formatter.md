@@ -36,4 +36,4 @@ Following **ADR-012**:
 
 ## Current Refinement: Stream Boundaries
 
-`StreamEventFormatter` continues to own transport/SSE/JSON-RPC framing. It does not define user-facing agent activity. Provider lifecycle events are normalized through `EngineProgressEvent` and ADR-082; final response text is returned through `EngineTickResult.response`. See [ADR-082](ADR-082-structured-agent-activity-streaming.md).
+`StreamEventFormatter` continues to own transport/SSE/JSON-RPC framing. It does not define user-facing agent activity. Provider lifecycle events are normalized through `EngineProgressEvent` and ADR-082; callers must read `EngineTickResult.outcome` before treating `EngineTickResult.response` as a successful final answer. See [ADR-082](ADR-082-structured-agent-activity-streaming.md).

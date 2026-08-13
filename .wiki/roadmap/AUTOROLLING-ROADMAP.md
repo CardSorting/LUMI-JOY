@@ -1,6 +1,21 @@
 # Auto-Rolling & Self-Documenting Evolution Roadmap
 
-This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoegg/Desktop/LUMI-NEW`. It automatically tracks completed evolutionary passes, defines the active next pass, and provides self-documenting instructions for AI agents extending the engine.
+This document is the canonical **Auto-Rolling Evolution Roadmap** for `/Users/bozoegg/Desktop/LUMI-NEW`. It records historical pass scope through Pass 192, later cross-cutting hardening, and the evidence required before a new entry can be marked complete. No next numbered pass is currently assigned; do not infer Pass 193 from the end of the ledger.
+
+---
+
+## Status and Completion Semantics
+
+Roadmap completion and runtime completion are different concepts:
+
+- A roadmap entry marked `[COMPLETE]` means the stated implementation scope was added, composed into the monolith where applicable, verified at its recorded checkpoint, and documented in its ADR/changelog. It is a historical milestone, not a claim that the feature was freshly revalidated against the current worktree.
+- A current-worktree verification claim requires a fresh `npm run check`, `npm test`, `npm run build`, and `git diff --check`, plus feature-specific regression or interactive evidence proportional to the change.
+- `npm run smoke` validates the current Pass 192 composition against an exact typed component manifest and exercises critical runtime completion, rewind, safety, output, and integrity contracts. Missing, uninitialized, unexpected, or duplicate manifest entries degrade the run. It is current-worktree evidence, but it does not replace feature-specific tests or the full verification gate.
+- Runtime turn completion is governed separately by [ADR-082](../adr/ADR-082-structured-agent-activity-streaming.md): an item or retry attempt can complete while the logical turn remains active, and public success exists only when `EngineTickResult.outcome` is `completed`.
+
+The latest generated current-worktree verification (2026-08-13T04:45:51.966Z) passed **142/142** exact composition entries, **9/9** smoke checks, **5/5** heterogeneous benchmark cases, **8/8** deep Flappy Bird project assertions, and **6/6** architecture/performance guardrails. [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json) is authoritative for exact measurements.
+
+A future pass must remain `[IN PROGRESS]` until code, composition, tests, and documentation are all present. Creating a source file, receiving one provider frame, finishing a retry attempt, or drafting an ADR is not enough to mark a pass complete.
 
 ---
 
@@ -142,7 +157,7 @@ This document serves as the **Auto-Rolling Evolution Roadmap** for `/Users/bozoe
 | **Passes 184–186** | `[COMPLETE]` | Phase 58 Broccoli Semantic Axiom Engine & Simulation Engine | BroccoliSemanticAxiomEngine, BroccoliSimulationEngine & Master Synthesis | [ADR-079](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-079-phase-58-broccolidb-semantic-axiom-and-simulation-engine.md) |
 | **Passes 187–189** | `[COMPLETE]` | Phase 59 Broccoli Command Sanitizer & Shell Environment Resolver | BroccoliCommandSanitizer, BroccoliShellEnvironmentResolver & Master Synthesis | [ADR-080](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-080-phase-59-broccolidb-command-sanitizer-and-shell-resolver.md) |
 | **Passes 190–192** | `[COMPLETE]` | Phase 60 Broccoli Command Diagnostics & Output Buffer | BroccoliCommandDiagnostics, BroccoliCommandOutputBuffer & Master Synthesis | [ADR-081](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-081-phase-60-broccolidb-command-diagnostics-and-output-buffer.md) |
-| **Runtime Hardening** | `[COMPLETE]` | Codex SDK and terminal activity UX | `CodexProgressAdapter`, `AgentActivityTimeline`, structured progress contract, cancellation, timeouts, redaction | [ADR-082](../adr/ADR-082-structured-agent-activity-streaming.md) |
+| **Runtime Hardening & Live Verification** | `[COMPLETE]` | Codex SDK, terminal activity UX, modern smoke, and live baseline | `CodexProgressAdapter`, `AgentActivityTimeline`, fail-closed completion, exact 142-component manifest, 9-check smoke, 8-assertion Flappy workload, atomic reports | [ADR-082](../adr/ADR-082-structured-agent-activity-streaming.md), [live baseline](../../docs/LIVE_BASELINE.json) |
 
 
 ---
@@ -153,7 +168,9 @@ When an AI agent completes Pass $N$, it MUST execute the following **Auto-Rollin
 
 1. **Update Code & Verification**:
    - Implement changes in `src/core/` and `src/*/extensions/`.
-   - Verify `npm run check` and `npx tsx src/index.ts`.
+   - Verify `npm run check`, `npm test`, `npm run build`, and `git diff --check`.
+   - Run `npm run smoke` for composition and cross-cutting contracts, then add feature-specific assertions rather than treating the smoke suite as the sole evidence for a pass.
+   - Run `npm run baseline:update` when composition, performance, or architecture guardrails change so the live baseline reports remain synchronized.
 
 2. **Publish Architecture Decision Record (ADR)**:
    - Create `.wiki/adr/ADR-xxx.md`.
@@ -164,7 +181,7 @@ When an AI agent completes Pass $N$, it MUST execute the following **Auto-Rollin
    - Log entries in `CHANGELOG.md`.
    - If the change affects provider dispatch or progress UX, update the [Agent Activity Streaming Strategy](../agent/streaming-activity-strategy.md), API reference, troubleshooting guide, and contributor regression checklist.
 
-4. **Git Commit & Push**:
+4. **Release Handoff (when explicitly authorized)**:
    - Stage explicit files: `git add <files>`.
    - Commit message: `feat(agent): complete Pass N ...`.
-   - Push to `main`.
+   - Push only as part of the authorized release workflow.

@@ -76,15 +76,18 @@ export class InteractiveModeController {
     const tickResult = await monolith.tick({
       prompt,
       onProgress: (event) => {
-        const percent = event.status === "completed" || event.status === "failed" || event.status === "cancelled"
-          ? 100
-          : 50;
+        const isTurnEvent = event.metadata?.scope === undefined
+          ? event.activityId.endsWith(":turn")
+          : event.metadata.scope === "turn";
+        const isTerminal = isTurnEvent &&
+          (event.status === "completed" || event.status === "failed" || event.status === "cancelled");
+        const percent = isTerminal ? 100 : event.status === "completed" ? 75 : 50;
         onProgress?.(event.message, percent);
       },
     });
 
     if (onProgress) {
-      onProgress("Turn tick complete", 100);
+      onProgress(`Turn tick ${tickResult.outcome}`, 100);
     }
 
     return tickResult.response;
@@ -673,7 +676,11 @@ export class InteractiveModeController {
               renderTurnProgress();
             },
           });
-          activityTimeline.completeIfNeeded(Date.now() - activeTurnStartedAt);
+          activityTimeline.settleIfNeeded(
+            tickResult.outcome,
+            tickResult.response,
+            Date.now() - activeTurnStartedAt
+          );
           const responseBox = new Box(1, 0, (str: string) => `\x1b[48;5;237m${str}\x1b[0m`);
           responseBox.addChild(
             new Markdown(
@@ -777,7 +784,12 @@ export class InteractiveModeController {
               console.error(`\x1b[90m  ${icon} ${event.message}${detail}\x1b[0m`);
             },
           });
-          console.log(`\x1b[1;32m[Frame #${result.frameIndex}]\x1b[0m (${result.durationMs}ms)`);
+          const outcomeColor = result.outcome === "completed"
+            ? "\x1b[1;32m"
+            : result.outcome === "cancelled"
+              ? "\x1b[1;33m"
+              : "\x1b[1;31m";
+          console.log(`${outcomeColor}[${result.outcome.toUpperCase()} · Frame #${result.frameIndex}]\x1b[0m (${result.durationMs}ms)`);
           console.log(result.response);
           console.log();
         } catch (err: unknown) {

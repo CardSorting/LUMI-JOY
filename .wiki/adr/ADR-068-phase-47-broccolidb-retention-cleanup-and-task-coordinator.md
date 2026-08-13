@@ -33,4 +33,4 @@ This architectural pass introduces:
 ## Conformance & Verification
 
 - Typecheck verification passed via `npm run check` with zero strict TypeScript errors.
-- High-throughput execution verified via `npx tsx src/index.ts --benchmark`.
+- Acceptance-time execution was verified with the benchmark command then in use. Current verification uses `npm run benchmark`; exact results are generated in [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json).

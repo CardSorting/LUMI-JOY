@@ -9,6 +9,25 @@
 
 ---
 
+## Current Validation Addendum (August 13, 2026 UTC)
+
+The original paper and its Section 3 experiment record the August 9 foundation-era measurements. The current Pass 192 + runtime-hardening implementation is verified separately from those historical values:
+
+| Current verification lane | Latest result |
+|---|---:|
+| Exact composition manifest | 142/142 components |
+| Runtime capability smoke | 9/9 checks |
+| Heterogeneous benchmark | 5/5 cases |
+| Complete Flappy Bird React + TypeScript + Vite synthesis | 12/12 files; 8/8 assertions; $354.20\text{ ms}$ observed |
+| Architecture/performance guardrails | 6/6 checks |
+| Local fast-path mean | $0.13\text{ ms}$ observed; $<1.0\text{ ms}$ required |
+| Local fast-path throughput | $7,787.13$ frames/second observed; $\geq1,000$ required |
+| Snapshot rewind | $0.018\text{ ms}$ warmed p95 observed; $<0.1\text{ ms}$ required |
+
+The exact machine-readable evidence, runtime identity, and generation timestamp are in [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json). [`docs/BENCHMARK_REPORT.md`](../../docs/BENCHMARK_REPORT.md) contains all eight Flappy assertion results. Performance observations are host-sensitive and are not permanent guarantees.
+
+---
+
 ## Abstract
 
 We present **AKD-DSO** (**Architectural Knowledge Distillation & Deterministic Substrate Optimization**), a novel paradigm for autonomous agent self-mutation and state-space compression. Current multi-agent LLM frameworks suffer from exponential context decay, un-reproducible state drift, and high latency caused by microservice IPC channels ("framework soup"). 
@@ -81,9 +100,9 @@ Ensuring zero null-pointer exceptions during autonomous tool execution loops.
 
 ---
 
-## 3. Empirical Performance Benchmarks & Hardware-Level Throughput
+## 3. Original August 9 Empirical Benchmark (Historical Dataset)
 
-Experiments conducted on macOS ARM64 (Apple M-Series) running Node.js 20+ evaluating the monolithic game loop against the legacy multi-package monorepo:
+The following acceptance-time experiment was conducted on macOS ARM64 (Apple M-Series) running Node.js 20+ and is retained for reproducibility and provenance. It is not the current baseline; use the validation addendum and generated reports above for current claims.
 
 | Metric | Legacy Monorepo (`pi-main`) | AKD-DSO Engine (`LUMI-NEW`) | Underlying Mechanism / Speedup |
 |---|---|---|---|

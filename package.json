@@ -19,7 +19,10 @@
   "scripts": {
     "check": "tsc --noEmit",
     "build": "tsc",
-    "test": "node --import tsx scripts/validate-dsl-strategy.ts && node --import tsx scripts/validate-context-management.ts && node --import tsx scripts/validate-repo.ts",
+    "test": "node --import tsx scripts/validate-dsl-strategy.ts && node --import tsx scripts/validate-context-management.ts && node --import tsx scripts/validate-runtime-baseline.ts && node --import tsx scripts/validate-documentation.ts && node --import tsx scripts/validate-repo.ts",
+    "smoke": "node --import tsx src/index.ts --smoke",
+    "benchmark": "node --import tsx src/index.ts --benchmark",
+    "baseline:update": "node --import tsx src/index.ts --baseline",
     "guardrail": "node --import tsx scripts/validate-repo.ts",
     "start": "node dist/index.js",
     "prepublishOnly": "npm run check && npm test && npm run build"
@@ -27,11 +30,11 @@
   "dependencies": {
     "@openai/codex-sdk": "0.147.0",
     "get-east-asian-width": "1.6.0",
-    "marked": "18.0.5"
+    "marked": "18.0.5",
+    "typescript": "5.9.3"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "tsx": "^4.23.12",
-    "typescript": "^5.5.0"
+    "tsx": "^4.23.12"
   }
 }
