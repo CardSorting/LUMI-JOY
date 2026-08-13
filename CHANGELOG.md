@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added (Token-Aware Multi-Turn Context Lifecycle)
+
+- **Model-aware context admission**: Connected live provider requests to model-catalog window limits, output/safety reserves, proactive compaction thresholds, and a final turn-aware token guard.
+- **Non-destructive rolling compaction**: Split the durable transcript from the active provider projection; added exact policy pinning, recent complete-turn retention, deterministic `LUMI-CONTEXT/1` checkpoints, SHA-256 transcript references, and non-recursive rebuilds.
+- **Provider thread continuity**: Added versioned `LUMI-THREAD/1` rehydration after compaction, rewind, import, model/CWD changes, stateless provider calls, local turns, and failures while retaining the fast consecutive-turn path.
+- **Deterministic turn ordering**: Serialized concurrent submissions per engine so session mutations and stateful provider calls cannot interleave.
+- **Memory trust boundary**: Moved user-derived long-term memory out of the system prompt into a JSON-encoded `LUMI-MEMORY/1` assistant-scope envelope.
+- **Context regression suite**: Added deterministic validation for budgets, compaction pressure, oversized input, tool-turn integrity, persistence, rewind, checkpoint recurrence, and stateful SDK handoffs ([ADR-083](.wiki/adr/ADR-083-token-aware-multi-turn-context-lifecycle.md)).
+- **Linear compaction planning**: Added prefix-cost cutoff estimation with bounded refinement, avoiding quadratic checkpoint rebuilding on long histories.
+
 ### Added (Structured Agent Activity Streaming)
 
 - **Typed progress lifecycle**: Extended `EngineTickInput` with local cancellation and structured `onProgress` events carrying stable activity identity, lifecycle status, safe detail, timestamps, elapsed time, ordering, and metadata.

@@ -112,6 +112,12 @@ export type {
 } from "./core/contracts/agent.contracts.js";
 export type { GameStateSnapshot, SessionMessage, ISessionStore, SlabBufferSnapshot } from "./core/contracts/session.contracts.js";
 export type { CommandResult, AnchoredEditResult, ToolingEvent, JsonRpcNotification, TerminalProgressFrame, IHands, IEars, IToolRegistry } from "./core/contracts/tooling.contracts.js";
+export {
+  estimateMessageTokens,
+  estimateMessagesTokens,
+  estimateTextTokens,
+  truncateTextToTokenBudget,
+} from "./core/utilities/token-estimator.js";
 
 export { AbstractAgentEngine } from "./core/abstracts/abstract-agent-engine.js";
 export { AbstractSessionStore } from "./core/abstracts/abstract-session-store.js";
@@ -121,6 +127,7 @@ export { AbstractToolRegistry } from "./core/abstracts/abstract-tool-registry.js
 
 export { AgentConfig } from "./agents/base/agent-config.js";
 export { AgentEngine } from "./agents/extensions/execution/agent-engine.js";
+export type { AgentContextServices } from "./agents/extensions/execution/agent-engine.js";
 export { PromptComposer } from "./agents/extensions/compaction/prompt-composer.js";
 export { ModelResolver } from "./agents/extensions/resolution/model-resolver.js";
 export { AgentSlashRouter } from "./agents/extensions/resolution/agent-slash-router.js";
@@ -145,8 +152,9 @@ export type { CachedModelList } from "./agents/extensions/resolution/dynamic-mod
 export { LoopPhaseController } from "./agents/extensions/execution/loop-phase-controller.js";
 export type { LoopPhase, PhaseTransitionEvent } from "./agents/extensions/execution/loop-phase-controller.js";
 export { ContextBudgetCalculator } from "./agents/extensions/compaction/context-budget-calculator.js";
-export type { ContextBudgetInfo } from "./agents/extensions/compaction/context-budget-calculator.js";
+export type { ContextBudgetInfo, ContextBudgetOptions } from "./agents/extensions/compaction/context-budget-calculator.js";
 export { TokenTruncator } from "./agents/extensions/compaction/token-truncator.js";
+export type { TokenTruncationOptions } from "./agents/extensions/compaction/token-truncator.js";
 export { PromptTemplateEngine } from "./agents/extensions/compaction/prompt-template-engine.js";
 export { DynamicVariableInjector } from "./agents/extensions/compaction/dynamic-variable-injector.js";
 export { AgentLoopHarness } from "./agents/extensions/execution/agent-loop-harness.js";
@@ -165,6 +173,12 @@ export { SessionContext } from "./sessions/base/session-context.js";
 export { PersistentSessionStore, SessionStore } from "./sessions/extensions/persistence/session-store.js";
 export { ArenaAllocator } from "./sessions/extensions/substrate/arena-allocator.js";
 export { SessionCompactor } from "./sessions/extensions/compaction/session-compactor.js";
+export type {
+  CompactorOptions,
+  CompactionReason,
+  ContextCompactionPolicy,
+  ContextCompactionReport,
+} from "./sessions/extensions/compaction/session-compactor.js";
 export { SessionVfs } from "./sessions/extensions/vfs/session-vfs.js";
 export { SessionMemoryStore } from "./sessions/extensions/memory/session-memory-store.js";
 export { StabilityDoctor } from "./sessions/extensions/integrity/stability-doctor.js";

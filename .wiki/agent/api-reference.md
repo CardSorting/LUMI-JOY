@@ -126,6 +126,30 @@ Source: [`src/agents/extensions/execution/agent-engine.ts`](../../src/agents/ext
 
 The built-in Frogger generator is an explicit demo shortcut only: it activates when the prompt contains `frogger`. It is not the generic unauthenticated fallback for other creation prompts.
 
+## Context and compaction
+
+### `PersistentSessionStore`
+
+Source: [`src/sessions/extensions/persistence/session-store.ts`](../../src/sessions/extensions/persistence/session-store.ts)
+
+- `getMessages()` / `getActiveMessages()` return the bounded provider projection.
+- `getTranscript()` returns defensive copies of the full-fidelity conversation.
+- `resolveTranscriptReference(reference)` resolves a checkpoint SHA-256 address in constant expected time.
+- `compact(compactor, policy?)` updates only the active projection and returns a `ContextCompactionReport`.
+- JSONL export persists the durable transcript; import validates all records before replacing state.
+
+### `SessionCompactor`
+
+Source: [`src/sessions/extensions/compaction/session-compactor.ts`](../../src/sessions/extensions/compaction/session-compactor.ts)
+
+`compactWithReport(messages, policy?, sourceMessages?)` supports message and token triggers, target utilization, pinned-token reservation, recent-turn preference, bounded checkpoint size, and forced manual compaction. Reports include reason, estimated token deltas, summarized messages, preserved turns, checkpoint ID, and an explicit `overBudget` signal.
+
+### `ContextBudgetCalculator` and `TokenTruncator`
+
+Sources: [`context-budget-calculator.ts`](../../src/agents/extensions/compaction/context-budget-calculator.ts), [`token-truncator.ts`](../../src/agents/extensions/compaction/token-truncator.ts)
+
+The calculator derives usable input, safety, proactive trigger, and post-compaction target budgets from a model specification. The truncator supplies conservative token estimation and the final turn-aware provider admission guard. See [ADR-083](../adr/ADR-083-token-aware-multi-turn-context-lifecycle.md).
+
 ## Setup and model selection
 
 ### `SetupWizard`

@@ -34,6 +34,7 @@ export class AgentSlashRouter {
     switch (lowerCmd) {
       case "/stats": {
         const msgCount = context.sessionStore.getMessages().length;
+        const transcriptCount = context.sessionStore.getTranscript().length;
         const metrics = context.modelResolver.getMetrics();
         const memories = context.sessionMemoryStore.listMemories().length;
         const staged = context.sessionVfs.exportStaged().length;
@@ -42,6 +43,7 @@ export class AgentSlashRouter {
 Session ID: ${context.sessionContext.sessionId}
 Turn Count: ${context.sessionContext.turnCount}
 Active Messages: ${msgCount}
+Durable Transcript Messages: ${transcriptCount}
 Active Model: ${context.modelResolver.getActiveModel()}
 Estimated Tokens Consumed: ${metrics.totalTokensEstimated}
 Memories Stored: ${memories}
@@ -70,9 +72,14 @@ Slab Allocated Bytes: ${slab.allocatedBytes} / ${slab.capacityBytes}`;
 
       case "/compact": {
         const beforeCount = context.sessionStore.getMessages().length;
-        context.sessionStore.compact(context.sessionCompactor);
+        const report = context.sessionStore.compact(context.sessionCompactor, { force: true });
         const afterCount = context.sessionStore.getMessages().length;
-        return { handled: true, output: `Compacted session history: ${beforeCount} -> ${afterCount} messages.` };
+        return {
+          handled: true,
+          output: report.compacted
+            ? `Compacted active context: ${beforeCount} -> ${afterCount} messages, ${report.inputTokens} -> ${report.outputTokens} estimated tokens. Full transcript retained.`
+            : `Context already minimal (${afterCount} active messages). Full transcript retained.`,
+        };
       }
 
       case "/clear": {

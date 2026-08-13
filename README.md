@@ -161,6 +161,29 @@ See the [complete streaming strategy](.wiki/agent/streaming-activity-strategy.md
 
 ---
 
+## 🧠 Multi-Turn Context Lifecycle
+
+LUMI separates the full conversation transcript from the bounded context projection sent to a model. The transcript remains available for persistence, snapshots, forks, rewind, and SHA-256-addressed recall; the active projection keeps pinned system policy, one structured checkpoint, and the newest complete user turns.
+
+Context admission is model-aware and token-aware:
+
+```text
+model context window
+├── reserved model output
+├── safety margin
+└── usable model input
+    ├── pinned system + memory context
+    └── active conversation projection
+        ├── LUMI-CONTEXT/1 checkpoint
+        └── recent complete turns
+```
+
+Compaction triggers before the hard provider limit and targets a lower utilization level, leaving space for subsequent tool rounds. A final turn-aware guard prevents provider-side blind truncation. Stateful Codex threads are automatically rehydrated from `LUMI-THREAD/1` after compaction, rewind, model changes, stateless provider turns, or local-only responses.
+
+Run `npm test` to exercise message pressure, token pressure, oversized DSL/code input, checkpoint recurrence, durable persistence, rewind, and multi-turn thread handoff. See [ADR-083](.wiki/adr/ADR-083-token-aware-multi-turn-context-lifecycle.md) for the policy and trade-offs.
+
+---
+
 ## 🛡️ Non-Destructive Osmosis Extension Strategy (`ADR-012`)
 
 To prevent code regression, file overwrites, and structural drift as new evolutionary passes are absorbed from `pi-main`, **LUMI-NEW** strictly enforces the **Non-Destructive Extension & Mutation Directory Strategy**:

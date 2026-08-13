@@ -490,7 +490,9 @@ export class MonolithFactory {
       sessionMemoryStore,
       slashRouter,
       codexProviderBridge,
-      proxyGateway
+      proxyGateway,
+      undefined,
+      { modelCatalog, budgetCalculator, tokenTruncator }
     );
 
     return {

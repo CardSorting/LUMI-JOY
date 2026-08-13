@@ -1,3 +1,5 @@
+import { estimateMessagesTokens, estimateTextTokens } from "../../../core/utilities/token-estimator.js";
+
 /**
  * [LAYER: TOOLING EXTENSION]
  * Pass 155: Zero-Dependency Broccoli Token Estimator
@@ -20,19 +22,20 @@ export class BroccoliTokenEstimator {
    * Fast rough token count estimation based on character length ratio.
    */
   public static roughTokenCountEstimation(content: string, bytesPerToken = 4): number {
-    return Math.round(content.length / bytesPerToken);
+    if (bytesPerToken === 4) {
+      return estimateTextTokens(content);
+    }
+    const safeRatio = Number.isFinite(bytesPerToken) && bytesPerToken > 0 ? bytesPerToken : 4;
+    return content.length === 0 ? 0 : Math.max(1, Math.ceil(content.length / safeRatio));
   }
 
   /**
    * Estimates token usage for an array of structured text contents.
    */
   public estimateMessages(contents: string[]): number {
-    let total = 0;
-    for (const text of contents) {
-      total += BroccoliTokenEstimator.roughTokenCountEstimation(text);
-      total += 20; // Structural message metadata overhead
-    }
-    return total;
+    return estimateMessagesTokens(
+      contents.map((content) => ({ role: "user" as const, content, timestamp: 0 }))
+    );
   }
 
   /**

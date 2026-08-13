@@ -18,6 +18,8 @@ export interface GameStateSnapshot {
   frameIndex: number;
   timestamp: number;
   messages: SessionMessage[];
+  /** Durable, uncompacted conversation log. Optional for snapshot compatibility. */
+  transcript?: SessionMessage[];
   stagedFiles: Array<{ path: string; originalContent: string; stagedContent: string; isNew: boolean }>;
   memories: Array<{ key: string; value: string; category: string; timestamp: number }>;
   modelMetrics: { totalTurns: number; totalTokensEstimated: number; fallbackTriggeredCount: number };

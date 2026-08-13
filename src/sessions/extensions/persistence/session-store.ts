@@ -3,7 +3,7 @@ import * as path from "node:path";
 import { AbstractSessionStore } from "../../../core/abstracts/abstract-session-store.js";
 import type { GameStateSnapshot, SessionMessage, SlabBufferSnapshot } from "../../../core/contracts/session.contracts.js";
 import { ArenaAllocator } from "../substrate/arena-allocator.js";
-import type { SessionCompactor } from "../compaction/session-compactor.js";
+import { SessionCompactor, type ContextCompactionPolicy, type ContextCompactionReport } from "../compaction/session-compactor.js";
 import type { SessionVfs } from "../vfs/session-vfs.js";
 import type { SessionMemoryStore } from "../memory/session-memory-store.js";
 import type { ModelResolver } from "../../../agents/extensions/resolution/model-resolver.js";
@@ -14,13 +14,18 @@ import { BroccoliTaskStateEngine } from "./broccolidb-task-state.js";
 export class PersistentSessionStore extends AbstractSessionStore {
   private readonly arena: ArenaAllocator;
   private readonly coalescer: WriteCoalescerSubstrate;
+  private transcript: SessionMessage[];
+  private readonly transcriptIndex = new Map<string, SessionMessage>();
+  private contextGeneration = 0;
   readonly taskStateEngine: BroccoliTaskStateEngine;
 
   constructor(initialMessages: SessionMessage[] = [], arenaCapacityBytes?: number) {
-    super(initialMessages);
+    super(initialMessages.map((message) => ({ ...message })));
+    this.transcript = initialMessages.map((message) => ({ ...message }));
     this.arena = new ArenaAllocator(arenaCapacityBytes ?? 16 * 1024 * 1024);
     this.coalescer = new WriteCoalescerSubstrate();
     this.taskStateEngine = new BroccoliTaskStateEngine();
+    this.rebuildTranscriptIndex();
     for (const msg of this.messages) {
       if (msg.content) {
         this.arena.allocateString(msg.content);
@@ -30,6 +35,9 @@ export class PersistentSessionStore extends AbstractSessionStore {
 
   addMessage(message: Omit<SessionMessage, "timestamp">): SessionMessage {
     const fullMessage = super.addMessage(message);
+    const transcriptMessage = { ...fullMessage };
+    this.transcript.push(transcriptMessage);
+    this.transcriptIndex.set(SessionCompactor.referenceFor(transcriptMessage), transcriptMessage);
     if (fullMessage.content) {
       this.arena.allocateString(fullMessage.content);
     }
@@ -38,33 +46,60 @@ export class PersistentSessionStore extends AbstractSessionStore {
 
   clear(): void {
     super.clear();
+    this.transcript.length = 0;
+    this.transcriptIndex.clear();
+    this.contextGeneration += 1;
     this.arena.reset();
   }
 
-  compact(compactor: SessionCompactor): void {
-    this.messages = compactor.compact(this.messages);
+  compact(
+    compactor: SessionCompactor,
+    policy: ContextCompactionPolicy = {}
+  ): ContextCompactionReport {
+    const report = compactor.compactWithReport(this.messages, policy, this.transcript);
+    this.messages = report.messages;
+    if (report.compacted) {
+      this.contextGeneration += 1;
+    }
     this.arena.reset();
     for (const msg of this.messages) {
       if (msg.content) {
         this.arena.allocateString(msg.content);
       }
     }
+    return report;
   }
 
   fork(): PersistentSessionStore {
-    const forkedStore = new PersistentSessionStore(this.messages, this.arena.getCapacityBytes());
-    forkedStore.arena.setOffset(this.arena.getOffset());
+    const forkedStore = new PersistentSessionStore([], this.arena.getCapacityBytes());
+    forkedStore.messages = this.messages.map((message) => ({ ...message }));
+    forkedStore.transcript = this.transcript.map((message) => ({ ...message }));
+    forkedStore.contextGeneration = this.contextGeneration;
+    forkedStore.rebuildTranscriptIndex();
+    forkedStore.rebuildArena();
     return forkedStore;
   }
 
   exportJsonl(): string {
-    return this.messages.map((msg) => JSON.stringify(msg)).join("\n");
+    return this.transcript.map((msg) => JSON.stringify(msg)).join("\n");
   }
 
   importJsonl(jsonlData: string): void {
     const lines = jsonlData.split("\n").filter((line) => line.trim().length > 0);
-    const parsed: SessionMessage[] = lines.map((line) => JSON.parse(line));
-    this.messages = parsed;
+    const parsed: SessionMessage[] = lines.map((line, index) => {
+      try {
+        return this.parseMessage(JSON.parse(line) as unknown, index + 1);
+      } catch (error) {
+        if (error instanceof SyntaxError) {
+          throw new Error(`Invalid session JSONL syntax at line ${index + 1}`, { cause: error });
+        }
+        throw error;
+      }
+    });
+    this.messages = parsed.map((message) => ({ ...message }));
+    this.transcript = parsed.map((message) => ({ ...message }));
+    this.rebuildTranscriptIndex();
+    this.contextGeneration += 1;
     this.arena.reset();
     for (const msg of this.messages) {
       if (msg.content) {
@@ -105,6 +140,26 @@ export class PersistentSessionStore extends AbstractSessionStore {
     this.arena.reset();
   }
 
+  /** Active provider context, which may contain a rolling checkpoint. */
+  getActiveMessages(): readonly SessionMessage[] {
+    return this.getMessages();
+  }
+
+  /** Full-fidelity history retained independently from lossy active context. */
+  getTranscript(): readonly SessionMessage[] {
+    return this.transcript.map((message) => ({ ...message }));
+  }
+
+  resolveTranscriptReference(reference: string): SessionMessage | undefined {
+    const match = this.transcriptIndex.get(reference);
+    return match ? { ...match } : undefined;
+  }
+
+  /** Changes only when provider context must be rehydrated into a fresh thread. */
+  getContextGeneration(): number {
+    return this.contextGeneration;
+  }
+
   createSnapshot(
     frameIndex: number,
     sessionVfs?: SessionVfs,
@@ -125,6 +180,7 @@ export class PersistentSessionStore extends AbstractSessionStore {
       frameIndex,
       timestamp: Date.now(),
       messages: this.messages.map((msg) => ({ ...msg })),
+      transcript: this.transcript.map((msg) => ({ ...msg })),
       stagedFiles,
       memories: sessionMemoryStore ? [...sessionMemoryStore.listMemories()] : [],
       modelMetrics: modelResolver ? { ...modelResolver.getMetrics() } : { totalTurns: 0, totalTokensEstimated: 0, fallbackTriggeredCount: 0 },
@@ -134,10 +190,55 @@ export class PersistentSessionStore extends AbstractSessionStore {
 
   rewindToSnapshot(snapshot: GameStateSnapshot): void {
     this.messages = snapshot.messages.map((msg) => ({ ...msg }));
+    this.transcript = (snapshot.transcript ?? snapshot.messages).map((msg) => ({ ...msg }));
+    this.rebuildTranscriptIndex();
+    this.contextGeneration += 1;
     if (snapshot.slabSnapshot) {
       this.arena.setOffset(snapshot.slabSnapshot.offsetWords);
     } else {
       this.arena.reset();
+    }
+  }
+
+  private parseMessage(value: unknown, lineNumber: number): SessionMessage {
+    if (!value || typeof value !== "object") {
+      throw new Error(`Invalid session JSONL message at line ${lineNumber}`);
+    }
+
+    const candidate = value as Partial<SessionMessage>;
+    const validRoles = new Set<SessionMessage["role"]>(["system", "user", "assistant", "tool"]);
+    if (
+      !candidate.role ||
+      !validRoles.has(candidate.role) ||
+      typeof candidate.content !== "string" ||
+      typeof candidate.timestamp !== "number" ||
+      !Number.isFinite(candidate.timestamp)
+    ) {
+      throw new Error(`Invalid session JSONL message at line ${lineNumber}`);
+    }
+
+    return {
+      role: candidate.role,
+      content: candidate.content,
+      timestamp: candidate.timestamp,
+      ...(typeof candidate.toolCallId === "string" ? { toolCallId: candidate.toolCallId } : {}),
+      ...(typeof candidate.name === "string" ? { name: candidate.name } : {}),
+    };
+  }
+
+  private rebuildArena(): void {
+    this.arena.reset();
+    for (const message of this.messages) {
+      if (message.content) {
+        this.arena.allocateString(message.content);
+      }
+    }
+  }
+
+  private rebuildTranscriptIndex(): void {
+    this.transcriptIndex.clear();
+    for (const message of this.transcript) {
+      this.transcriptIndex.set(SessionCompactor.referenceFor(message), message);
     }
   }
 }

@@ -88,6 +88,7 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 | [ADR-080](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-080-phase-59-broccolidb-command-sanitizer-and-shell-resolver.md) | Phase 59 Broccoli Command Sanitizer & Shell Environment Resolver (Passes 187–189) | Accepted | 2026-08-12 | Phase 59 Evolution |
 | [ADR-081](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-081-phase-60-broccolidb-command-diagnostics-and-output-buffer.md) | Phase 60 Broccoli Command Diagnostics & Output Buffer (Passes 190–192) | Accepted | 2026-08-12 | Phase 60 Evolution |
 | [ADR-082](ADR-082-structured-agent-activity-streaming.md) | Structured Agent Activity Streaming and Persistent Terminal Timeline | Accepted | 2026-08-12 | Agent Execution & Terminal UX |
+| [ADR-083](ADR-083-token-aware-multi-turn-context-lifecycle.md) | Token-Aware Multi-Turn Context Lifecycle | Accepted | 2026-08-12 | Context Engineering |
 
 ## Domain Grouping
 
@@ -100,6 +101,7 @@ This index lists all Architecture Decision Records (ADRs) for the LUMI-NEW works
 - **ADR-011** *(historical record unavailable)*: Terminal Progress Renderer (`ProgressStreamingEars`, `TerminalProgressRenderer`).
 - **[ADR-012](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-012-non-destructive-osmosis-class-extension-strategy.md)**: Non-Destructive Class Extension & Additive Osmosis Strategy.
 - **[ADR-082](ADR-082-structured-agent-activity-streaming.md)**: Provider-independent progress lifecycle, Codex SDK event adaptation, persistent terminal activity timeline, cancellation, and safe observability boundaries.
+- **[ADR-083](ADR-083-token-aware-multi-turn-context-lifecycle.md)**: Token-aware active context projections, durable transcripts, versioned compaction envelopes, and stateful provider rehydration.
 
 ### Feature Evolution & Osmosis Learning
 - **[ADR-002](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-002-osmosis-evolution-compaction-skills-composition.md)**: Context compaction, skill discovery, and prompt composition.

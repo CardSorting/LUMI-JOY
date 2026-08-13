@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { createHash } from "node:crypto";
 import { Codex, type Thread } from "@openai/codex-sdk";
 import { AbstractAgentEngine } from "../../../core/abstracts/abstract-agent-engine.js";
 import type {
@@ -7,13 +8,17 @@ import type {
   EngineTickInput,
   EngineTickResult,
 } from "../../../core/contracts/agent.contracts.js";
+import type { SessionMessage } from "../../../core/contracts/session.contracts.js";
 import type { AgentConfig } from "../../base/agent-config.js";
 import type { SessionContext } from "../../../sessions/base/session-context.js";
 import type { PersistentSessionStore } from "../../../sessions/extensions/persistence/session-store.js";
 import type { ValidatingToolRegistry } from "../../../tooling/extensions/registry/tool-registry.js";
 import type { PromptComposer } from "../compaction/prompt-composer.js";
 import type { SessionCompactor } from "../../../sessions/extensions/compaction/session-compactor.js";
+import { ContextBudgetCalculator, type ContextBudgetInfo } from "../compaction/context-budget-calculator.js";
+import { TokenTruncator } from "../compaction/token-truncator.js";
 import type { ModelResolver } from "../resolution/model-resolver.js";
+import { ModelCatalog } from "../resolution/model-catalog.js";
 import type { SessionVfs } from "../../../sessions/extensions/vfs/session-vfs.js";
 import type { SessionMemoryStore } from "../../../sessions/extensions/memory/session-memory-store.js";
 import type { AgentSlashRouter } from "../resolution/agent-slash-router.js";
@@ -23,6 +28,18 @@ import { CodexProgressAdapter } from "./codex-progress-adapter.js";
 import { sanitizeProgressText } from "../../../core/utilities/progress-sanitizer.js";
 
 const CODEX_TURN_TIMEOUT_MS = 10 * 60 * 1000;
+
+interface PreparedProviderContext {
+  messages: SessionMessage[];
+  currentPrompt: string;
+  budget: ContextBudgetInfo;
+}
+
+export interface AgentContextServices {
+  modelCatalog?: ModelCatalog;
+  budgetCalculator?: ContextBudgetCalculator;
+  tokenTruncator?: TokenTruncator;
+}
 
 export class AgentEngine extends AbstractAgentEngine {
   readonly promptComposer: PromptComposer;
@@ -37,6 +54,13 @@ export class AgentEngine extends AbstractAgentEngine {
   private codexThread: Thread | null = null;
   private codexThreadModel: string | null = null;
   private codexThreadCwd: string | null = null;
+  private codexThreadContextGeneration = -1;
+  private codexThreadPinnedContextKey: string | null = null;
+  private codexThreadTranscriptLength = -1;
+  private readonly runtimeModelCatalog: ModelCatalog;
+  private readonly runtimeBudgetCalculator: ContextBudgetCalculator;
+  private readonly runtimeTokenTruncator: TokenTruncator;
+  private turnQueue: Promise<void> = Promise.resolve();
 
   constructor(
     config: AgentConfig,
@@ -51,7 +75,8 @@ export class AgentEngine extends AbstractAgentEngine {
     slashRouter: AgentSlashRouter,
     codexProviderBridge?: CodexProviderBridge,
     proxyGateway?: LlmProxyGateway,
-    codex: Codex = new Codex()
+    codex: Codex = new Codex(),
+    contextServices: AgentContextServices = {}
   ) {
     super(config, sessionContext, sessionStore, toolRegistry);
     this.promptComposer = promptComposer;
@@ -63,6 +88,28 @@ export class AgentEngine extends AbstractAgentEngine {
     this.codexProviderBridge = codexProviderBridge;
     this.proxyGateway = proxyGateway;
     this.codex = codex;
+    this.runtimeModelCatalog = contextServices.modelCatalog ?? new ModelCatalog();
+    this.runtimeBudgetCalculator = contextServices.budgetCalculator ?? new ContextBudgetCalculator();
+    this.runtimeTokenTruncator = contextServices.tokenTruncator ?? new TokenTruncator();
+  }
+
+  /** Serialize mutations and stateful provider calls for deterministic turn order. */
+  override async tick(input: EngineTickInput): Promise<EngineTickResult> {
+    const predecessor = this.turnQueue;
+    let releaseTurn: () => void = () => undefined;
+    this.turnQueue = new Promise<void>((resolve) => {
+      releaseTurn = resolve;
+    });
+
+    await predecessor;
+    try {
+      if (input.signal?.aborted) {
+        throw new Error("Turn cancelled before execution");
+      }
+      return await super.tick(input);
+    } finally {
+      releaseTurn();
+    }
   }
 
   protected async preTick(input: EngineTickInput): Promise<void> {
@@ -106,13 +153,10 @@ export class AgentEngine extends AbstractAgentEngine {
       });
     }
 
-    // 3. Compact History if Over Capacity
-    if (sessionStore.getMessages().length > this.config.maxTurns) {
-      sessionStore.compact(this.sessionCompactor);
-    }
-
-    // 4. Response Resolution & Action Dispatch
+    // 3. Response Resolution & Action Dispatch. Provider-bound paths prepare
+    // and compact context immediately before authentication/dispatch.
     let responseText = "";
+    let responseUsedCodexThread = false;
 
     // Keep the built-in Frogger demo available without hijacking other game requests.
     const lowerPrompt = promptText.toLowerCase();
@@ -158,17 +202,24 @@ export class AgentEngine extends AbstractAgentEngine {
       if (this.codexProviderBridge) {
         for (let attempt = 0; attempt < 2; attempt++) {
           try {
+            progressManagedByCodex = false;
             const activeModel = this.modelResolver.getActiveModel();
+            const preparedContext = this.prepareProviderContext(activeModel, promptText);
             const auth = await this.codexProviderBridge.resolveProviderAuth(activeModel);
             if (auth.authType === "codex-oauth") {
               progressManagedByCodex = true;
               liveResponse = await this.dispatchCodexTurn(
-                promptText,
+                preparedContext.currentPrompt,
                 activeModel,
+                preparedContext.messages,
                 input.signal,
                 input.onProgress
               );
+              responseUsedCodexThread = liveResponse !== null;
             } else if (auth.authType === "api-key") {
+              // A stateless API turn is invisible to an existing SDK thread.
+              // Rehydrate from the canonical local context before any later SDK turn.
+              this.resetCodexThread();
               liveProgressActivityId = "openai:turn";
               const requestStartedAt = Date.now();
               const timeoutSignal = AbortSignal.timeout(
@@ -196,8 +247,13 @@ export class AgentEngine extends AbstractAgentEngine {
 
               const payload = {
                 model: activeModel,
-                messages: sessionStore.getMessages().map((m) => ({ role: m.role, content: m.content })),
-                max_tokens: 2048,
+                messages: preparedContext.messages.map((message) => ({
+                  role: message.role,
+                  content: message.content,
+                  ...(message.name ? { name: message.name } : {}),
+                  ...(message.toolCallId ? { tool_call_id: message.toolCallId } : {}),
+                })),
+                max_tokens: preparedContext.budget.reservedOutputTokens,
               };
 
               const res = await fetch(endpoint.url, {
@@ -309,11 +365,25 @@ export class AgentEngine extends AbstractAgentEngine {
       }
     }
 
-    // 5. Add Assistant Response Message
+    // 4. Add Assistant Response Message
     sessionStore.addMessage({
       role: "assistant",
       content: responseText,
     });
+
+    const maintenanceCompaction = sessionStore.getMessages().length > this.config.maxTurns
+      ? sessionStore.compact(this.sessionCompactor, { maxMessages: this.config.maxTurns })
+      : undefined;
+
+    if (maintenanceCompaction?.compacted) {
+      this.resetCodexThread();
+    } else if (responseUsedCodexThread) {
+      this.codexThreadTranscriptLength = sessionStore.getTranscript().length;
+    } else {
+      // Local/demo, memory, API-key, and failed turns are not present in the
+      // stateful SDK transcript. Force an exact local rehydration next time.
+      this.resetCodexThread();
+    }
 
     this.modelResolver.recordTurnExecution(
       promptText.length,
@@ -338,15 +408,28 @@ export class AgentEngine extends AbstractAgentEngine {
   private async dispatchCodexTurn(
     promptText: string,
     activeModel: string,
+    contextMessages: readonly SessionMessage[],
     signal?: AbortSignal,
     onProgress?: (event: EngineProgressEvent) => void
   ): Promise<string> {
     const cwd = this.sessionContext.cwd;
+    const sessionStore = this.sessionStore as PersistentSessionStore;
+    const contextGeneration = sessionStore.getContextGeneration();
+    const pinnedContextKey = this.fingerprintPinnedContext(contextMessages);
+    const transcriptLength = sessionStore.getTranscript().length;
+    const hasUnexpectedTranscriptMutation =
+      this.codexThreadTranscriptLength >= 0 &&
+      transcriptLength !== this.codexThreadTranscriptLength + 1;
+    let requiresBootstrap = false;
     if (
       !this.codexThread ||
       this.codexThreadModel !== activeModel ||
-      this.codexThreadCwd !== cwd
+      this.codexThreadCwd !== cwd ||
+      this.codexThreadContextGeneration !== contextGeneration ||
+      this.codexThreadPinnedContextKey !== pinnedContextKey ||
+      hasUnexpectedTranscriptMutation
     ) {
+      this.resetCodexThread();
       this.codexThread = this.codex.startThread({
         model: activeModel,
         workingDirectory: cwd,
@@ -356,6 +439,9 @@ export class AgentEngine extends AbstractAgentEngine {
       });
       this.codexThreadModel = activeModel;
       this.codexThreadCwd = cwd;
+      this.codexThreadContextGeneration = contextGeneration;
+      this.codexThreadPinnedContextKey = pinnedContextKey;
+      requiresBootstrap = true;
     }
 
     const timeoutSignal = AbortSignal.timeout(CODEX_TURN_TIMEOUT_MS);
@@ -391,7 +477,10 @@ export class AgentEngine extends AbstractAgentEngine {
     watchdogInterval.unref?.();
 
     try {
-      const { events } = await this.codexThread.runStreamed(promptText, { signal: turnSignal });
+      const providerPrompt = requiresBootstrap
+        ? this.promptComposer.composeThreadBootstrap(contextMessages, promptText)
+        : promptText;
+      const { events } = await this.codexThread.runStreamed(providerPrompt, { signal: turnSignal });
 
       for await (const event of events) {
         lastEventAt = Date.now();
@@ -435,9 +524,7 @@ export class AgentEngine extends AbstractAgentEngine {
       }
 
       // A failed or cancelled child should never be reused as the next turn's transport.
-      this.codexThread = null;
-      this.codexThreadModel = null;
-      this.codexThreadCwd = null;
+      this.resetCodexThread();
 
       if (signal?.aborted) {
         progress.cancel();
@@ -456,6 +543,78 @@ export class AgentEngine extends AbstractAgentEngine {
     } finally {
       clearInterval(watchdogInterval);
     }
+  }
+
+  private prepareProviderContext(activeModel: string, requestedPrompt = ""): PreparedProviderContext {
+    const sessionStore = this.sessionStore as PersistentSessionStore;
+    const model = this.runtimeModelCatalog.getModelInfo(activeModel);
+    const requestedOutputTokens = Math.min(8_192, model.maxOutputTokens);
+    const budget = this.runtimeBudgetCalculator.calculateBudget(
+      activeModel,
+      requestedOutputTokens,
+      { contextWindowTokens: model.contextWindowTokens }
+    );
+    const memoryContext = this.sessionMemoryStore.formatMemoryContext();
+    const promptConfig = activeModel === this.config.modelName
+      ? this.config
+      : { ...this.config, modelName: activeModel };
+    const pinnedMessages = this.promptComposer.compileTurnMessages({
+      config: promptConfig,
+      sessionContext: this.sessionContext,
+      messages: [],
+      memoryContext,
+    });
+    const reservedTokens = this.runtimeTokenTruncator.estimateMessages(pinnedMessages);
+
+    sessionStore.compact(this.sessionCompactor, {
+      maxInputTokens: budget.availableInputTokens,
+      triggerInputTokens: budget.compactionTriggerTokens,
+      targetInputTokens: budget.targetInputTokens,
+      reservedTokens,
+      preserveRecentTurns: 4,
+    });
+
+    const compiled = this.promptComposer.compileTurnMessages({
+      config: promptConfig,
+      sessionContext: this.sessionContext,
+      messages: [...sessionStore.getMessages()],
+      memoryContext,
+    });
+    const guarded = this.runtimeTokenTruncator.truncateToTokenBudget(
+      compiled,
+      budget.availableInputTokens,
+      { preserveRecentTurns: 1 }
+    );
+    const currentPrompt = requestedPrompt
+      ? [...guarded].reverse().find((message) => message.role === "user")?.content ?? requestedPrompt
+      : "";
+
+    return {
+      messages: guarded,
+      currentPrompt,
+      budget,
+    };
+  }
+
+  private resetCodexThread(): void {
+    this.codexThread = null;
+    this.codexThreadModel = null;
+    this.codexThreadCwd = null;
+    this.codexThreadContextGeneration = -1;
+    this.codexThreadPinnedContextKey = null;
+    this.codexThreadTranscriptLength = -1;
+  }
+
+  private fingerprintPinnedContext(messages: readonly SessionMessage[]): string {
+    const content = messages
+      .filter(
+        (message) =>
+          message.role === "system" ||
+          message.content.startsWith("LUMI-MEMORY/1")
+      )
+      .map((message) => `${message.role}\u0000${message.content}`)
+      .join("\u0001");
+    return createHash("sha256").update(content).digest("hex");
   }
 
   private reportProgress(
@@ -1128,4 +1287,3 @@ export class AgentEngine extends AbstractAgentEngine {
 </html>`;
   }
 }
-
