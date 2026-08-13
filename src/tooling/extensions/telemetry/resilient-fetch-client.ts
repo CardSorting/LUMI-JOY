@@ -30,6 +30,10 @@ export class ResilientFetchClient {
     this.maxBackoffMs = options.maxBackoffMs ?? 2000;
   }
 
+  isRetriableStatus(status: number): boolean {
+    return status === 429 || (status >= 500 && status <= 504);
+  }
+
   async fetchText(url: string): Promise<FetchResult<string>> {
     const startTime = Date.now();
     return {
@@ -48,11 +52,15 @@ export class ResilientFetchClient {
     const startTime = Date.now();
     let attempts = 0;
     let currentBackoff = this.initialBackoffMs;
+    let lastStatus = 500;
+    let lastError = "";
 
     while (attempts <= this.maxRetries) {
       attempts++;
       try {
         const res = await fetcher();
+        lastStatus = res.status;
+
         if (res.ok) {
           const data = await res.json();
           return {
@@ -63,29 +71,45 @@ export class ResilientFetchClient {
             durationMs: Date.now() - startTime,
           };
         }
+
+        if (!this.isRetriableStatus(res.status)) {
+          return {
+            ok: false,
+            status: res.status,
+            attempts,
+            durationMs: Date.now() - startTime,
+            error: `Non-retriable HTTP status ${res.status}`,
+          };
+        }
+
+        lastError = `HTTP ${res.status} (retriable)`;
       } catch (err) {
+        lastError = err instanceof Error ? err.message : String(err);
         if (attempts > this.maxRetries) {
           return {
             ok: false,
-            status: 500,
+            status: lastStatus,
             attempts,
             durationMs: Date.now() - startTime,
-            error: err instanceof Error ? err.message : String(err),
+            error: lastError,
           };
         }
       }
 
-      // Exponential backoff delay calculation
+      if (attempts > this.maxRetries) break;
+
+      // Exponential backoff with full jitter to protect brittle LLM connections
+      const jitteredBackoff = Math.floor(Math.random() * currentBackoff);
       currentBackoff = Math.min(currentBackoff * 2, this.maxBackoffMs);
-      await new Promise((r) => setTimeout(r, currentBackoff));
+      await new Promise((r) => setTimeout(r, jitteredBackoff));
     }
 
     return {
       ok: false,
-      status: 504,
+      status: lastStatus,
       attempts,
       durationMs: Date.now() - startTime,
-      error: "Max retries exceeded",
+      error: lastError || "Max retries exceeded",
     };
   }
 }

@@ -101,12 +101,29 @@ export class CodexProgressAdapter {
     this.finish("cancelled", "cancelled", "Agent turn cancelled", message, { source: "codex-sdk" }, true);
   }
 
-  timeout(message = "The agent exceeded the 10 minute turn limit"): void {
+  timeout(message = "The agent exceeded the turn limit"): void {
     this.finish("failed", "failed", "Agent turn timed out", message, { source: "codex-sdk" }, true);
   }
 
   fail(message: string, detail?: string): void {
     this.finish("failed", "failed", message, detail);
+  }
+
+  completeTurnFallback(finalResponseLength = 0, usage?: Usage): void {
+    if (this.terminal) return;
+    const detail: string[] = [];
+    if (this.commandCount > 0) detail.push(this.pluralize(this.commandCount, "command"));
+    if (this.toolCount > 0) detail.push(this.pluralize(this.toolCount, "tool call"));
+    if (this.changedFiles.size > 0) detail.push(this.pluralize(this.changedFiles.size, "file changed", "files changed"));
+    if (usage) {
+      detail.push(`${usage.input_tokens.toLocaleString()} in / ${usage.output_tokens.toLocaleString()} out tokens`);
+    } else if (finalResponseLength > 0) {
+      detail.push(`${finalResponseLength.toLocaleString()} chars received`);
+    }
+    this.finish("completed", "completed", "Agent turn complete", detail.join(" · ") || "Response complete", {
+      source: "codex-sdk",
+      ...(usage ? { inputTokens: usage.input_tokens, outputTokens: usage.output_tokens } : {}),
+    });
   }
 
   private handleItem(

@@ -18,9 +18,14 @@ export class ContextBudgetCalculator {
   }
 
   calculateBudget(modelName: string, maxOutputTokens = 4096): ContextBudgetInfo {
-    const maxTokens = modelName.includes("claude-3-5") || modelName.includes("gpt-4o")
-      ? 200000
-      : this.defaultMaxTokens;
+    const isLargeContext =
+      modelName.includes("claude-3-5") ||
+      modelName.includes("gpt-4o") ||
+      modelName.includes("gpt-5") ||
+      modelName.includes("terra") ||
+      modelName.includes("codex");
+
+    const maxTokens = isLargeContext ? 200000 : this.defaultMaxTokens;
 
     const availableInputTokens = Math.max(0, maxTokens - maxOutputTokens);
 

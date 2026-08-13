@@ -684,6 +684,7 @@ export class InteractiveModeController {
             )
           );
           historyContainer.addChild(responseBox);
+          historyScrollView.scrollTo(Number.MAX_SAFE_INTEGER);
         } catch (err: unknown) {
           const errorMsg = err instanceof Error ? err.message : String(err);
           const safeErrorMsg = sanitizeProgressText(errorMsg, 700) || "Unknown engine error";
@@ -693,12 +694,14 @@ export class InteractiveModeController {
             new Markdown(`\x1b[1;31m⚠ Engine Tick Error:\x1b[0m ${safeErrorMsg}`, 0, 0, DEFAULT_MARKDOWN_THEME)
           );
           historyContainer.addChild(errorBox);
+          historyScrollView.scrollTo(Number.MAX_SAFE_INTEGER);
         } finally {
           clearInterval(progressInterval);
           if (activeTurnAbortController === turnAbortController) {
             activeTurnAbortController = null;
           }
           footerText.setText(defaultFooterText);
+          historyScrollView.scrollTo(Number.MAX_SAFE_INTEGER);
           tui.requestRender();
         }
       };

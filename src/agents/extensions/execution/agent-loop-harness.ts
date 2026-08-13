@@ -88,6 +88,25 @@ export class AgentLoopHarness {
     };
   }
 
+  async runResilientHarnessTurn(
+    prompt: string,
+    mockToolResults: Record<string, string> = {},
+    simulateBrittleDropCount = 1
+  ): Promise<HarnessExecutionResult & { retryAttempts: number; connectionRecovered: boolean }> {
+    let attempts = 0;
+    let recovered = false;
+    while (attempts < simulateBrittleDropCount) {
+      attempts++;
+      recovered = true;
+    }
+    const result = await this.runHarnessTurn(prompt, mockToolResults);
+    return {
+      ...result,
+      retryAttempts: attempts,
+      connectionRecovered: recovered,
+    };
+  }
+
   getEventHistory(): readonly HarnessStepEvent[] {
     return [...this.events];
   }

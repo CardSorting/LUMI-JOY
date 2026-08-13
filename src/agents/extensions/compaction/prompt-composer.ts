@@ -15,7 +15,7 @@ export class PromptComposer {
   readonly suggestionEngine = new BroccoliCognitiveSuggestionEngine();
   composeSystemPrompt(config: AgentConfig, skillsContext?: string, memoryContext?: string): string {
     let prompt = `You are LUMI, an intelligent AI pair programmer operating inside deterministic game engine monolith runtime.
-Working directory: ${config.modelName}
+Active Model: ${config.modelName}
 
 ## Instructions
 - Be concise, direct, and technical.

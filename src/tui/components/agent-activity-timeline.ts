@@ -53,13 +53,13 @@ export class AgentActivityTimeline implements Component {
     );
     if (safeEvent.status === "completed" && safeEvent.phase === "completed") {
       this.terminalStatus = "completed";
+      this.settleActiveEntries(safeEvent, "completed");
     } else if (safeEvent.status === "failed" && safeEvent.activityId.endsWith(":turn")) {
       this.terminalStatus = "failed";
+      this.settleActiveEntries(safeEvent, "failed");
     } else if (safeEvent.status === "cancelled") {
       this.terminalStatus = "cancelled";
-    }
-    if (this.terminalStatus === "cancelled" || this.terminalStatus === "failed") {
-      this.settleActiveEntries(safeEvent, this.terminalStatus);
+      this.settleActiveEntries(safeEvent, "cancelled");
     }
     this.invalidate();
   }
@@ -156,7 +156,7 @@ export class AgentActivityTimeline implements Component {
 
   private settleActiveEntries(
     terminalEvent: EngineProgressEvent,
-    status: "failed" | "cancelled"
+    status: "completed" | "failed" | "cancelled"
   ): void {
     for (const [id, entry] of this.entries) {
       if (id === terminalEvent.activityId) continue;
@@ -165,7 +165,7 @@ export class AgentActivityTimeline implements Component {
         ...entry,
         phase: status,
         status,
-        message: `${entry.message} (${status === "cancelled" ? "stopped" : "interrupted"})`,
+        message: status === "completed" ? entry.message : `${entry.message} (${status === "cancelled" ? "stopped" : "interrupted"})`,
         timestamp: terminalEvent.timestamp,
         elapsedMs: Math.max(0, terminalEvent.timestamp - entry.timestamp),
         sequence: terminalEvent.sequence,

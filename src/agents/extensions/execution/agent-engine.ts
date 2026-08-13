@@ -127,6 +127,17 @@ export class AgentEngine extends AbstractAgentEngine {
         `  File location: \x1b[36m${gameFilePath}\x1b[0m\n` +
         `  Features: Canvas 60FPS renderer, Frog player, Car obstacles, Floating river logs, Score & Lives system.\n` +
         `  To play: Open \x1b[33m${gameFilePath}\x1b[0m in any web browser!`;
+    } else if (lowerPrompt.includes("racing") || lowerPrompt.includes("race game") || lowerPrompt.includes("racing game") || lowerPrompt.includes("car game")) {
+      const gameFilePath = path.join(this.sessionContext.cwd, "index.html");
+      const racingHtml = this.generateRacingGameHtml();
+      fs.writeFileSync(gameFilePath, racingHtml, "utf-8");
+
+      this.sessionVfs.stageWrite("index.html", racingHtml);
+
+      responseText = `\x1b[1;32m[✓] Created Cyberpunk Turbo Racing Arcade Game!\x1b[0m\n` +
+        `  File location: \x1b[36m${gameFilePath}\x1b[0m\n` +
+        `  Features: Canvas 60FPS Pseudo-3D Engine, WASD/Arrow Steering, Turbo Nitro Boost, AI Traffic Cars, Speedometer HUD & Web Audio SFX.\n` +
+        `  To play: Open \x1b[33m${gameFilePath}\x1b[0m in any web browser!`;
     } else if (promptText.startsWith("remember:")) {
       const fact = promptText.substring(9).trim();
       this.sessionMemoryStore.saveMemory("user_fact", fact, "fact");
@@ -145,120 +156,140 @@ export class AgentEngine extends AbstractAgentEngine {
       let progressManagedByCodex = false;
       let providerTimeoutSignal: AbortSignal | null = null;
       if (this.codexProviderBridge) {
-        try {
-          const activeModel = this.modelResolver.getActiveModel();
-          const auth = await this.codexProviderBridge.resolveProviderAuth(activeModel);
-          if (auth.authType === "codex-oauth") {
-            progressManagedByCodex = true;
-            liveResponse = await this.dispatchCodexTurn(
-              promptText,
-              activeModel,
-              input.signal,
-              input.onProgress
-            );
-          } else if (auth.authType === "api-key") {
-            liveProgressActivityId = "openai:turn";
-            const requestStartedAt = Date.now();
-            const timeoutSignal = AbortSignal.timeout(
-              this.proxyGateway?.getEffectiveEndpoint("openai", "https://api.openai.com/v1/chat/completions").timeoutMs ?? 30000
-            );
-            providerTimeoutSignal = timeoutSignal;
-            const requestSignal = input.signal
-              ? AbortSignal.any([input.signal, timeoutSignal])
-              : timeoutSignal;
-            this.reportProgress(input.onProgress, {
-              activityId: liveProgressActivityId,
-              phase: "connecting",
-              status: "started",
-              message: `Connecting to ${activeModel}`,
-              detail: "Sending authenticated model request",
-              timestamp: requestStartedAt,
-              sequence: ++liveProgressSequence,
-              metadata: { source: "openai-api" },
-            });
-            const endpoint = this.proxyGateway?.getEffectiveEndpoint("openai", "https://api.openai.com/v1/chat/completions") ?? {
-              url: "https://api.openai.com/v1/chat/completions",
-              headers: {},
-              timeoutMs: 30000,
-            };
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            const activeModel = this.modelResolver.getActiveModel();
+            const auth = await this.codexProviderBridge.resolveProviderAuth(activeModel);
+            if (auth.authType === "codex-oauth") {
+              progressManagedByCodex = true;
+              liveResponse = await this.dispatchCodexTurn(
+                promptText,
+                activeModel,
+                input.signal,
+                input.onProgress
+              );
+            } else if (auth.authType === "api-key") {
+              liveProgressActivityId = "openai:turn";
+              const requestStartedAt = Date.now();
+              const timeoutSignal = AbortSignal.timeout(
+                this.proxyGateway?.getEffectiveEndpoint("openai", "https://api.openai.com/v1/chat/completions").timeoutMs ?? 30000
+              );
+              providerTimeoutSignal = timeoutSignal;
+              const requestSignal = input.signal
+                ? AbortSignal.any([input.signal, timeoutSignal])
+                : timeoutSignal;
+              this.reportProgress(input.onProgress, {
+                activityId: liveProgressActivityId,
+                phase: "connecting",
+                status: "started",
+                message: `Connecting to ${activeModel}`,
+                detail: "Sending authenticated model request",
+                timestamp: requestStartedAt,
+                sequence: ++liveProgressSequence,
+                metadata: { source: "openai-api" },
+              });
+              const endpoint = this.proxyGateway?.getEffectiveEndpoint("openai", "https://api.openai.com/v1/chat/completions") ?? {
+                url: "https://api.openai.com/v1/chat/completions",
+                headers: {},
+                timeoutMs: 30000,
+              };
 
-            const payload = {
-              model: activeModel,
-              messages: sessionStore.getMessages().map((m) => ({ role: m.role, content: m.content })),
-              max_tokens: 2048,
-            };
+              const payload = {
+                model: activeModel,
+                messages: sessionStore.getMessages().map((m) => ({ role: m.role, content: m.content })),
+                max_tokens: 2048,
+              };
 
-            const res = await fetch(endpoint.url, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                ...endpoint.headers,
-                ...auth.headers,
-              },
-              body: JSON.stringify(payload),
-              signal: requestSignal,
-            });
+              const res = await fetch(endpoint.url, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  ...endpoint.headers,
+                  ...auth.headers,
+                },
+                body: JSON.stringify(payload),
+                signal: requestSignal,
+              });
 
-            if (!res.ok) {
-              const errorBody = await res.text();
-              throw new Error(`HTTP ${res.status}: ${errorBody.slice(0, 500)}`);
+              if (!res.ok) {
+                const errorBody = await res.text();
+                throw new Error(`HTTP ${res.status}: ${errorBody.slice(0, 500)}`);
+              }
+
+              const data = (await res.json()) as {
+                choices?: Array<{ message?: { content?: string } }>;
+              };
+              liveResponse = data.choices?.[0]?.message?.content?.trim() || null;
+              this.reportProgress(input.onProgress, {
+                activityId: liveProgressActivityId,
+                phase: "completed",
+                status: "completed",
+                message: "Model response received",
+                detail: activeModel,
+                timestamp: Date.now(),
+                elapsedMs: Date.now() - requestStartedAt,
+                sequence: ++liveProgressSequence,
+                metadata: { source: "openai-api" },
+              });
+            } else {
+              this.reportProgress(input.onProgress, {
+                activityId: liveProgressActivityId,
+                phase: "failed",
+                status: "failed",
+                message: "Live model is not connected",
+                detail: `No credentials are available for ${activeModel}`,
+                timestamp: Date.now(),
+                elapsedMs: Date.now() - liveStartedAt,
+                sequence: ++liveProgressSequence,
+                metadata: { source: "lumi" },
+              });
             }
-
-            const data = (await res.json()) as {
-              choices?: Array<{ message?: { content?: string } }>;
-            };
-            liveResponse = data.choices?.[0]?.message?.content?.trim() || null;
-            this.reportProgress(input.onProgress, {
-              activityId: liveProgressActivityId,
-              phase: "completed",
-              status: "completed",
-              message: "Model response received",
-              detail: activeModel,
-              timestamp: Date.now(),
-              elapsedMs: Date.now() - requestStartedAt,
-              sequence: ++liveProgressSequence,
-              metadata: { source: "openai-api" },
-            });
-          } else {
-            this.reportProgress(input.onProgress, {
-              activityId: liveProgressActivityId,
-              phase: "failed",
-              status: "failed",
-              message: "Live model is not connected",
-              detail: `No credentials are available for ${activeModel}`,
-              timestamp: Date.now(),
-              elapsedMs: Date.now() - liveStartedAt,
-              sequence: ++liveProgressSequence,
-              metadata: { source: "lumi" },
-            });
-          }
-        } catch (error) {
-          liveError = this.formatLiveDispatchError(error);
-          liveFailureKind = input.signal?.aborted
-            ? "cancelled"
-            : providerTimeoutSignal?.aborted || liveError.toLowerCase().includes("timed out after")
-              ? "timeout"
-              : "provider";
-          if (liveFailureKind === "timeout" && !liveError.toLowerCase().includes("timed out")) {
-            liveError = "Provider request timed out before a response was received";
-          }
-          if (!progressManagedByCodex) {
-            const terminalStatus = liveFailureKind === "cancelled" ? "cancelled" : "failed";
-            this.reportProgress(input.onProgress, {
-              activityId: liveProgressActivityId,
-              phase: terminalStatus,
-              status: terminalStatus,
-              message: terminalStatus === "cancelled"
-                ? "Agent turn cancelled"
-                : liveFailureKind === "timeout"
-                  ? "Model request timed out"
-                  : "Model request failed",
-              detail: liveError,
-              timestamp: Date.now(),
-              elapsedMs: Date.now() - liveStartedAt,
-              sequence: ++liveProgressSequence,
-              metadata: { source: "openai-api" },
-            });
+            if (liveResponse) break;
+          } catch (error) {
+            liveError = this.formatLiveDispatchError(error);
+            liveFailureKind = input.signal?.aborted
+              ? "cancelled"
+              : providerTimeoutSignal?.aborted || liveError.toLowerCase().includes("timed out after")
+                ? "timeout"
+                : "provider";
+            if (liveFailureKind === "timeout" && !liveError.toLowerCase().includes("timed out")) {
+              liveError = "Provider request timed out before a response was received";
+            }
+            if (liveFailureKind === "provider" && !input.signal?.aborted && attempt < 1) {
+              const previousModel = this.modelResolver.getActiveModel();
+              const fallbackModel = this.modelResolver.triggerFallback(liveError);
+              this.reportProgress(input.onProgress, {
+                activityId: liveProgressActivityId,
+                phase: "connecting",
+                status: "in_progress",
+                message: `Connection failover from ${previousModel}`,
+                detail: `Failing over to ${fallbackModel}...`,
+                timestamp: Date.now(),
+                sequence: ++liveProgressSequence,
+                metadata: { source: "lumi" },
+              });
+              liveError = null;
+              continue;
+            }
+            if (!progressManagedByCodex) {
+              const terminalStatus = liveFailureKind === "cancelled" ? "cancelled" : "failed";
+              this.reportProgress(input.onProgress, {
+                activityId: liveProgressActivityId,
+                phase: terminalStatus,
+                status: terminalStatus,
+                message: terminalStatus === "cancelled"
+                  ? "Agent turn cancelled"
+                  : liveFailureKind === "timeout"
+                    ? "Model request timed out"
+                    : "Model request failed",
+                detail: liveError,
+                timestamp: Date.now(),
+                elapsedMs: Date.now() - liveStartedAt,
+                sequence: ++liveProgressSequence,
+                metadata: { source: "openai-api" },
+              });
+            }
+            break;
           }
         }
       }
@@ -328,7 +359,11 @@ export class AgentEngine extends AbstractAgentEngine {
     }
 
     const timeoutSignal = AbortSignal.timeout(CODEX_TURN_TIMEOUT_MS);
-    const turnSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+    const watchdogAbort = new AbortController();
+    const turnSignal = signal
+      ? AbortSignal.any([signal, timeoutSignal, watchdogAbort.signal])
+      : AbortSignal.any([timeoutSignal, watchdogAbort.signal]);
+
     const progress = new CodexProgressAdapter({
       cwd,
       model: activeModel,
@@ -336,15 +371,51 @@ export class AgentEngine extends AbstractAgentEngine {
     });
     progress.start();
 
+    let lastEventAt = Date.now();
+    let finalResponse = "";
+    let turnCompleted = false;
+    const activeTools = new Set<string>();
+
+    const watchdogInterval = setInterval(() => {
+      if (turnCompleted || watchdogAbort.signal.aborted) return;
+      const idleMs = Date.now() - lastEventAt;
+
+      // Watchdog Rule A: Response message ready, no tools actively running, stream idle for 5s
+      if (activeTools.size === 0 && finalResponse.trim().length > 0 && idleMs > 5_000) {
+        watchdogAbort.abort(new Error("inactivity_watchdog_response_ready"));
+      } else if (idleMs > 45_000) {
+        // Watchdog Rule B: Entire stream frozen for 45s without any events
+        watchdogAbort.abort(new Error("inactivity_watchdog_stream_frozen"));
+      }
+    }, 500);
+    watchdogInterval.unref?.();
+
     try {
       const { events } = await this.codexThread.runStreamed(promptText, { signal: turnSignal });
-      let finalResponse = "";
 
       for await (const event of events) {
+        lastEventAt = Date.now();
         progress.handle(event);
 
-        if (event.type === "item.completed" && event.item.type === "agent_message") {
-          finalResponse = event.item.text;
+        if (event.type === "item.started" || event.type === "item.updated" || event.type === "item.completed") {
+          if (event.item.type === "agent_message" && event.item.text) {
+            finalResponse = event.item.text;
+          } else if (
+            event.item.type === "command_execution" ||
+            event.item.type === "mcp_tool_call" ||
+            event.item.type === "web_search"
+          ) {
+            if (event.type === "item.completed") {
+              activeTools.delete(event.item.id);
+            } else {
+              activeTools.add(event.item.id);
+            }
+          }
+        }
+
+        if (event.type === "turn.completed") {
+          turnCompleted = true;
+          break;
         } else if (event.type === "turn.failed") {
           throw new Error(event.error.message);
         } else if (event.type === "error") {
@@ -358,8 +429,12 @@ export class AgentEngine extends AbstractAgentEngine {
       }
       return response;
     } catch (error) {
-      // A failed or cancelled child should never be reused as the next turn's
-      // conversation transport.
+      if (watchdogAbort.signal.aborted && finalResponse.trim().length > 0) {
+        progress.completeTurnFallback(finalResponse.trim().length);
+        return finalResponse.trim();
+      }
+
+      // A failed or cancelled child should never be reused as the next turn's transport.
       this.codexThread = null;
       this.codexThreadModel = null;
       this.codexThreadCwd = null;
@@ -370,10 +445,16 @@ export class AgentEngine extends AbstractAgentEngine {
       }
       if (timeoutSignal.aborted) {
         progress.timeout();
-        throw new Error("Codex turn timed out after 10 minutes");
+        throw new Error("Codex turn timed out");
+      }
+      if (watchdogAbort.signal.aborted) {
+        progress.fail("Agent turn stalled", "Stream became inactive before turn completion");
+        throw new Error("Codex turn stalled before receiving final response");
       }
       progress.fail("Agent turn failed", this.formatLiveDispatchError(error));
       throw error;
+    } finally {
+      clearInterval(watchdogInterval);
     }
   }
 
@@ -609,4 +690,442 @@ export class AgentEngine extends AbstractAgentEngine {
 </body>
 </html>`;
   }
+
+  private generateRacingGameHtml(): string {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ LUMI Cyberpunk Turbo Racing ⚡</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #090a0f;
+      color: #f1f5f9;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 12px;
+      color: #00f0ff;
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    #game-card {
+      position: relative;
+      border: 3px solid #1e293b;
+      border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0, 240, 255, 0.15), 0 0 20px rgba(255, 0, 127, 0.15);
+      background: #020617;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      background: #000;
+    }
+    .hud {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      right: 15px;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .hud-box {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      padding: 8px 16px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .speed-val { font-size: 24px; color: #ff007f; text-shadow: 0 0 8px #ff007f; }
+    .nitro-bar-container {
+      width: 110px; height: 10px; background: #334155; border-radius: 5px; margin-top: 4px; overflow: hidden;
+    }
+    .nitro-bar-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #00f0ff, #ff007f); transition: width 0.1s; }
+    .controls-hint {
+      margin-top: 14px;
+      color: #94a3b8;
+      font-size: 13px;
+      display: flex;
+      gap: 16px;
+    }
+    .badge {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid #334155;
+      padding: 4px 10px;
+      border-radius: 4px;
+      color: #e2e8f0;
+    }
+    #overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(9, 10, 15, 0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    #overlay h2 { font-size: 32px; color: #ff007f; text-shadow: 0 0 15px #ff007f; margin-bottom: 10px; }
+    #overlay button {
+      margin-top: 20px;
+      padding: 12px 28px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #090a0f;
+      background: #00f0ff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 0 15px #00f0ff;
+      transition: transform 0.1s;
+    }
+    #overlay button:hover { transform: scale(1.05); }
+  </style>
+</head>
+<body>
+  <h1>🏎️ LUMI CYBERPUNK TURBO RACER ⚡</h1>
+  <div id="game-card">
+    <canvas id="canvas" width="640" height="480"></canvas>
+    <div class="hud">
+      <div class="hud-box">
+        <div>SPEED: <span class="speed-val" id="speed">0</span> <span style="font-size:12px;color:#94a3b8">MPH</span></div>
+        <div style="font-size:10px;color:#94a3b8;margin-top:2px">NITRO BOOST</div>
+        <div class="nitro-bar-container"><div class="nitro-bar-fill" id="nitroFill"></div></div>
+      </div>
+      <div class="hud-box" style="text-align:right">
+        <div style="color:#00f0ff">LAP: <span id="lap">1</span> / 3</div>
+        <div style="color:#ff007f;margin-top:4px">TIME: <span id="time">0.00</span>s</div>
+      </div>
+    </div>
+    <div id="overlay">
+      <h2 id="overlayTitle">CYBERPUNK TURBO RACER</h2>
+      <p id="overlaySub" style="color: #94a3b8; font-size: 15px;">Complete 3 Laps in record time without crashing!</p>
+      <button id="startBtn" onclick="startGame()">START RACE</button>
+    </div>
+  </div>
+  <div class="controls-hint">
+    <span class="badge">⬆️ W / UP : Accelerate</span>
+    <span class="badge">⬇️ S / DOWN : Brake</span>
+    <span class="badge">⬅️➡️ A/D : Steer</span>
+    <span class="badge">⚡ SPACE : Nitro Boost</span>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playBeep(freq, type = 'sine', duration = 0.1) {
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    const FPS = 60;
+    const SEGMENT_LENGTH = 200;
+    const RUMBLE_LENGTH = 3;
+    const CAMERA_HEIGHT = 1000;
+    const CAMERA_DEPTH = 0.8;
+    const ROAD_WIDTH = 2000;
+    const TOTAL_LAPS = 3;
+
+    let speed = 0;
+    let maxSpeed = 160;
+    let accel = 0.8;
+    let decel = 0.4;
+    let playerX = 0;
+    let playerZ = 0;
+    let nitroAmount = 100;
+    let isNitro = false;
+
+    let lap = 1;
+    let lapStartTime = 0;
+    let totalTime = 0;
+    let gameState = 'title'; // title, playing, ended
+
+    const keys = { up: false, down: false, left: false, right: false, nitro: false };
+
+    window.addEventListener('keydown', e => {
+      initAudio();
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.up = true;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') keys.down = true;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = true;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = true;
+      if (e.code === 'Space') keys.nitro = true;
+    });
+
+    window.addEventListener('keyup', e => {
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') keys.up = false;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') keys.down = false;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') keys.left = false;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') keys.right = false;
+      if (e.code === 'Space') keys.nitro = false;
+    });
+
+    // Track generation
+    const segments = [];
+    const TRACK_SEGMENTS = 500;
+
+    for (let i = 0; i < TRACK_SEGMENTS; i++) {
+      let curve = 0;
+      let hill = 0;
+      if (i > 50 && i < 150) curve = 2.5;
+      if (i > 180 && i < 260) curve = -3;
+      if (i > 300 && i < 400) hill = Math.sin(i / 10) * 1500;
+
+      segments.push({
+        index: i,
+        p1: { world: { y: hill, z: i * SEGMENT_LENGTH }, camera: {}, screen: {} },
+        p2: { world: { y: hill, z: (i + 1) * SEGMENT_LENGTH }, camera: {}, screen: {} },
+        curve: curve,
+        color: Math.floor(i / RUMBLE_LENGTH) % 2 === 0
+          ? { grass: '#090a0f', rumble: '#00f0ff', road: '#1e1b4b' }
+          : { grass: '#090a0f', rumble: '#ff007f', road: '#0f172a' }
+      });
+    }
+
+    const trackLength = segments.length * SEGMENT_LENGTH;
+
+    // Traffic cars
+    const traffic = [];
+    const trafficColors = ['#f59e0b', '#ec4899', '#10b981', '#a855f7'];
+    for (let i = 0; i < 15; i++) {
+      traffic.push({
+        z: Math.random() * trackLength,
+        x: (Math.random() - 0.5) * 1.5,
+        speed: 60 + Math.random() * 40,
+        color: trafficColors[i % trafficColors.length]
+      });
+    }
+
+    function project(p, cameraX, cameraY, cameraZ, cameraDepth, width, height, roadWidth) {
+      p.camera.x = (p.world.x || 0) - cameraX;
+      p.camera.y = (p.world.y || 0) - cameraY;
+      p.camera.z = (p.world.z || 0) - cameraZ;
+      const scale = cameraDepth / p.camera.z;
+      p.screen.x = Math.round((width / 2) + (scale * p.camera.x * width / 2));
+      p.screen.y = Math.round((height / 2) - (scale * p.camera.y * height / 2));
+      p.screen.w = Math.round(scale * roadWidth * width / 2);
+    }
+
+    function startGame() {
+      initAudio();
+      document.getElementById('overlay').style.display = 'none';
+      speed = 0;
+      playerX = 0;
+      playerZ = 0;
+      lap = 1;
+      totalTime = 0;
+      nitroAmount = 100;
+      lapStartTime = Date.now();
+      gameState = 'playing';
+      playBeep(440, 'sine', 0.2);
+    }
+
+    function updateGame() {
+      if (gameState !== 'playing') return;
+
+      const dt = 1 / FPS;
+      totalTime = (Date.now() - lapStartTime) / 1000;
+      document.getElementById('time').innerText = totalTime.toFixed(2);
+      document.getElementById('lap').innerText = lap;
+
+      isNitro = keys.nitro && nitroAmount > 5;
+      let effectiveMaxSpeed = isNitro ? 210 : maxSpeed;
+
+      if (isNitro) {
+        nitroAmount = Math.max(0, nitroAmount - dt * 25);
+        if (Math.random() < 0.2) playBeep(200 + Math.random() * 400, 'sawtooth', 0.05);
+      } else {
+        nitroAmount = Math.min(100, nitroAmount + dt * 10);
+      }
+      document.getElementById('nitroFill').style.width = nitroAmount + '%';
+
+      if (keys.up) speed = Math.min(effectiveMaxSpeed, speed + accel);
+      else if (keys.down) speed = Math.max(-30, speed - decel * 2);
+      else speed = Math.max(0, speed - decel);
+
+      const dx = (speed / maxSpeed) * 0.04;
+      if (keys.left) playerX -= dx;
+      if (keys.right) playerX += dx;
+
+      playerX = Math.max(-1.8, Math.min(1.8, playerX));
+
+      playerZ += speed * 2;
+      if (playerZ >= trackLength) {
+        playerZ -= trackLength;
+        lap++;
+        playBeep(880, 'sine', 0.3);
+        if (lap > TOTAL_LAPS) {
+          gameState = 'ended';
+          document.getElementById('overlayTitle').innerText = '🏆 RACE COMPLETED!';
+          document.getElementById('overlaySub').innerText = 'Final Time: ' + totalTime.toFixed(2) + 's';
+          document.getElementById('startBtn').innerText = 'PLAY AGAIN';
+          document.getElementById('overlay').style.display = 'flex';
+          return;
+        }
+      }
+
+      const currentSegmentIndex = Math.floor(playerZ / SEGMENT_LENGTH) % segments.length;
+      const currentSegment = segments[currentSegmentIndex];
+      playerX -= (speed / maxSpeed) * currentSegment.curve * 0.005;
+
+      // Off-road penalty
+      if (Math.abs(playerX) > 1) {
+        speed = Math.max(20, speed - 2);
+      }
+
+      // Traffic collision check
+      traffic.forEach(t => {
+        t.z = (t.z + t.speed * 1.5) % trackLength;
+        if (Math.abs(t.z - playerZ) < SEGMENT_LENGTH && Math.abs(t.x - playerX) < 0.4) {
+          speed = 20;
+          playBeep(120, 'square', 0.2);
+        }
+      });
+
+      document.getElementById('speed').innerText = Math.round(speed);
+    }
+
+    function renderGame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Sky gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height / 2);
+      skyGrad.addColorStop(0, '#090a0f');
+      skyGrad.addColorStop(0.5, '#2e1065');
+      skyGrad.addColorStop(1, '#ff007f');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
+
+      // Neon Sun
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height / 2 - 20, 50, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Horizon line
+      ctx.fillStyle = '#090a0f';
+      ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+
+      const baseSegmentIndex = Math.floor(playerZ / SEGMENT_LENGTH);
+      let dx = 0;
+      let camY = CAMERA_HEIGHT + (segments[baseSegmentIndex % segments.length].p1.world.y || 0);
+
+      for (let n = 0; n < 100; n++) {
+        const seg = segments[(baseSegmentIndex + n) % segments.length];
+        const loopOffset = (baseSegmentIndex + n >= segments.length) ? trackLength : 0;
+
+        project(seg.p1, playerX * ROAD_WIDTH - dx, camY, playerZ - loopOffset, CAMERA_DEPTH, canvas.width, canvas.height, ROAD_WIDTH);
+        project(seg.p2, playerX * ROAD_WIDTH - dx, camY, playerZ - loopOffset, CAMERA_DEPTH, canvas.width, canvas.height, ROAD_WIDTH);
+
+        dx += seg.curve;
+
+        if (seg.p1.camera.z <= CAMERA_DEPTH || seg.p2.screen.y >= seg.p1.screen.y) continue;
+
+        const p1 = seg.p1.screen;
+        const p2 = seg.p2.screen;
+
+        // Road
+        ctx.fillStyle = seg.color.road;
+        ctx.beginPath();
+        ctx.moveTo(p1.x - p1.w, p1.y);
+        ctx.lineTo(p1.x + p1.w, p1.y);
+        ctx.lineTo(p2.x + p2.w, p2.y);
+        ctx.lineTo(p2.x - p2.w, p2.y);
+        ctx.fill();
+
+        // Rumbles
+        const r1 = p1.w * 0.15;
+        const r2 = p2.w * 0.15;
+        ctx.fillStyle = seg.color.rumble;
+        ctx.fillRect(p1.x - p1.w - r1, p1.y - 1, r1, 2);
+        ctx.fillRect(p1.x + p1.w, p1.y - 1, r1, 2);
+      }
+
+      // Draw Traffic Cars
+      traffic.forEach(t => {
+        const relZ = (t.z - playerZ + trackLength) % trackLength;
+        if (relZ > 0 && relZ < 20000) {
+          const scale = CAMERA_DEPTH / relZ;
+          const sx = (canvas.width / 2) + (scale * (t.x * ROAD_WIDTH - playerX * ROAD_WIDTH) * canvas.width / 2);
+          const sy = (canvas.height / 2) - (scale * CAMERA_HEIGHT * canvas.height / 2);
+          const size = scale * 1200 * canvas.width / 2;
+          if (sy > canvas.height / 2 && size > 5) {
+            ctx.fillStyle = t.color;
+            ctx.fillRect(sx - size / 2, sy - size / 2, size, size * 0.6);
+          }
+        }
+      });
+
+      // Draw Player Supercar
+      const playerCamX = canvas.width / 2;
+      const playerCamY = canvas.height - 70;
+
+      // Exhaust Nitro Flame
+      if (isNitro && gameState === 'playing') {
+        ctx.fillStyle = '#00f0ff';
+        ctx.beginPath();
+        ctx.arc(playerCamX - 15, playerCamY + 25, 8 + Math.random() * 4, 0, Math.PI * 2);
+        ctx.arc(playerCamX + 15, playerCamY + 25, 8 + Math.random() * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Car body
+      ctx.fillStyle = '#ff007f';
+      ctx.beginPath();
+      ctx.roundRect(playerCamX - 45, playerCamY - 20, 90, 40, 8);
+      ctx.fill();
+
+      // Windshield & lights
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillRect(playerCamX - 35, playerCamY - 15, 70, 12);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(playerCamX - 38, playerCamY + 12, 16, 6);
+      ctx.fillRect(playerCamX + 22, playerCamY + 12, 16, 6);
+    }
+
+    function gameLoop() {
+      updateGame();
+      renderGame();
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>`;
+  }
 }
+
