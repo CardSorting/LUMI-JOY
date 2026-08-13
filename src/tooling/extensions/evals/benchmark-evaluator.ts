@@ -46,6 +46,9 @@ export class MonolithBenchmarkEvaluator {
     const testCases = customCases ?? this.defaultCases;
     const results: BenchmarkTestResult[] = [];
 
+    // Warm-up tick to complete V8 JIT compilation and eliminate cold-start latency spike
+    await monolith.tick({ prompt: "ping" });
+
     let totalDuration = 0;
     let passCount = 0;
 

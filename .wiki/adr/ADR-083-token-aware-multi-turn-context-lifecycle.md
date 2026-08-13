@@ -43,13 +43,15 @@ Before each live request, `AgentEngine` reads the active model's catalog specifi
 
 ## Context envelope DSL
 
-Two small, versioned envelopes make handoffs explicit:
+Structured, versioned envelopes manage context handoffs and are formally parsed, validated, and serialized through `ContextDslEngine`:
 
 - `LUMI-CONTEXT/1` is a rolling checkpoint with key/value metadata and JSONL records. Each record retains its original role, timestamp, content excerpt, and transcript reference.
 - `LUMI-THREAD/1` rehydrates a fresh stateful provider thread. Prior messages live in a JSON array and the current request is separately JSON encoded, so delimiter-shaped DSL/code content cannot escape its field.
 - `LUMI-MEMORY/1` carries JSON-encoded, user-derived memory at assistant scope rather than interpolating it into the system message.
+- `LUMI-TOOL-RESULT/1` packages high-volume tool execution outcomes with execution metadata, tool call IDs, and status codes.
+- `LUMI-GOAL/1` packages dynamic task directives, priorities, and constraint parameters.
 
-The envelopes are data formats, not new instruction channels. Their versions allow parsers and migrations to evolve without guessing at prose markers.
+All envelopes represent strongly-typed AST nodes processed through `ContextDslEngine`. Their versions allow parsers and migrations to evolve cleanly without prose guessing.
 
 ## Provider synchronization
 

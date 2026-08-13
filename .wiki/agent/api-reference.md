@@ -138,11 +138,27 @@ Source: [`src/sessions/extensions/persistence/session-store.ts`](../../src/sessi
 - `compact(compactor, policy?)` updates only the active projection and returns a `ContextCompactionReport`.
 - JSONL export persists the durable transcript; import validates all records before replacing state.
 
+### `ContextDslEngine`
+
+Source: [`src/agents/extensions/compaction/context-dsl-engine.ts`](../../src/agents/extensions/compaction/context-dsl-engine.ts)
+
+- `parseEnvelope(text)` parses the primary DSL context envelope into AST nodes (`context`, `thread`, `memory`, `tool-result`, `goal`).
+- `parseAllEnvelopes(text)` extracts all embedded envelopes from a multi-line string.
+- `serializeEnvelope(envelope)` generates canonical spec-compliant string formats.
+- `validateIntegrity(content)` verifies structural completeness and SHA-256 transcript references.
+- `computeMetrics(envelope)` calculates line count, byte size, token estimates, and record counts.
+
+### `PromptTemplateEngine`
+
+Source: [`src/agents/extensions/compaction/prompt-template-engine.ts`](../../src/agents/extensions/compaction/prompt-template-engine.ts)
+
+- `render(template, variables)` compiles system prompt templates supporting `{{var}}` placeholders, `{{#if key}}...{{/if}}` conditional blocks, and `{{#unless key}}...{{/unless}}` negative blocks.
+
 ### `SessionCompactor`
 
 Source: [`src/sessions/extensions/compaction/session-compactor.ts`](../../src/sessions/extensions/compaction/session-compactor.ts)
 
-`compactWithReport(messages, policy?, sourceMessages?)` supports message and token triggers, target utilization, pinned-token reservation, recent-turn preference, bounded checkpoint size, and forced manual compaction. Reports include reason, estimated token deltas, summarized messages, preserved turns, checkpoint ID, and an explicit `overBudget` signal.
+`compactWithReport(messages, policy?, sourceMessages?)` supports message and token triggers, target utilization, pinned-token reservation, recent-turn preference, bounded checkpoint size, and forced manual compaction. Delegates envelope serialization and parsing to `ContextDslEngine`. Reports include reason, estimated token deltas, summarized messages, preserved turns, checkpoint ID, and an explicit `overBudget` signal.
 
 ### `ContextBudgetCalculator` and `TokenTruncator`
 

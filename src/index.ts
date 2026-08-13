@@ -129,6 +129,17 @@ export { AgentConfig } from "./agents/base/agent-config.js";
 export { AgentEngine } from "./agents/extensions/execution/agent-engine.js";
 export type { AgentContextServices } from "./agents/extensions/execution/agent-engine.js";
 export { PromptComposer } from "./agents/extensions/compaction/prompt-composer.js";
+export { ContextDslEngine } from "./agents/extensions/compaction/context-dsl-engine.js";
+export type {
+  ContextDslEnvelope,
+  ContextCheckpointEnvelope,
+  ThreadBootstrapEnvelope,
+  MemoryEnvelopePayload,
+  ToolResultEnvelopePayload,
+  GoalEnvelopePayload,
+  DslIntegrityResult,
+  DslEnvelopeMetrics,
+} from "./agents/extensions/compaction/context-dsl-engine.js";
 export { ModelResolver } from "./agents/extensions/resolution/model-resolver.js";
 export { AgentSlashRouter } from "./agents/extensions/resolution/agent-slash-router.js";
 export { MentionResolver } from "./agents/extensions/mentions/mention-resolver.js";

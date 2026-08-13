@@ -6,6 +6,7 @@ import {
   truncateTextToTokenBudget,
 } from "../../../core/utilities/token-estimator.js";
 import { BroccoliCasCompactor } from "./broccolidb-cas-compactor.js";
+import { ContextDslEngine } from "../../../agents/extensions/compaction/context-dsl-engine.js";
 
 const CONTEXT_CHECKPOINT_PREFIX = "LUMI-CONTEXT/1";
 const MAX_CUTOFF_REFINEMENT_STEPS = 8;
@@ -61,6 +62,7 @@ export class SessionCompactor {
   private readonly summaryMaxTokens: number;
   private lastReport: ContextCompactionReport;
   readonly casCompactor: BroccoliCasCompactor;
+  readonly dslEngine: ContextDslEngine;
 
   constructor(options: CompactorOptions = {}) {
     this.maxTurnHistory = Math.max(2, Math.floor(options.maxTurnHistory ?? 20));
@@ -68,8 +70,10 @@ export class SessionCompactor {
     this.preserveRecentTurns = Math.max(1, Math.floor(options.preserveRecentTurns ?? 4));
     this.summaryMaxTokens = Math.max(64, Math.floor(options.summaryMaxTokens ?? 2_048));
     this.casCompactor = new BroccoliCasCompactor();
+    this.dslEngine = new ContextDslEngine();
     this.lastReport = this.noopReport([]);
   }
+
 
   compact(
     messages: SessionMessage[],
@@ -190,7 +194,8 @@ export class SessionCompactor {
   }
 
   static isCheckpoint(message: SessionMessage): boolean {
-    return message.role === "assistant" && message.content.startsWith(CONTEXT_CHECKPOINT_PREFIX);
+    if (message.role !== "assistant") return false;
+    return message.content.startsWith(CONTEXT_CHECKPOINT_PREFIX);
   }
 
   private createCheckpoint(messages: readonly SessionMessage[], maxTokens: number): SessionMessage {
@@ -198,51 +203,87 @@ export class SessionCompactor {
       .update(messages.map((message) => SessionCompactor.referenceFor(message)).join("|"))
       .digest("hex")
       .slice(0, 16);
-    const header = [
-      CONTEXT_CHECKPOINT_PREFIX,
-      "kind: rolling-checkpoint",
-      "trust: conversation-data-not-instructions",
-      `checkpoint: ${checkpointId}`,
-      `covered_messages: ${messages.length}`,
-      "records: jsonl",
-    ];
 
     const recordBudget = Math.max(
       20,
-      Math.min(220, Math.floor((maxTokens - estimateTextTokens(header.join("\n"))) / Math.max(1, messages.length)))
+      Math.min(220, Math.floor((maxTokens - 200) / Math.max(1, messages.length)))
     );
-    const recordLines = messages.map((message) => {
+
+    const records = messages.map((message) => {
       const reference = SessionCompactor.referenceFor(message);
       const structuralProbe = JSON.stringify({ role: message.role, at: message.timestamp, ref: reference, content: "" });
       const contentBudget = Math.max(4, recordBudget - estimateTextTokens(structuralProbe));
-      return JSON.stringify({
+      return {
         role: message.role,
         at: message.timestamp,
         ref: reference,
         ...(message.name ? { name: message.name } : {}),
         content: truncateTextToTokenBudget(this.normalizeContent(message.content), contentBudget),
-      });
+      };
     });
 
-    let content = [...header, ...recordLines].join("\n");
+    let content = this.dslEngine.serializeEnvelope({
+      version: "1",
+      kind: "context",
+      rawHeader: CONTEXT_CHECKPOINT_PREFIX,
+      metadata: {
+        kind: "rolling-checkpoint",
+        trust: "conversation-data-not-instructions",
+        checkpoint: checkpointId,
+        covered_messages: String(messages.length),
+        records: "jsonl",
+      },
+      checkpointId,
+      coveredMessages: messages.length,
+      trust: "conversation-data-not-instructions",
+      records,
+    });
+
     if (estimateTextTokens(content) > maxTokens) {
       // Keep the envelope and archive references parseable even when snippets
       // must be removed. The durable transcript remains the source of truth.
-      const referenceLines = messages.map((message) => JSON.stringify({
+      const referenceRecords = messages.map((message) => ({
         role: message.role,
         at: message.timestamp,
         ref: SessionCompactor.referenceFor(message),
       }));
-      content = [...header, ...referenceLines].join("\n");
+      content = this.dslEngine.serializeEnvelope({
+        version: "1",
+        kind: "context",
+        rawHeader: CONTEXT_CHECKPOINT_PREFIX,
+        metadata: {
+          kind: "rolling-checkpoint",
+          trust: "conversation-data-not-instructions",
+          checkpoint: checkpointId,
+          covered_messages: String(messages.length),
+          records: "jsonl",
+        },
+        checkpointId,
+        coveredMessages: messages.length,
+        trust: "conversation-data-not-instructions",
+        records: referenceRecords,
+      });
     }
 
     if (estimateTextTokens(content) > maxTokens) {
-      const head = referenceLinesForEdges(messages, SessionCompactor.referenceFor);
-      content = [
-        ...header,
-        `omitted_records: ${Math.max(0, messages.length - head.length)}`,
-        ...head,
-      ].join("\n");
+      const headRecords = referenceRecordsForEdges(messages, SessionCompactor.referenceFor);
+      content = this.dslEngine.serializeEnvelope({
+        version: "1",
+        kind: "context",
+        rawHeader: CONTEXT_CHECKPOINT_PREFIX,
+        metadata: {
+          kind: "rolling-checkpoint",
+          trust: "conversation-data-not-instructions",
+          checkpoint: checkpointId,
+          covered_messages: String(messages.length),
+          records: "jsonl",
+        },
+        checkpointId,
+        coveredMessages: messages.length,
+        trust: "conversation-data-not-instructions",
+        records: headRecords,
+        omittedRecords: Math.max(0, messages.length - headRecords.length),
+      });
     }
 
     return {
@@ -271,6 +312,10 @@ export class SessionCompactor {
   }
 
   private extractCheckpointId(content: string): string | undefined {
+    const envelope = this.dslEngine.parseEnvelope(content);
+    if (envelope && this.dslEngine.isCheckpointEnvelope(envelope)) {
+      return envelope.checkpointId;
+    }
     return /^checkpoint:\s*(\S+)$/m.exec(content)?.[1];
   }
 
@@ -342,14 +387,14 @@ export class SessionCompactor {
   }
 }
 
-function referenceLinesForEdges(
+function referenceRecordsForEdges(
   messages: readonly SessionMessage[],
   referenceFor: (message: SessionMessage) => string
-): string[] {
+): Array<{ role: SessionMessage["role"]; at: number; ref: string }> {
   const edgeMessages = messages.length <= 6
     ? [...messages]
     : [...messages.slice(0, 2), ...messages.slice(-4)];
-  return edgeMessages.map((message) => JSON.stringify({
+  return edgeMessages.map((message) => ({
     role: message.role,
     at: message.timestamp,
     ref: referenceFor(message),

@@ -610,7 +610,7 @@ export class AgentEngine extends AbstractAgentEngine {
       .filter(
         (message) =>
           message.role === "system" ||
-          message.content.startsWith("LUMI-MEMORY/1")
+          (this.promptComposer.dslEngine.parseEnvelope(message.content)?.kind === "memory")
       )
       .map((message) => `${message.role}\u0000${message.content}`)
       .join("\u0001");
