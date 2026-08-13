@@ -1,5 +1,5 @@
 {
-  "name": "lumi-new",
+  "name": "lumi-joy",
   "version": "0.1.0",
   "description": "Greenfield 3-tier monolithic agent framework",
   "type": "module",
@@ -7,7 +7,7 @@
   "types": "dist/index.d.ts",
   "bin": {
     "lumi": "dist/index.js",
-    "lumi-new": "dist/index.js"
+    "lumi-joy": "dist/index.js"
   },
   "files": [
     "dist",

@@ -18,7 +18,7 @@ export type ModernGpt56Model = typeof MODERN_GPT56_MODELS[number];
 
 /**
  * Pass 104: Codex Provider Bridge
- * Integrates OpenAI Codex OAuth alongside standard API Key providers in LUMI-NEW model resolution.
+ * Integrates OpenAI Codex OAuth alongside standard API Key providers in LUMI-JOY model resolution.
  * Detects Codex & modern GPT 5.6 (Terra/Luna/Sol) model requests and injects Bearer OAuth access tokens and ChatGPT-Account-Id headers.
  */
 export class CodexProviderBridge {

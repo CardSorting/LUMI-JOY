@@ -1,6 +1,6 @@
-# LUMI-NEW Architecture & Methodology Wiki
+# LUMI-JOY Architecture & Methodology Wiki
 
-Welcome to the central documentation wiki for **LUMI-NEW** (`/Users/bozoegg/Desktop/LUMI-NEW`), a self-evolving agent framework built using **AKD-DSO** (**Architectural Knowledge Distillation & Deterministic Substrate Optimization**).
+Welcome to the central documentation wiki for **LUMI-JOY**, a self-evolving agent framework built using **AKD-DSO** (**Architectural Knowledge Distillation & Deterministic Substrate Optimization**).
 
 ---
 
@@ -12,7 +12,7 @@ Welcome to the central documentation wiki for **LUMI-NEW** (`/Users/bozoegg/Desk
 
 ### Latest generated verification
 
-Generated at **2026-08-13T04:45:51.966Z** on Node.js `v23.5.0`, macOS ARM64:
+Generated at **2026-08-13T05:44:24.943Z** on Node.js `v23.5.0`, macOS ARM64:
 
 | Lane | Result |
 |---|---:|
@@ -35,6 +35,8 @@ The live JSON remains authoritative if this summary and a regenerated run ever d
   - Release history and unreleased pass features.
 
 ### 2. Academic Whitepapers & Research
+- 📖 [Author's Preface & Dedication](../PREFACE.md)
+  - Personal preface, dedication, and technical vision by primary inventor William Andrew Cruz.
 - 🎓 [Academic Research Paper: AKD-DSO Architecture Specification](whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md)
   - Abstract, Mathematical Formalisms ($\mathcal{L}_{\text{AKD}}$, $\mathbf{Step}_t$, $\mathcal{R}$), Empirical Benchmarks, and Theorem Proofs.
 - 🌅 [Philosophy Brief: The Next Step Forward — Reframing Agent Architecture](philosophy/THE-NEXT-STEP-PHILOSOPHY.md)

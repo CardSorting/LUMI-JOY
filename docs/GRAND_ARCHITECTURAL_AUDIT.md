@@ -1,7 +1,7 @@
 # LUMI Live Architectural Audit
 
 > **Live Baseline Status**: `PASSED`
-> **Generated At**: 2026-08-13T04:45:51.966Z
+> **Generated At**: 2026-08-13T05:44:24.943Z
 > **Evolution Baseline**: Pass 192 + runtime hardening (ADR-082)
 > **Configured Model**: `gpt-5.6-terra`
 > **Regenerate**: `npm run baseline:update`
@@ -17,8 +17,8 @@ This audit and [the benchmark report](BENCHMARK_REPORT.md) are generated atomica
 | Required current capabilities | 142/142 | PASS |
 | Composed runtime components | 142 | observed |
 | Benchmark cases | 5/5 | PASS |
-| Mean heterogeneous case latency | 70.91 ms | observed |
-| Workload throughput | 14.10 cases/sec | observed |
+| Mean heterogeneous case latency | 73.49 ms | observed |
+| Workload throughput | 13.61 cases/sec | observed |
 
 ## Runtime Smoke Evidence
 
@@ -26,11 +26,11 @@ This audit and [the benchmark report](BENCHMARK_REPORT.md) are generated atomica
 |---|---|---:|---|---|
 | composition | Current evolution capabilities are composed | 0.03 ms | PASS | 142 required capabilities across 142 components |
 | architecture | Core abstract contracts remain connected | 0.07 ms | PASS | agent, session, hands, ears, and tool-registry contracts verified |
-| execution | Local frame commits an explicit successful outcome | 1.08 ms | PASS | frame 1 completed in 0.77 ms |
-| state | Snapshot rewind restores frame and message state | 0.27 ms | PASS | restored frame 1 with 2 messages |
-| governance | Completion gate fails closed without evaluated evidence | 0.14 ms | PASS | 5 fail-closed states rejected; 2/2 evaluated required criteria accepted |
-| safety | Modern command safety and diagnostics are active | 0.26 ms | PASS | interactive editor blocking and port-collision guidance verified |
-| observability | Command output summaries remain bounded | 0.08 ms | PASS | head/tail output retention verified |
+| execution | Local frame commits an explicit successful outcome | 1.06 ms | PASS | frame 1 completed in 0.76 ms |
+| state | Snapshot rewind restores frame and message state | 0.32 ms | PASS | restored frame 1 with 2 messages |
+| governance | Completion gate fails closed without evaluated evidence | 0.16 ms | PASS | 5 fail-closed states rejected; 2/2 evaluated required criteria accepted |
+| safety | Modern command safety and diagnostics are active | 0.29 ms | PASS | interactive editor blocking and port-collision guidance verified |
+| observability | Command output summaries remain bounded | 0.10 ms | PASS | head/tail output retention verified |
 | governance | Strategic integrity audit contract is complete | 0.04 ms | PASS | architect, critic, and SRE review sections verified |
 | health | Subsystem health aggregation remains optimal | 0.07 ms | PASS | 3/3 registered subsystems healthy |
 
@@ -39,9 +39,9 @@ This audit and [the benchmark report](BENCHMARK_REPORT.md) are generated atomica
 | Rule | Live Measurement | Required Threshold | Status |
 |---|---:|---:|---|
 | Zero-GC Contiguous Slab Memory Invariant | 16777216 bytes | 16777216 bytes | PASS |
-| Performance SLA: Sub-Millisecond Turn Tick Latency | 0.13 ms | < 1 ms | PASS |
-| Performance SLA: Execution Throughput | 7787.13 frames/sec | >= 1000 frames/sec | PASS |
-| Performance SLA: State Rewind Latency | 0.018 ms p95 | < 0.1 ms p95 | PASS |
+| Performance SLA: Sub-Millisecond Turn Tick Latency | 0.12 ms | < 1 ms | PASS |
+| Performance SLA: Execution Throughput | 8525.73 frames/sec | >= 1000 frames/sec | PASS |
+| Performance SLA: State Rewind Latency | 0.019 ms p95 | < 0.1 ms p95 | PASS |
 | Architecture Rule: Zero Barrel Imports (ADR-012) | 0 barrel files | 0 barrel files | PASS |
 | Architecture Rule: Base Class Immutability (ADR-012) | 3 / 3 files intact | 3 files intact | PASS |
 

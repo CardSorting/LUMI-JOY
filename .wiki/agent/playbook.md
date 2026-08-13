@@ -4,9 +4,9 @@ This playbook serves as the primary orientation document for AI agents working i
 
 ## Current System Snapshot
 
-LUMI-NEW is a greenfield 3-tier monolithic agent framework built in TypeScript for Node.js (ESM). It is structured around the architectural design of a **Deterministic Game Engine**, where turns execute as frame ticks (`tick()`), state transitions are captured in immutable snapshots (`GameStateSnapshot`), and the runtime supports frame-perfect state rewind and replay.
+LUMI-NEW is a greenfield 3-tier monolithic agent framework built in TypeScript for Node.js (ESM). It is structured around the architectural design of a **Deterministic Game Engine**, where interactions execute as frame ticks (`tick()`), state transitions are captured in immutable snapshots (`GameStateSnapshot`), memory is pre-allocated in a 16MB contiguous slab (`ArenaAllocator`), and the runtime supports sub-millisecond ($<0.1\text{ ms}$ warmed p95) frame-perfect state rewind (`rewindToSnapshot()`) and session forking (`forkSession()`).
 
-Tiers expand organically as needed to support specialized subsystem features, with the primary constraint being strict alignment with the Deterministic Game Engine Strategy.
+Tiers expand organically as needed to support specialized subsystem features, with the primary constraint being strict alignment with the Deterministic Game Engine Strategy ([ADR-008](../adr/ADR-008-deterministic-game-engine-architecture.md)).
 
 Current generated verification is **Pass 192 + runtime hardening**: 142/142 exact composition entries, 9/9 smoke checks, 5/5 benchmark cases, 8/8 assertions for a complete 12-file Flappy Bird React + TypeScript + Vite project, and 6/6 guardrails. Use [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json) for exact current measurements.
 

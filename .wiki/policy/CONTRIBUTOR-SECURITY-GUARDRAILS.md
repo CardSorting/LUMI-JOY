@@ -1,13 +1,13 @@
 # 🛡️ Policy: Contributor Security & Performance Guardrail Governance
 
 **Document ID**: `POL-2026-08-09-SECURITY-01`  
-**Target Scope**: All contributors, automated PR bots, and agent mutations in `LUMI-NEW`  
+**Target Scope**: All contributors, automated PR bots, and agent mutations in `LUMI-JOY`  
 
 ---
 
 ## 📌 Executive Statement
 
-**LUMI-NEW** enforces strict automated repository protection rules around deterministic fast-path performance and architecture. The latest generated run passed **6/6 guardrails**, with a **$0.13\text{ ms}$** local fast-path mean, **$7,787.13$ frames/second**, and **$0.018\text{ ms}$ warmed rewind p95** on Node.js `v23.5.0`/macOS ARM64. These observations are host-sensitive; the durable requirements are the thresholds below, and [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json) is the measurement authority.
+**LUMI-JOY** enforces strict automated repository protection rules around deterministic fast-path performance and architecture. The latest generated run passed **6/6 guardrails**, with a **$0.12\text{ ms}$** local fast-path mean, **$8525.73$ frames/second**, and **$0.019\text{ ms}$ warmed rewind p95** on Node.js `v23.5.0`/macOS ARM64. These observations are host-sensitive; the durable requirements are the thresholds below, and [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json) is the measurement authority.
 
 ---
 

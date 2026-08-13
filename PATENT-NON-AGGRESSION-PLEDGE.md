@@ -1,6 +1,6 @@
 # 🛡️ Defensive Patent Pledge & Anti-Patent-Troll Covenant
 
-**Project**: `LUMI-NEW` Deterministic Game Engine Monolith  
+**Project**: `LUMI-JOY` Deterministic Game Engine Monolith  
 **Primary Author & Curator**: **William Andrew Cruz** (`bozoegg` / `CardSorting`)  
 **Community Ideation Attribution**: Open-Source AI Agent Research Community  
 **Date of First Public Disclosure**: August 9, 2026  
@@ -20,21 +20,20 @@ Instead, by publishing this complete specification under the **Apache License, V
 2. **Defensive Shield for the Community**: Public prior-art publication irrevocably invalidates any future patent application by patent trolls or bad actors attempting to privatize these collective community breakthroughs.
 
 ---
+**William Andrew Cruz** and the **LUMI-JOY** contributors explicitly choose **NOT** to file restrictive software patents. Software patents create artificial barriers, slow down open-source innovation, and breed predatory litigation.
 
-## 📌 Statement of Anti-Patent-Troll Protection
+By releasing **LUMI-JOY** under the permissive **Apache License 2.0**, all patents owned or licensable by William Andrew Cruz that cover the software are perpetually and irrevocably licensed to every user, contributor, and organization worldwide.
 
-To protect **William Andrew Cruz**, contributors, downstream developers, startups, and enterprise users against patent trolls, non-practicing entities (NPEs), and predatory patent litigation:
+---
 
-### 1. Public Prior-Art Irrevocability
-All concepts, mathematical equations ($\mathbf{Step}_t$, $\mathcal{S}_t$, $\mathcal{L}_{\text{AKD}}$), contiguous slab memory structures (`ArenaAllocator`), $O(1)$ state pointer rewinds (`rewindToSnapshot`), and sub-millisecond agent game loops (`tick()`) disclosed herein constitute **irrevocable public prior art** as of **August 9, 2026**. Under international patent laws (35 U.S.C. § 102, European Patent Convention Article 54, and Patent Cooperation Treaty regulations), no third-party entity may patent or claim exclusive rights to these prior-art mechanisms.
+## 🛑 Defensive Termination & Covenant Not to Sue
 
-### 2. Defensive Patent License & Automatic License Termination
-Per Section 3 of the Apache License 2.0:
-- Every contributor grants a perpetual, worldwide, non-exclusive, royalty-free, irrevocable patent license.
-- **Defensive Patent Termination**: If any corporate entity, patent troll, or non-practicing entity files a patent lawsuit or asserts patent infringement claims against **William Andrew Cruz**, `bozoegg`, `CardSorting`, or any user of LUMI-NEW, **all patent licenses granted to that litigating entity under this work shall immediately terminate as of the filing date**.
+To protect the open-source community from patent aggression, predatory licensing demands, and corporate patent trolls, the following defensive conditions apply to all usage of **LUMI-JOY**:
 
-### 3. Patent Prior-Art Invalidation Commitment
-In the event that any patent troll or bad actor asserts a patent claim covering any mechanism disclosed in LUMI-NEW, **William Andrew Cruz** (`bozoegg` / `CardSorting`) and the open-source community will provide full prior-art documentation, commit timestamps, and empirical execution traces to petition for **Inter Partes Review (IPR)** and **patent invalidation** before the USPTO, EPO, and international patent offices worldwide.
+- **Defensive Patent Termination**: If any corporate entity, patent troll, or non-practicing entity files a patent lawsuit or asserts patent infringement claims against **William Andrew Cruz**, `bozoegg`, `CardSorting`, or any user of LUMI-JOY, **all patent licenses granted to that litigating entity under this work shall immediately terminate as of the filing date**.
+- **Public Prior-Art Publication**: This repository, its commit logs, `.wiki/ip/INVENTION-DISCLOSURE-AND-PRIOR-ART.md`, `.wiki/ip/DEFENSIVE-PRIOR-ART-CLAIMS.md`, and published whitepapers serve as **irrefutable, legally binding public prior-art disclosures** under 35 U.S.C. § 102(a)(1) and international patent law worldwide as of August 9, 2026.
+
+In the event that any patent troll or bad actor asserts a patent claim covering any mechanism disclosed in LUMI-JOY, **William Andrew Cruz** (`bozoegg` / `CardSorting`) and the open-source community will provide full prior-art documentation, commit timestamps, and empirical execution traces to petition for **Inter Partes Review (IPR)** and **patent invalidation** before the USPTO, EPO, and international patent offices worldwide.
 
 ---
 

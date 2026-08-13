@@ -1,6 +1,6 @@
-# Contributing to LUMI-NEW
+# Contributing to LUMI-JOY
 
-Thank you for your interest in contributing to **LUMI-NEW**! We welcome contributions from the community. Please review this guide to ensure your contributions align with our architectural standards and workflow.
+Thank you for your interest in contributing to **LUMI-JOY**! We welcome contributions from the community. Please review this guide to ensure your contributions align with our architectural standards and workflow.
 
 ---
 
@@ -85,7 +85,7 @@ npm run smoke
 npm run baseline:update
 ```
 
-The latest checked-in run (2026-08-13T04:45:51.966Z) passed 142/142 composition entries, 9/9 smoke checks, 5/5 benchmark cases, 8/8 deep assertions for the generated 12-file Flappy Bird React + TypeScript + Vite project, and 6/6 guardrails. Treat timings as host-sensitive; consult `docs/LIVE_BASELINE.json` instead of copying them into source documentation.
+The latest checked-in run (2026-08-13T05:44:24.943Z) passed 142/142 composition entries, 9/9 smoke checks, 5/5 benchmark cases, 8/8 deep assertions for the generated 12-file Flappy Bird React + TypeScript + Vite project, and 6/6 guardrails. Treat timings as host-sensitive; consult `docs/LIVE_BASELINE.json` instead of copying them into source documentation.
 
 ### 5. Streaming Regression Checklist
 

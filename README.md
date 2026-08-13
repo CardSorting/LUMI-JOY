@@ -1,10 +1,10 @@
 <div align="center">
 
-# ⚡ LUMI-NEW
+# ⚡ LUMI-JOY
 
 ### **AKD-DSO: Architectural Knowledge Distillation & Deterministic Substrate Optimization**
 
-*An enterprise-grade TypeScript agent framework built on structural knowledge distillation, frame-perfect state snapshotting, and biological osmosis self-mutation.*
+*An enterprise-grade TypeScript agent framework engineered like a deterministic game engine—built on frame-perfect state snapshotting, contiguous slab memory, and biological osmosis self-mutation.*
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20.19+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
@@ -18,17 +18,42 @@
 
 | **Core Navigation** | **Documentation & Wiki** | **Subsystem Source Code** |
 |---|---|---|
-| 📌 [Executive Brief](#-executive-brief) | 🚀 [Auto-Rolling Roadmap](.wiki/roadmap/AUTOROLLING-ROADMAP.md) | ⚡ [Composition Root](src/index.ts) |
-| ⚡ [Comparison Matrix](#-comparison-matrix--empirical-benchmarks) | 🎓 [Academic Whitepaper](.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md) | 🏭 [Engine Factory](src/factories/monolith-factory.ts) |
-| 🏗️ [Architecture Tree](#%EF%B8%8F-subsystem-architecture--file-tree) | 📦 [1-to-1 Package Matrix](.wiki/package-mappings/PACKAGE-MAPPING-MATRIX.md) | ⚙️ [Core Abstracts](src/core/abstracts/) |
-| 🧪 [Osmosis Methodology](#-the-osmosis-learning-methodology) | 🧠 [Handoff Strategy Guide](.wiki/agent/osmosis-methodology.md) | 🧠 [Agents Tier](src/agents/) |
-| 🚀 [Quick Start Guide](#-quick-start--installation) | 📋 [API Reference Guide](.wiki/agent/api-reference.md) | 💾 [Sessions Tier](src/sessions/) |
-| 📡 [Live Activity Streaming](#-live-agent-activity-streaming) | 📡 [Streaming Strategy](.wiki/agent/streaming-activity-strategy.md) | 🖥️ [TUI Components](src/tui/components/) |
-| 🤝 [Contributing Guide](CONTRIBUTING.md) | 📋 [Workspace Changelog](CHANGELOG.md) | 📜 [Core Contracts](src/core/contracts/) |
+| 📌 [Executive Brief](#-why-lumi-joy-the-architectural-imperative) | 📖 [Author's Preface](PREFACE.md) | ⚡ [Composition Root](src/index.ts) |
+| ⚡ [Comparison Matrix](#-comparison-matrix--empirical-benchmarks) | 🎮 [Game Engine Paradigm](#-inspired-by-game-engines-deterministic-agent-architecture) | 🏭 [Engine Factory](src/factories/monolith-factory.ts) |
+| 🏗️ [Architecture Tree](#%EF%B8%8F-subsystem-architecture--file-tree) | 🎓 [Academic Whitepaper](.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md) | ⚙️ [Core Abstracts](src/core/abstracts/) |
+| 🧪 [Osmosis Methodology](#-the-osmosis-learning-methodology) | 📦 [1-to-1 Package Matrix](.wiki/package-mappings/PACKAGE-MAPPING-MATRIX.md) | 🧠 [Agents Tier](src/agents/) |
+| 🚀 [Quick Start Guide](#-quick-start--installation) | 🧠 [Handoff Strategy Guide](.wiki/agent/osmosis-methodology.md) | 💾 [Sessions Tier](src/sessions/) |
+| 📡 [Live Activity Streaming](#-live-agent-activity-streaming) | 📋 [API Reference Guide](.wiki/agent/api-reference.md) | 🖥️ [TUI Components](src/tui/components/) |
+| 🤝 [Contributing Guide](CONTRIBUTING.md) | 📖 [Game Engine ADR-008](.wiki/adr/ADR-008-deterministic-game-engine-architecture.md) | 📜 [Core Contracts](src/core/contracts/) |
 
 ---
 
 </div>
+
+---
+
+## 📖 Author's Preface & Dedication
+
+> *To my family, whose quiet encouragement and unconditional warmth gave me the space to dream, tinker, and build in the silence of late nights;*  
+> 
+> *To the open-source community and the legendary pioneers of computer graphics who taught us that code can be written with craftsmanship, elegance, and soul;*  
+> 
+> *And to every engineer who has ever looked at a bloated, sluggish system and believed, in their heart, that we could build something far more beautiful.*  
+> 
+> *This work is dedicated to you. May it serve as a humble gift back to the open world that taught me how to create.*
+
+### A Letter from the Author
+
+Behind every line of code in **LUMI-JOY** lies a simple, deeply human story: the quiet joy of tinkering, the thrill of chasing elegance, and a lifelong love for software that feels truly *alive*.
+
+For years, as Large Language Models emerged, we wrapped these magnificent reasoning models inside heavy, tangled layers of enterprise web architecture ("framework soup"). With every layer of microservice RPC complexity, our tools grew slower, state drifted, and the magic of interacting with intelligence was buried under software friction.
+
+Late one night in August 2026, I thought back to the software that first sparked my childhood wonder: the legendary game engines of computing history. Pioneers like John Carmack taught us a sacred discipline—that memory is precious, every single frame matters, and code written with reverence for real-time physics can render entire virtual universes in milliseconds.
+
+By reframing an AI agent runtime as a deterministic game engine kernel (`tick()`), allocating a contiguous **16MB Zero-GC Contiguous ArrayBuffer Slab** like a classic C++ arena allocator, and capturing frame-perfect state snapshots (`GameStateSnapshot`), LUMI-JOY proved that software friction was an illusion—enforcing sub-millisecond fast-path latency ($<1.0\text{ ms}$), throughput exceeding $1,000\text{ frames/second}$, and $O(1)$ time-travel state rewind ($<0.1\text{ ms}$ warmed p95).
+
+— **William Andrew Cruz** (`bozoegg` / `CardSorting`), *Primary Author & Inventor*  
+📖 *Read the complete [Author's Preface & Dedication](PREFACE.md).*
 
 ---
 
@@ -65,16 +90,64 @@ Select your role for tailored navigation and onboarding instructions:
 - **Goal 2: Frame-Perfect State Rewind**: Perform $O(1)$ state restoration under the enforced $0.1\text{ ms}$ warmed-p95 guardrail during iterative agent debugging.
 - **Goal 3: Type-Safe Programmatic SDK**: Embed `LumiMonolith` seamlessly into node applications with full TypeScript autocompletion and progress callbacks.
 
-## 💡 Why LUMI-NEW? (The Architectural Imperative)
+## 💡 Why LUMI-JOY? (The Architectural Imperative)
 
 Traditional AI agent frameworks (LangChain, AutoGen, CrewAI, and raw provider wrappers) suffer from systemic architectural flaws that limit their enterprise production readiness:
 
-| Architectural Challenge | Traditional Agent Frameworks | AKD-DSO Engine (`LUMI-NEW`) | Business & Technical Impact |
+| Architectural Challenge | Traditional Agent Frameworks | AKD-DSO Engine (`LUMI-JOY`) | Business & Technical Impact |
 |---|---|---|---|
 | **Framework Overhead** | 18+ micro-packages with RPC/IPC queues | **Single 3-tier monolith** (`agents`, `sessions`, `tooling`) | **Measured deterministic fast path with $<1.0\text{ ms}$ latency SLA** |
 | **Context Safety & DSL** | Loose string joins prone to prompt injection | **Formal `ContextDslEngine` AST parsing & SHA-256 digests** | **Deterministic context bounds & injection defense** |
 | **Memory & GC Latency** | Dynamic heap allocations causing V8 GC sweeps | **Contiguous 16MB ArrayBuffer zero-GC substrate** | **Zero Garbage Collection pauses during live streaming** |
 | **State Rewind & Audit** | Slow transcript re-parsing | **$O(1)$ in-memory snapshot restoration** | **Warmed-p95 guardrail below $0.1\text{ ms}$ and frame-perfect state verification** |
+
+---
+
+## 🎮 Inspired by Game Engines: Deterministic Agent Architecture
+
+Traditional AI agent frameworks treat LLM interactions as loose async request/response handlers or stateless REST calls, leading to state drift, non-reproducible execution paths, and V8 Garbage Collection latency spikes.
+
+**LUMI-JOY was explicitly engineered like a Deterministic Game Engine kernel.** By adapting core principles from high-performance game engine architecture, LUMI-JOY brings frame-perfect isolation, sub-millisecond turn discipline, and zero-GC memory stability to autonomous AI agents.
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DETERMINISTIC GAME ENGINE TURN LOOP                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   [ User Input / CLI Trigger ]                                              │
+│               │                                                             │
+│               ▼                                                             │
+│   ┌─────────────────────────┐                                               │
+│   │ Frame Tick (tick())     │ ◄─── Input ───► DSL Context Projection        │
+│   └───────────┬─────────────┘                                               │
+│               │                                                             │
+│               ▼                                                             │
+│   ┌─────────────────────────┐                                               │
+│   │ Provider Dispatch       │ ◄─── Streaming Events & Activity Timeline     │
+│   └───────────┬─────────────┘                                               │
+│               │                                                             │
+│               ▼                                                             │
+│   ┌─────────────────────────┐                                               │
+│   │ Immutable State Snapshot│ ◄─── GameStateSnapshot (VFS Overlay + Memory) │
+│   └───────────┬─────────────┘                                               │
+│               │                                                             │
+│               ▼                                                             │
+│   [ O(1) Rewind / Subagent ] ◄─── rewindToSnapshot() (< 0.1ms p95)          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Core Game Engine Architectural Parallels
+
+| Game Engine Concept | Traditional Agent Frameworks | LUMI-JOY Game Engine Implementation | Technical & Operational Advantage |
+|---|---|---|---|
+| 🕹️ **Frame Tick (`tick()`)** | Loose async handlers & event emitters | **Deterministic frame step (`AbstractAgentEngine.tick()`)** | Serializes turn processing in a strict frame cycle (`Input -> Context Assembly -> Dispatch -> Mutation -> Telemetry`). |
+| 💾 **Game Save / Frame Snapshot** | Serialized text transcript re-parsing | **`GameStateSnapshot` (In-memory frame snapshotting)** | Captures complete engine state (VFS staged overlays, memory store, token budgets, turn index) at frame $t$. |
+| ⏪ **Frame Rewind & Replay** | Manual context re-building or restart | **$O(1)$ State Rewind (`rewindToSnapshot()`)** | Sub-millisecond ($<0.1\text{ ms}$ warmed p95) time-travel rollback for instant turn debugging & subagent state branching. |
+| ⚡ **Arena Memory Allocator** | Dynamic heap allocation per turn | **Contiguous 16MB ArrayBuffer slab (`ArenaAllocator`)** | Pre-allocated slab eliminates V8 Garbage Collection (GC) latency pauses during live streaming & tick execution. |
+| 🌿 **Scene & Subagent Branching** | Shared mutable global state | **Child Session Forking (`AgentSwarmDispatcher`)** | Subagent tasks spawn isolated child engine instances pre-initialized from parent state snapshots (`createSnapshot()`). |
+
+> 📖 For full technical details and architectural specs, read [ADR-008: Deterministic Game Engine Architecture](.wiki/adr/ADR-008-deterministic-game-engine-architecture.md) and [The Osmosis Paradigm Whitepaper](.wiki/whitepaper/OSMOSIS-WHITEPAPER.md).
 
 ---
 
@@ -89,7 +162,7 @@ Traditional AI agent frameworks (LangChain, AutoGen, CrewAI, and raw provider wr
 
 ### Latest verified workspace baseline
 
-The authoritative run was generated on **2026-08-13T04:45:51.966Z** using Node.js `v23.5.0` on macOS ARM64. It passed:
+The authoritative run was generated on **2026-08-13T05:44:24.943Z** using Node.js `v23.5.0` on macOS ARM64. It passed:
 
 | Verification lane | Latest result |
 |---|---:|
@@ -105,7 +178,7 @@ Performance timings are host-sensitive and must not be copied forward as permane
 
 ## 🚀 Quick Start & Onboarding
 
-Get up and running with **LUMI-NEW** in seconds:
+Get up and running with **LUMI-JOY** in seconds:
 
 ### 1. Prerequisites & Installation
 
@@ -113,8 +186,8 @@ Ensure you have **Node.js 20.19+** (or a compatible newer release) installed:
 
 ```bash
 # Clone the repository
-git clone https://github.com/CardSorting/LUMI-NEW.git
-cd LUMI-NEW
+git clone https://github.com/CardSorting/LUMI-JOY.git
+cd LUMI-JOY
 
 # Install dependencies
 npm install
@@ -149,7 +222,7 @@ npx tsx src/index.ts "Build a HTML5 Canvas game in src/app.js"
 #### Programmatic TypeScript Usage
 
 ```typescript
-import { LumiMonolith } from "lumi-new";
+import { LumiMonolith } from "lumi-joy";
 
 // Initialize the deterministic monolith engine
 const lumi = new LumiMonolith();
@@ -182,7 +255,7 @@ The current measured baseline is stored in [`docs/LIVE_BASELINE.json`](docs/LIVE
 
 ## ⚡ Comparison Matrix & Empirical Benchmarks
 
-| Metric / Feature | Legacy Monorepo (`pi-main`) | AKD-DSO Engine (`LUMI-NEW`) | Underlying Mechanism / Speedup |
+| Metric / Feature | Legacy Monorepo (`pi-main`) | AKD-DSO Engine (`LUMI-JOY`) | Underlying Mechanism / Speedup |
 |---|---|---|---|
 | **Architecture** | 18+ Micro-packages | **3-Tier Monolith** (`agents`, `sessions`, `tooling`) | **Zero Framework Bloat** |
 | **Execution Loop** | Loose Async Handlers | **Deterministic Game Loop** (`tick()`) | **Frame-Perfect Isolation** |
@@ -222,31 +295,7 @@ src/
 │       ├── memory/                        # session-memory-store.ts
 │       ├── vfs/                           # session-vfs.ts
 │       ├── compaction/                    # session-compactor.ts, snapcompact-engine.ts (Pass 15)
-│       └── integrity/                     # stability-doctor.ts (Pass 12)
-│
-├── tooling/                               # Tier 3: Tooling Subsystem
-│   ├── base/                              # eyes.ts
-│   └── extensions/                        # Domain Mutation Subdirectories
-│       ├── perception/                    # ast-eyes.ts
-│       ├── progress/                      # progress-ears.ts
-│       ├── telemetry/                     # ears.ts, telemetry-tracer.ts (Pass 19)
-│       ├── hashline/                      # hands.ts
-│       ├── registry/                      # skills-ingestor.ts, tool-registry.ts
-│       ├── policy/                        # module-decomposer.ts (Pass 10)
-│       ├── permissions/                   # command-permission-controller.ts (Pass 14)
-│       ├── gateway/                       # monolith-gateway-server.ts (Pass 17)
-│       └── evals/                         # benchmark-evaluator.ts (Pass 18)
-│
-├── factories/                             # Engine Monolith Bootstrapper
-│   └── monolith-factory.ts
-│
-├── tui/                                   # Differential terminal renderer & activity timeline
-│   └── components/                        # agent-activity-timeline.ts and UI primitives
-│
-└── index.ts                               # Composition Root (LumiMonolith)
-```
-
-> 🛡️ **Non-Destructive Osmosis Extension Strategy (`ADR-012`)**:  
+│       └──> 🛡️ **Non-Destructive Osmosis Extension Strategy (`ADR-012`)**:  
 > Base classes in `src/*/base/` remain immutable. Evolutionary passes introduce single-responsibility extension classes in dedicated mutation subdirectories (`src/*/extensions/<mutation-domain>/`) and compose them cleanly in `MonolithFactory` and `LumiMonolith`.
 
 ---
@@ -255,7 +304,7 @@ src/
 
 Authenticated Codex turns use the official SDK event stream and render a persistent activity card instead of a single ambiguous `Thinking...` label. Stable activities update in place as they move through `started`, `in_progress`, and a terminal state.
 
-Use `/setup` to connect and activate a provider. Codex setup attempts to open the browser, but also displays a clickable and copyable OpenAI sign-in URL; press `O` to retry or paste the authorization code/full callback URL if automatic capture is unavailable. When Codex is already authenticated, submit an empty field to keep the login and activate its default model. The selection is saved in `~/.lumi/config.json`.
+Use `/setup` to connect and activate a provider. Codex setup attempts to open the browser, but also displays a clickable and copyable OpenAI sign-in URL; press `O` to retry or paste the authorization code/full callback URL if automatic redirect capture is unavailable. When Codex is already authenticated, submit an empty field to keep the login and activate its default model. The selection is saved in `~/.lumi/config.json`.
 
 ```text
 Agent activity · Working 4s · gpt-5.6-terra
@@ -316,7 +365,7 @@ Run `npm test` to exercise DSL AST parsing (`scripts/validate-dsl-strategy.ts`),
 
 ## 🛡️ Non-Destructive Osmosis Extension Strategy (`ADR-012`)
 
-To prevent code regression, file overwrites, and structural drift as new evolutionary passes are absorbed from `pi-main`, **LUMI-NEW** strictly enforces the **Non-Destructive Extension & Mutation Directory Strategy**:
+To prevent code regression, file overwrites, and structural drift as new evolutionary passes are absorbed from `pi-main`, **LUMI-JOY** strictly enforces the **Non-Destructive Extension & Mutation Directory Strategy**:
 
 ### 1. Core Architectural Tenets
 
@@ -353,26 +402,29 @@ To prevent code regression, file overwrites, and structural drift as new evoluti
 
 ## ❓ Frequently Asked Questions (FAQ)
 
-### Q: What is LUMI-NEW and what core business problem does it solve?
-**LUMI-NEW** is an enterprise-grade AI pair programmer and autonomous agent engine. It addresses framework overhead and state drift through a deterministic local frame path guarded below $1.0\text{ ms}$ mean latency, explicit frame outcomes, immutable snapshots, and fail-closed completion semantics. Provider-backed model latency is external to this local-runtime guardrail.
+### Q: What is LUMI-JOY and what core business problem does it solve?
+**LUMI-JOY** is an enterprise-grade AI pair programmer and autonomous agent engine. It addresses framework overhead and state drift through a deterministic local frame path guarded below $1.0\text{ ms}$ mean latency, explicit frame outcomes, immutable snapshots, and fail-closed completion semantics. Provider-backed model latency is external to this local-runtime guardrail.
 
-### Q: How does LUMI-NEW reduce AI infrastructure and cloud operating costs?
-By eliminating internal microservice RPC queues, LUMI-NEW keeps deterministic local orchestration in-process. The enforced floor is **$1,000$ local frames/second**; the latest host run observed **$7,787.13$ frames/second**. These figures are local framework measurements—not provider responses, model tokens, or a universal server-capacity promise—and should be regenerated on deployment hardware.
+### Q: Why is the LUMI-JOY agent runtime inspired by game engines?
+Traditional AI agent frameworks suffer from state drift, non-reproducible turns, microservice overhead, and V8 Garbage Collection pauses. Modeling the agent runtime like a **Deterministic Game Engine** establishes frame ticks (`tick()`), immutable state snapshots (`GameStateSnapshot`), sub-millisecond state rewind (`rewindToSnapshot()`), and a pre-allocated 16MB contiguous slab memory substrate (`ArenaAllocator`). This guarantees frame-perfect isolation, instant time-travel debugging, and zero-GC performance stability.
+
+### Q: How does LUMI-JOY reduce AI infrastructure and cloud operating costs?
+By eliminating internal microservice RPC queues, LUMI-JOY keeps deterministic local orchestration in-process. The enforced floor is **$1,000$ local frames/second**; the latest host run observed **$8525.73$ frames/second**. These figures are local framework measurements—not provider responses, model tokens, or a universal server-capacity promise—and should be regenerated on deployment hardware.
 
 ### Q: Which LLM providers and AI models are supported?
-LUMI-NEW natively supports major provider ecosystems including **OpenAI** (`gpt-4o`, `gpt-5`, `Codex`), **Anthropic** (`Claude 3.5 Sonnet`), and standard OpenAI-compatible proxy gateways. It features automatic model resolution, fallback routing, and PKCE OAuth 2.0 authentication.
+LUMI-JOY natively supports major provider ecosystems including **OpenAI** (`gpt-4o`, `gpt-5`, `Codex`), **Anthropic** (`Claude 3.5 Sonnet`), and standard OpenAI-compatible proxy gateways. It features automatic model resolution, fallback routing, and PKCE OAuth 2.0 authentication.
 
-### Q: How does LUMI-NEW protect enterprise data privacy and source code security?
-LUMI-NEW runs locally or within your private cloud infrastructure. Credentials configured via `/setup` are stored in restricted user storage (`~/.lumi/config.json` with 0600 permissions). The engine explicitly redacts credentials, bearer tokens, and internal file contents from streaming activity logs, and enforces strict command permission policies before executing any terminal operations.
+### Q: How does LUMI-JOY protect enterprise data privacy and source code security?
+LUMI-JOY runs locally or within your private cloud infrastructure. Credentials configured via `/setup` are stored in restricted user storage (`~/.lumi/config.json` with 0600 permissions). The engine explicitly redacts credentials, bearer tokens, and internal file contents from streaming activity logs, and enforces strict command permission policies before executing any terminal operations.
 
-### Q: Can LUMI-NEW be customized or embedded into internal enterprise tools?
-Yes. LUMI-NEW is open-source under the **Apache License 2.0** and backed by a **Defensive Patent Non-Aggression Pledge**. You can integrate the TypeScript SDK (`LumiMonolith`) directly into internal developer portals, custom CLI tools, IDE plugins, or automated CI/CD code repair pipelines.
+### Q: Can LUMI-JOY be customized or embedded into internal enterprise tools?
+Yes. LUMI-JOY is open-source under the **Apache License 2.0** and backed by a **Defensive Patent Non-Aggression Pledge**. You can integrate the TypeScript SDK (`LumiMonolith`) directly into internal developer portals, custom CLI tools, IDE plugins, or automated CI/CD code repair pipelines.
 
-### Q: What user experience does LUMI-NEW offer developers during long agent tasks?
-Developers receive real-time, transparent feedback through a differential terminal timeline UI or progress event stream. Instead of displaying a static "Thinking..." label, LUMI-NEW shows live activity updates (file viewing, test execution, plan updates) with elapsed time timers and clear completion status.
+### Q: What user experience does LUMI-JOY offer developers during long agent tasks?
+Developers receive real-time, transparent feedback through a differential terminal timeline UI or progress event stream. Instead of displaying a static "Thinking..." label, LUMI-JOY shows live activity updates (file viewing, test execution, plan updates) with elapsed time timers and clear completion status.
 
-### Q: How quickly can an engineering team get started with LUMI-NEW?
-Engineering teams can install LUMI-NEW in under 60 seconds with `npm install` and complete provider authentication using the built-in guided wizard (`lumi --setup`). Programmatic integration requires only 4 lines of TypeScript code.
+### Q: How quickly can an engineering team get started with LUMI-JOY?
+Engineering teams can install LUMI-JOY in under 60 seconds with `npm install` and complete provider authentication using the built-in guided wizard (`lumi --setup`). Programmatic integration requires only 4 lines of TypeScript code.
 
 ---
 
@@ -392,6 +444,8 @@ Engineering teams can install LUMI-NEW in under 60 seconds with `npm install` an
 - 🧪 [Generated Benchmark Evidence](docs/BENCHMARK_REPORT.md)
 - 🏛️ [Generated Architectural Audit](docs/GRAND_ARCHITECTURAL_AUDIT.md)
 - 📖 [ADR Index & Decision Records](.wiki/adr/README.md)
+
+---
 
 ---
 

@@ -7,7 +7,7 @@ export interface CentennialMilestone {
 
 /**
  * Pass 100: Centennial Pass Marker
- * Certifies the 100th evolutionary pass milestone for the LUMI-NEW monolithic architecture.
+ * Certifies the 100th evolutionary pass milestone for the LUMI-JOY monolithic architecture.
  * Manages century milestones and architectural growth verification.
  */
 export class CentennialPassMarker {
