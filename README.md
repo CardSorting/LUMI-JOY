@@ -330,29 +330,26 @@ To prevent code regression, file overwrites, and structural drift as new evoluti
 
 ## ❓ Frequently Asked Questions (FAQ)
 
-### Q: Why build a single 3-tier monolith (`agents`, `sessions`, `tooling`) instead of micro-packages?
-Sprawling monorepos with 18+ micro-packages incur heavy IPC/RPC messaging queues, serialization friction, and uncoordinated state drift. **LUMI-NEW** consolidates all agent operations into a single composition root (`LumiMonolith`). Direct in-memory function calls deliver a **$129\times$ latency reduction ($0.11\text{ ms}$ tick latency)** and $58.7\times$ higher throughput ($4,132\text{ turns/sec}$).
+### Q: What is LUMI-NEW and what core business problem does it solve?
+**LUMI-NEW** is an enterprise-grade AI pair programmer and autonomous agent engine. It solves the high cost, slow turn execution, and unpredictable state drift of traditional agent frameworks by delivering sub-millisecond turn execution ($0.11\text{ ms}$) and frame-perfect state management for production software engineering workloads.
 
-### Q: What security guarantees are provided for OAuth tokens and API keys?
-Credentials configured via `/setup` or `lumi --setup` are stored exclusively in user-restricted storage at `~/.lumi/config.json` (0600 file permissions). PKCE (Proof Key for Code Exchange) S256 verifiers ensure authorization codes cannot be intercepted. Progress activity streaming (`CodexProgressAdapter`) explicitly redacts secrets, bearer tokens, tool payloads, and raw prompt content.
+### Q: How does LUMI-NEW reduce AI infrastructure and cloud operating costs?
+By eliminating multi-package framework bloat and unnecessary microservice RPC queues, LUMI-NEW processes over **247,000 agent turns per minute on a single server node** ($58.7\times$ higher throughput). This high density allows organizations to scale AI workloads with significantly smaller server footprints and lower cloud compute costs.
 
-### Q: How does the Context DSL Engine prevent prompt injection and context overflow?
-`ContextDslEngine` parses all history envelopes (`LUMI-CONTEXT/1`, `LUMI-THREAD/1`, `LUMI-MEMORY/1`, `LUMI-TOOL-RESULT/1`, `LUMI-GOAL/1`) as strongly typed AST nodes. Quoted user content and evicted history are kept in assistant scope with SHA-256 transcript references, preventing user text from being promoted to system policy. `PromptTemplateEngine` compiles handlebar conditionals (`{{#if}}`/`{{#unless}}`) safely.
+### Q: Which LLM providers and AI models are supported?
+LUMI-NEW natively supports major provider ecosystems including **OpenAI** (`gpt-4o`, `gpt-5`, `Codex`), **Anthropic** (`Claude 3.5 Sonnet`), and standard OpenAI-compatible proxy gateways. It features automatic model resolution, fallback routing, and PKCE OAuth 2.0 authentication.
 
-### Q: How does `PromptTemplateEngine` handle dynamic prompt templates?
-`PromptTemplateEngine` compiles handlebar variable placeholders (`{{variable}}`), conditional blocks (`{{#if variable}}...{{/if}}`), and negative blocks (`{{#unless variable}}...{{/unless}}`). It allows system prompts to adjust dynamically to active models, skills context, and environment variables without manual string concatenation.
+### Q: How does LUMI-NEW protect enterprise data privacy and source code security?
+LUMI-NEW runs locally or within your private cloud infrastructure. Credentials configured via `/setup` are stored in restricted user storage (`~/.lumi/config.json` with 0600 permissions). The engine explicitly redacts credentials, bearer tokens, and internal file contents from streaming activity logs, and enforces strict command permission policies before executing any terminal operations.
 
-### Q: How does LUMI-NEW handle memory allocation without Garbage Collection spikes?
-`ArenaAllocator` pre-allocates a contiguous 16MB ArrayBuffer slab for session state and text buffers. By resetting pointers during turn cycles rather than freeing objects dynamically, runtime V8 Garbage Collection sweeps are completely eliminated.
+### Q: Can LUMI-NEW be customized or embedded into internal enterprise tools?
+Yes. LUMI-NEW is open-source under the **Apache License 2.0** and backed by a **Defensive Patent Non-Aggression Pledge**. You can integrate the TypeScript SDK (`LumiMonolith`) directly into internal developer portals, custom CLI tools, IDE plugins, or automated CI/CD code repair pipelines.
 
-### Q: Can LUMI-NEW be integrated programmatically as a Node.js library?
-Yes. Import `LumiMonolith` directly from `lumi-new` or `src/index.ts`. Instantiate `new LumiMonolith()` and execute frame turns using `await lumi.tick({ prompt, signal, onProgress })`. Full type safety and progress event hooks are included.
+### Q: What user experience does LUMI-NEW offer developers during long agent tasks?
+Developers receive real-time, transparent feedback through a differential terminal timeline UI or progress event stream. Instead of displaying a static "Thinking..." label, LUMI-NEW shows live activity updates (file viewing, test execution, plan updates) with elapsed time timers and clear completion status.
 
-### Q: How can I run latency benchmarks and guardrail checks locally?
-Run `npm test` to execute the full validation suite (`scripts/validate-dsl-strategy.ts`, `scripts/validate-context-management.ts`, and `scripts/validate-repo.ts`). Run `npx tsx src/index.ts --benchmark` to measure turn tick latency and throughput.
-
-### Q: What open-source license governs LUMI-NEW?
-**LUMI-NEW** is distributed under the enterprise-friendly **Apache License 2.0** and backed by an explicit **Defensive Patent Non-Aggression Pledge** ([PATENT-NON-AGGRESSION-PLEDGE.md](PATENT-NON-AGGRESSION-PLEDGE.md)).
+### Q: How quickly can an engineering team get started with LUMI-NEW?
+Engineering teams can install LUMI-NEW in under 60 seconds with `npm install` and complete provider authentication using the built-in guided wizard (`lumi --setup`). Programmatic integration requires only 4 lines of TypeScript code.
 
 ---
 
