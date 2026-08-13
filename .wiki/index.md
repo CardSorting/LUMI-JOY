@@ -70,6 +70,8 @@ The live JSON remains authoritative if this summary and a regenerated run ever d
   - [ADR-001: 3-Tier Monolithic Agent Architecture](adr/ADR-001-3-tier-monolithic-agent-architecture.md)
   - [ADR-007: Explicit OOP Class Extension Hierarchy](adr/ADR-007-oop-class-extension-hierarchy.md)
   - [ADR-008: Deterministic Game Engine Architecture](adr/ADR-008-deterministic-game-engine-architecture.md)
+  - [ADR-083: Token-Aware Multi-Turn Context Lifecycle](adr/ADR-083-token-aware-multi-turn-context-lifecycle.md)
+  - [ADR-084: Attempt Completion Gate Strategy & Autonomous Turn Progression](adr/ADR-084-attempt-completion-gate-strategy.md)
 
 ### 8. Developer & Agent Guides
 - 📋 [Agent Orientation Playbook](agent/playbook.md)
@@ -80,8 +82,10 @@ The live JSON remains authoritative if this summary and a regenerated run ever d
 - 📋 [Troubleshooting & Verification](agent/troubleshooting.md)
 - 📋 [Common Pitfalls](agent/common-pitfalls.md)
 
-### 9. Provider Integration Decisions
+### 9. Provider & Execution Decisions
 
 - [ADR-048: OpenAI Codex OAuth and Provider Bridge](adr/ADR-048-phase-31-openai-codex-oauth-and-provider-bridge.md)
 - [ADR-049: Interactive Setup Wizard](adr/ADR-049-interactive-setup-wizard-and-provider-bridge.md)
 - [ADR-082: Structured Agent Activity Streaming](adr/ADR-082-structured-agent-activity-streaming.md)
+- [ADR-083: Token-Aware Multi-Turn Context Lifecycle](adr/ADR-083-token-aware-multi-turn-context-lifecycle.md)
+- [ADR-084: Attempt Completion Gate Strategy & Autonomous Turn Progression](adr/ADR-084-attempt-completion-gate-strategy.md)

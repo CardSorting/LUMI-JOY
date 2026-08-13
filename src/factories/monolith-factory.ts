@@ -500,7 +500,7 @@ export class MonolithFactory {
       codexProviderBridge,
       proxyGateway,
       undefined,
-      { modelCatalog, budgetCalculator, tokenTruncator }
+      { modelCatalog, budgetCalculator, tokenTruncator, completionGate }
     );
 
     return {

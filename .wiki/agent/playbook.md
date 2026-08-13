@@ -25,7 +25,7 @@ Current generated verification is **Pass 192 + runtime hardening**: 142/142 exac
   - `extensions/`: SessionCompactor, SessionVfs, SessionMemoryStore, PersistentSessionStore (`extends AbstractSessionStore`)
 - **Tier 3: Tooling (`src/tooling/`)**
   - `base/eyes.ts`: Eyes
-  - `extensions/`: SkillsIngestor, AnchoredHands (`extends AbstractHands`), ProtocolEars (`extends AbstractEars`), ValidatingToolRegistry (`extends AbstractToolRegistry`)
+  - `extensions/`: SkillsIngestor, AnchoredHands (`extends AbstractHands`), ProtocolEars (`extends AbstractEars`), ValidatingToolRegistry (`extends AbstractToolRegistry`), RoadmapCompletionGate (Zenith-Tier Attempt Completion Gate Strategy)
 - **Terminal UI (`src/tui/`)**
   - `components/agent-activity-timeline.ts`: identity-based, persistent provider activity rendering
   - `components/guided-setup-walkthrough-modal.ts`: credential setup, browser fallback, and model activation
@@ -73,6 +73,7 @@ When changing model dispatch or the interactive shell:
 6. Set `EngineTickResult.outcome`; never make consumers infer success from a resolved promise or response text.
 7. Clear elapsed timers and active abort-controller references in `finally`.
 8. Verify success, empty completion, premature EOF, retry, final failure, cancellation, and a subsequent prompt in the same session.
+9. Verify attempt completion gates (`RoadmapCompletionGate`) and self-healing multi-attempt loops satisfy required criteria before turn terminal publication.
 
 Provider fidelity is intentionally asymmetric: Codex OAuth is dispatched through `@openai/codex-sdk` and provides full lifecycle events, while API-key HTTP routes provide coarse request status. Do not manufacture detailed tool activity for a route that does not expose it.
 
@@ -86,8 +87,11 @@ Provider fidelity is intentionally asymmetric: Codex OAuth is dispatched through
 - [ADR-001: 3-Tier Monolithic Agent Architecture](../adr/ADR-001-3-tier-monolithic-agent-architecture.md)
 - [ADR-049: Interactive Setup Wizard & Provider Bridge](../adr/ADR-049-interactive-setup-wizard-and-provider-bridge.md)
 - [ADR-082: Structured Agent Activity Streaming](../adr/ADR-082-structured-agent-activity-streaming.md)
+- [ADR-083: Token-Aware Multi-Turn Context Lifecycle](../adr/ADR-083-token-aware-multi-turn-context-lifecycle.md)
+- [ADR-084: Attempt Completion Gate Strategy & Autonomous Turn Progression](../adr/ADR-084-attempt-completion-gate-strategy.md)
 - [ADR-050: Automated Benchmark & Throughput Evaluation](../adr/ADR-050-automated-benchmark-and-throughput-evaluation.md)
 - [API Reference](api-reference.md)
 - [Agent Activity Streaming Strategy](streaming-activity-strategy.md)
+- [Design Patterns & Workflows](patterns.md)
 - [Troubleshooting & Verification](troubleshooting.md)
 - [Agent Memory & Constraints](agent-memory.md)

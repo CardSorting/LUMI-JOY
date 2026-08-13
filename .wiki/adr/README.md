@@ -91,6 +91,7 @@ ADRs preserve decision-time context and acceptance evidence; their embedded comm
 | [ADR-081](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-081-phase-60-broccolidb-command-diagnostics-and-output-buffer.md) | Phase 60 Broccoli Command Diagnostics & Output Buffer (Passes 190–192) | Accepted | 2026-08-12 | Phase 60 Evolution |
 | [ADR-082](ADR-082-structured-agent-activity-streaming.md) | Structured Agent Activity Streaming and Persistent Terminal Timeline | Accepted | 2026-08-12 | Agent Execution & Terminal UX |
 | [ADR-083](ADR-083-token-aware-multi-turn-context-lifecycle.md) | Token-Aware Multi-Turn Context Lifecycle | Accepted | 2026-08-12 | Context Engineering |
+| [ADR-084](ADR-084-attempt-completion-gate-strategy.md) | Attempt Completion Gate Strategy & Autonomous Turn Progression | Accepted | 2026-08-13 | Quality Engineering & Autonomous Control |
 
 ## Domain Grouping
 
@@ -104,6 +105,7 @@ ADRs preserve decision-time context and acceptance evidence; their embedded comm
 - **[ADR-012](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-012-non-destructive-osmosis-class-extension-strategy.md)**: Non-Destructive Class Extension & Additive Osmosis Strategy.
 - **[ADR-082](ADR-082-structured-agent-activity-streaming.md)**: Provider-independent progress lifecycle, Codex SDK event adaptation, persistent terminal activity timeline, cancellation, and safe observability boundaries.
 - **[ADR-083](ADR-083-token-aware-multi-turn-context-lifecycle.md)**: Token-aware active context projections, durable transcripts, versioned compaction envelopes, and stateful provider rehydration.
+- **[ADR-084](ADR-084-attempt-completion-gate-strategy.md)**: Zenith-tier attempt completion gate strategy, differential regression detection, cognitive remediation directives, anti-oscillation guards, and circuit breaker governance.
 
 ### Feature Evolution & Osmosis Learning
 - **[ADR-002](file:///Users/bozoegg/Desktop/LUMI-NEW/.wiki/adr/ADR-002-osmosis-evolution-compaction-skills-composition.md)**: Context compaction, skill discovery, and prompt composition.

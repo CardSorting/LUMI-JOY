@@ -55,4 +55,11 @@ This document highlights common pitfalls and non-negotiable rules for AI agents 
     - API-key HTTP dispatch currently exposes coarse request lifecycle states.
     - Render honest provider-specific detail and supply a local terminal event when the route has no native item lifecycle.
 
-For the normative rules, see [Agent Activity Streaming Strategy](streaming-activity-strategy.md) and [ADR-082](../adr/ADR-082-structured-agent-activity-streaming.md).
+11. **Do Not Bypass Completion Quality Gates**:
+    - Never treat unverified model output or un-evaluated tool execution as a completed turn.
+    - Always evaluate `RoadmapCompletionGate` to enforce non-empty responses, error containment, mutation staging, and invariant satisfaction.
+
+12. **Do Not Prompt the User for Recoverable Failures**:
+    - Utilize `deriveAutonomousFeedback` and `deriveRemediationDirective` in `executeAutonomousAttemptLoop` to drive multi-attempt self-correction automatically without manual user intervention.
+
+For the normative rules, see [Agent Activity Streaming Strategy](streaming-activity-strategy.md), [ADR-082](../adr/ADR-082-structured-agent-activity-streaming.md), and [ADR-084](../adr/ADR-084-attempt-completion-gate-strategy.md).

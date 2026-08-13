@@ -178,3 +178,55 @@ The important invariants are:
 - Preserve fidelity: Codex SDK turns expose detailed item activity; API-key HTTP routes may expose only coarse request states.
 
 The provider activity stream, individual tool executor progress, and JSON-RPC protocol telemetry are related but separate layers. See the [Agent Activity Streaming Strategy](streaming-activity-strategy.md) and [ADR-082](../adr/ADR-082-structured-agent-activity-streaming.md).
+
+---
+
+## 5. Autonomous Multi-Attempt Gated Execution Loop
+
+The following sequence diagram illustrates zenith-tier attempt completion gating and self-healing multi-attempt turns without manual user intervention:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Harness as AgentLoopHarness / Engine
+    participant Gate as RoadmapCompletionGate
+    participant Executor as AttemptExecutor / Provider
+    participant Guard as AntiOscillation & CircuitBreaker
+
+    Harness->>Gate: executeAutonomousAttemptLoop(gateId, options)
+    
+    loop Attempts 1..maxAttempts
+        Harness->>Guard: check circuit breaker state
+        alt Circuit open
+            Guard-->>Harness: fail fast (circuit breaker tripped)
+        else Circuit closed
+            Harness->>Executor: executeAttempt(attempt, feedback, directive)
+            Executor-->>Harness: candidate response + tool outputs + errors
+            
+            Harness->>Gate: evaluateAttemptGate(gateId, evalContext)
+            Gate->>Gate: execute dynamic criteria evaluators
+            Gate->>Gate: compute attempt diff & regression metrics
+            
+            alt All required criteria passed
+                Gate-->>Harness: allowedToProceed = true (SUCCESS)
+                Harness-->>Harness: return successful outcome
+            else Gating blocked
+                Gate->>Gate: deriveRemediationDirective() & deriveAutonomousFeedback()
+                Gate->>Guard: detectOscillation(repeatedBlockingCriteria)
+                Gate-->>Harness: allowedToProceed = false + feedback + directive
+                Harness->>Harness: apply adaptive backoff delay (linear/exponential/jittered)
+                Harness->>Harness: escalate remediation strategy (PATCH -> REWRITE -> PIVOT)
+            end
+        end
+    end
+```
+
+### Key Architectural Invariants
+
+- **Differential Progression**: Attempt $N+1$ evaluates against Attempt $N$ to detect newly passing criteria vs regressions (`newlyFailing`).
+- **Cognitive Remediation Directives**: Directives specify concrete action steps rather than vague error messages.
+- **Anti-Oscillation Protection**: Prevents flip-flopping across repeating failure cycles.
+- **Circuit Breaker Governance**: Protects against runaway token burn during persistent environment failures.
+
+See [ADR-084](../adr/ADR-084-attempt-completion-gate-strategy.md) for detailed specifications.
+

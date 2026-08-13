@@ -24,6 +24,7 @@ import type { SessionMemoryStore } from "../../../sessions/extensions/memory/ses
 import type { AgentSlashRouter } from "../resolution/agent-slash-router.js";
 import type { CodexProviderBridge } from "../resolution/codex-provider-bridge.js";
 import type { LlmProxyGateway } from "../resolution/llm-proxy-gateway.js";
+import { RoadmapCompletionGate } from "../../../tooling/extensions/policy/roadmap-completion-gate.js";
 import { CodexProgressAdapter } from "./codex-progress-adapter.js";
 import {
   FlappyBirdProjectSynthesizer,
@@ -42,6 +43,7 @@ export interface AgentContextServices {
   modelCatalog?: ModelCatalog;
   budgetCalculator?: ContextBudgetCalculator;
   tokenTruncator?: TokenTruncator;
+  completionGate?: RoadmapCompletionGate;
 }
 
 export class AgentEngine extends AbstractAgentEngine {
@@ -53,6 +55,7 @@ export class AgentEngine extends AbstractAgentEngine {
   readonly slashRouter: AgentSlashRouter;
   readonly codexProviderBridge?: CodexProviderBridge;
   readonly proxyGateway?: LlmProxyGateway;
+  readonly completionGate: RoadmapCompletionGate;
   private readonly codex: Codex;
   private codexThread: Thread | null = null;
   private codexThreadModel: string | null = null;
@@ -92,6 +95,7 @@ export class AgentEngine extends AbstractAgentEngine {
     this.codexProviderBridge = codexProviderBridge;
     this.proxyGateway = proxyGateway;
     this.codex = codex;
+    this.completionGate = contextServices.completionGate ?? new RoadmapCompletionGate();
     this.runtimeModelCatalog = contextServices.modelCatalog ?? new ModelCatalog();
     this.runtimeBudgetCalculator = contextServices.budgetCalculator ?? new ContextBudgetCalculator();
     this.runtimeTokenTruncator = contextServices.tokenTruncator ?? new TokenTruncator();

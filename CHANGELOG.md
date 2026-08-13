@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added (Attempt Completion Gate Strategy & Autonomous Turn Progression)
+
+- **Dynamic Criteria Evaluators**: Extended `RoadmapCompletionGate` with asynchronous and synchronous criterion evaluator functions (`DynamicGateCriteria`, `CriterionEvaluatorFn`) capable of inspecting candidate responses, tool execution lists, and runtime error context.
+- **Fail-Closed Evidence Integrity**: Hardened quality gates with incremental evidence recording (`recordCriterionEvidence`, `batchRecordEvidence`) and evidence reset (`resetGateEvidence`), maintaining fail-closed governance.
+- **Autonomous Corrective Feedback Synthesis**: Implemented deterministic synthetic feedback derivation (`deriveAutonomousFeedback`) that extracts blocking criteria and actionable repair requirements for automated self-correction without manual user feedback.
+- **Autonomous Multi-Attempt Loop**: Added `executeAutonomousAttemptLoop` to orchestrate automatic multi-attempt execution up to `maxAttempts`, automatically injecting synthesized feedback into subsequent attempts.
+- **Standard Strategy Factories**: Added `AttemptCompletionGateStrategy` providing turnkey gate definitions for response verification, autonomous code repair, triad audits, and benchmark workloads.
+- **Multi-Attempt Harness & Engine Integration**: Enhanced `AgentLoopHarness` with `runAutonomousGatedTurn` emitting structured timeline events (`gate_evaluation`, `autonomous_feedback`, `auto_retry`), and connected `RoadmapCompletionGate` to `AgentEngine` provider dispatch loops ([ADR-084](.wiki/adr/ADR-084-attempt-completion-gate-strategy.md)).
+
 ### Added (Live Runtime Baselines)
 
 - Added `lumi --baseline` and `npm run baseline:update` to run capability smoke, hermetic benchmarks, and architecture guardrails before atomically generating `docs/LIVE_BASELINE.json`, `docs/BENCHMARK_REPORT.md`, and `docs/GRAND_ARCHITECTURAL_AUDIT.md` from one live worktree run.

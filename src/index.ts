@@ -74,7 +74,17 @@ import { McpHub, type McpServerConfig, type McpDiscoveredTool } from "./tooling/
 import { RipgrepSearchService, type RipgrepMatch } from "./tooling/extensions/perception/ripgrep-search-service.js";
 import { UrlContentFetcher } from "./tooling/extensions/perception/url-content-fetcher.js";
 import { LanguageSyntaxParser, type SyntaxSymbol } from "./tooling/extensions/perception/language-syntax-parser.js";
-import { RoadmapCompletionGate, type GateCriteria, type CompletionGateResult } from "./tooling/extensions/policy/roadmap-completion-gate.js";
+import {
+  RoadmapCompletionGate,
+  AttemptCompletionGateStrategy,
+  type GateCriteria,
+  type CompletionGateResult,
+  type AttemptGateEvaluationContext,
+  type DynamicGateCriteria,
+  type CriterionEvaluatorFn,
+  type AttemptGateStrategyConfig,
+  type AutonomousAttemptExecutionResult,
+} from "./tooling/extensions/policy/roadmap-completion-gate.js";
 import { RoadmapCheckpointDigest, type CheckpointDigest } from "./tooling/extensions/policy/roadmap-checkpoint-digest.js";
 import { NativeClipboardBridge } from "./tooling/extensions/perception/native-clipboard.js";
 import { AnchoredHands, Hands } from "./tooling/extensions/hashline/hands.js";
@@ -168,6 +178,7 @@ export type { TokenTruncationOptions } from "./agents/extensions/compaction/toke
 export { PromptTemplateEngine } from "./agents/extensions/compaction/prompt-template-engine.js";
 export { DynamicVariableInjector } from "./agents/extensions/compaction/dynamic-variable-injector.js";
 export { AgentLoopHarness } from "./agents/extensions/execution/agent-loop-harness.js";
+export type { HarnessStepEvent, HarnessExecutionResult, AutonomousHarnessOptions } from "./agents/extensions/execution/agent-loop-harness.js";
 export { ProviderAttributionComposer } from "./agents/extensions/resolution/provider-attribution.js";
 export type { AttributionRecord, AttributionSummary } from "./agents/extensions/resolution/provider-attribution.js";
 export { HttpDispatcherOverlay } from "./agents/extensions/resolution/http-dispatcher.js";
@@ -377,8 +388,28 @@ export type { RipgrepMatch } from "./tooling/extensions/perception/ripgrep-searc
 export { UrlContentFetcher } from "./tooling/extensions/perception/url-content-fetcher.js";
 export { LanguageSyntaxParser } from "./tooling/extensions/perception/language-syntax-parser.js";
 export type { SyntaxSymbol } from "./tooling/extensions/perception/language-syntax-parser.js";
-export { RoadmapCompletionGate } from "./tooling/extensions/policy/roadmap-completion-gate.js";
-export type { GateCriteria, CompletionGateResult } from "./tooling/extensions/policy/roadmap-completion-gate.js";
+export {
+  RoadmapCompletionGate,
+  AttemptCompletionGateStrategy,
+} from "./tooling/extensions/policy/roadmap-completion-gate.js";
+export type {
+  GateCriteria,
+  CompletionGateResult,
+  AttemptGateEvaluationContext,
+  DynamicGateCriteria,
+  CriterionEvaluatorFn,
+  AttemptGateStrategyConfig,
+  AutonomousAttemptExecutionResult,
+  GateCriterionSeverity,
+  GateCriterionCategory,
+  GatePhase,
+  EvaluationAggregationPolicy,
+  RemediationStrategyType,
+  RemediationDirective,
+  AttemptDiff,
+  CircuitBreakerConfig,
+  BackoffStrategy,
+} from "./tooling/extensions/policy/roadmap-completion-gate.js";
 export { RoadmapCheckpointDigest } from "./tooling/extensions/policy/roadmap-checkpoint-digest.js";
 export type { CheckpointDigest } from "./tooling/extensions/policy/roadmap-checkpoint-digest.js";
 export { NativeClipboardBridge } from "./tooling/extensions/perception/native-clipboard.js";

@@ -97,6 +97,15 @@ Run `/health`, confirm the selected model/provider pair, and reconnect only when
 
 See [Agent Activity Streaming Strategy](streaming-activity-strategy.md) for the complete contract and [API Reference](api-reference.md) for integration examples.
 
+## Attempt completion gate diagnostics
+
+If an autonomous turn fails or circuit breakers trip:
+
+1. **Inspect blocking criteria**: The gate returns `blockingCriteria` containing each required criterion that failed or remained unevaluated.
+2. **Review autonomous feedback & remediation directives**: Check `gateResult.autonomousFeedback` or `gateResult.remediationDirective` for prioritized action steps and root-cause diagnoses.
+3. **Check for anti-oscillation guards**: If `[ANTI_OSCILLATION_GUARD]` is flagged, the agent is repeating the same failing edits across attempts; pivot to structural refactoring instead of localized patching.
+4. **Reset or cool down circuit breakers**: If `circuitBreakerTripped` is true, wait for the configured cooldown period or call `gate.resetCircuitBreaker(gateId)`.
+
 ## Repository verification
 
 Run the full local gate after changing provider dispatch, activity mapping, TUI behavior, or setup:
@@ -124,3 +133,6 @@ For a manual authenticated test:
 | Erasable syntax failure | `enum`, `namespace`, parameter property, or another strip-only violation | Replace it with erasable TypeScript syntax |
 | `Line anchor hash mismatch` | The target changed after its hash was computed | Re-read the file and recompute the line hash |
 | Tool schema validation failed | Required or typed arguments do not match the registry schema | Correct the arguments before execution |
+| `Gate blocked by required criteria` | One or more required criteria in `RoadmapCompletionGate` failed | Follow `remediationDirective` or check dynamic evaluator criteria |
+| `Execution blocked by open circuit breaker` | Consecutive failures exceeded `CircuitBreakerConfig` threshold | Resolve root cause and allow circuit breaker cooldown or reset |
+

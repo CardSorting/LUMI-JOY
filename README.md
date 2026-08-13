@@ -363,6 +363,20 @@ Run `npm test` to exercise DSL AST parsing (`scripts/validate-dsl-strategy.ts`),
 
 ---
 
+## ⚡ Attempt Completion Gate Strategy & Autonomous Progression
+
+LUMI implements a zenith-tier **Attempt Completion Gate Strategy** (`RoadmapCompletionGate` and `AttemptCompletionGateStrategy`) to enable autonomous multi-attempt turn progression without manual user prompting or feedback:
+
+- **Phased Gating Lifecycle**: Evaluates quality bars across `admission`, `in_flight`, `completion`, and `postmortem` checkpoints.
+- **Dynamic Context Evaluators**: Analyzes candidate outputs, tool execution outcomes, and runtime error diagnostics.
+- **Differential Attempt Analysis (`computeAttemptDiff`)**: Tracks delta improvements and catches regressions (`newlyPassing`, `newlyFailing`, `stagnantFailing`) across attempts.
+- **Cognitive Remediation Directives (`RemediationDirective`)**: Automatically synthesizes root causes, prioritized criteria, and concrete action steps, escalating strategies (`PATCH_LOCAL` $\to$ `REWRITE_MODULE` $\to$ `PIVOT_APPROACH` $\to$ `EXPAND_CONTEXT`) when localized patches fail.
+- **Anti-Oscillation Guard & Circuit Breaker**: Detects cyclic repair traps (`[ANTI_OSCILLATION_GUARD]`) and trips circuit breakers (`CircuitBreakerConfig`) to prevent infinite retry loops and runaway token burn.
+
+See [ADR-084](.wiki/adr/ADR-084-attempt-completion-gate-strategy.md) for architectural specifications and benchmarks.
+
+---
+
 ## 🛡️ Non-Destructive Osmosis Extension Strategy (`ADR-012`)
 
 To prevent code regression, file overwrites, and structural drift as new evolutionary passes are absorbed from `pi-main`, **LUMI-JOY** strictly enforces the **Non-Destructive Extension & Mutation Directory Strategy**:

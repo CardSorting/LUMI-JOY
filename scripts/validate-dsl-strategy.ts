@@ -3,6 +3,12 @@ import { ContextDslEngine } from "../src/agents/extensions/compaction/context-ds
 import { PromptComposer } from "../src/agents/extensions/compaction/prompt-composer.js";
 import { SessionCompactor } from "../src/sessions/extensions/compaction/session-compactor.js";
 import type { SessionMessage } from "../src/core/contracts/session.contracts.js";
+import {
+  RoadmapCompletionGate,
+  AttemptCompletionGateStrategy,
+  type DynamicGateCriteria,
+} from "../src/tooling/extensions/policy/roadmap-completion-gate.js";
+import { AgentLoopHarness } from "../src/agents/extensions/execution/agent-loop-harness.js";
 
 function validateDslParsingAndSerialization(): void {
   const engine = new ContextDslEngine();
@@ -162,11 +168,280 @@ function validatePromptComposerIntegration(): void {
   assert.equal(renderedTemplate, "Hello LUMI (AI Pair Programmer) -- Footer");
 }
 
-function main(): void {
+async function validateAttemptCompletionGateStrategy(): Promise<void> {
+  const gate = new RoadmapCompletionGate();
+
+  // 1. Static Fail-Closed Evaluation & Evidence Recording
+  const gateId = "test-strategy-gate-1";
+  gate.registerGate(gateId, [
+    { id: "c1", description: "First required check", required: true, evaluated: false, passed: false },
+    { id: "c2", description: "Second required check", required: true, evaluated: false, passed: false },
+    { id: "c3", description: "Optional note", required: false, evaluated: true, passed: true },
+  ]);
+
+  const initialEval = gate.evaluateGate(gateId);
+  assert.equal(initialEval.allowedToProceed, false);
+  assert.equal(initialEval.blockingCriteria?.length, 2);
+  assert.ok(initialEval.autonomousFeedback?.includes("c1"));
+  assert.ok(initialEval.autonomousFeedback?.includes("c2"));
+
+  // Incremental Evidence Recording
+  gate.recordCriterionEvidence(gateId, "c1", true, "Verified c1 evidence");
+  const partialEval = gate.evaluateGate(gateId);
+  assert.equal(partialEval.allowedToProceed, false);
+  assert.equal(partialEval.blockingCriteria?.length, 1);
+
+  gate.recordCriterionEvidence(gateId, "c2", true, "Verified c2 evidence");
+  const passedEval = gate.evaluateGate(gateId);
+  assert.equal(passedEval.allowedToProceed, true);
+  assert.equal(passedEval.blockingCriteria?.length, 0);
+
+  // Reset Evidence
+  gate.resetGateEvidence(gateId);
+  const resetEval = gate.evaluateGate(gateId);
+  assert.equal(resetEval.allowedToProceed, false);
+
+  // 2. Dynamic Evaluators and Attempt Context
+  const dynamicGateId = "test-dynamic-gate";
+  const dynamicCriteria: DynamicGateCriteria[] = [
+    {
+      id: "response_present",
+      description: "Response candidate must not be empty",
+      required: true,
+      evaluated: false,
+      passed: false,
+      evaluator: (ctx) => {
+        const len = ctx.responseCandidate?.trim().length ?? 0;
+        return { passed: len > 0, detail: `Length: ${len}` };
+      },
+    },
+    {
+      id: "no_error",
+      description: "No unhandled error in attempt",
+      required: true,
+      evaluated: false,
+      passed: false,
+      evaluator: (ctx) => {
+        if (ctx.errorMessage) {
+          return { passed: false, detail: ctx.errorMessage };
+        }
+        return { passed: true, detail: "Zero errors" };
+      },
+    },
+  ];
+
+  gate.registerDynamicGate(dynamicGateId, dynamicCriteria);
+
+  // Evaluate Attempt 1 (Failing)
+  const attempt1Result = await gate.evaluateAttemptGate(dynamicGateId, {
+    gateId: dynamicGateId,
+    attempt: 1,
+    maxAttempts: 3,
+    prompt: "generate code",
+    responseCandidate: "",
+    errorMessage: "SyntaxError: unexpected token",
+  });
+
+  assert.equal(attempt1Result.allowedToProceed, false);
+  assert.equal(attempt1Result.blockingCriteria?.length, 2);
+  assert.ok(attempt1Result.autonomousFeedback?.includes("Attempt 1/3"));
+  assert.ok(attempt1Result.autonomousFeedback?.includes("SyntaxError"));
+
+  // Evaluate Attempt 2 (Passing)
+  const attempt2Result = await gate.evaluateAttemptGate(dynamicGateId, {
+    gateId: dynamicGateId,
+    attempt: 2,
+    maxAttempts: 3,
+    prompt: "generate code",
+    responseCandidate: "export const x = 42;",
+  });
+
+  assert.equal(attempt2Result.allowedToProceed, true);
+  assert.equal(attempt2Result.blockingCriteria?.length, 0);
+
+  // 3. Autonomous Multi-Attempt Execution Loop (Self-healing without user intervention)
+  const loopGateId = "test-loop-gate";
+  gate.registerDynamicGate(loopGateId, AttemptCompletionGateStrategy.createResponseVerificationGate(loopGateId));
+
+  let attemptExecutionCount = 0;
+  const loopOutcome = await gate.executeAutonomousAttemptLoop(
+    loopGateId,
+    async (attempt, feedback) => {
+      attemptExecutionCount++;
+      if (attempt === 1) {
+        // Attempt 1 fails (empty output)
+        return { response: "" };
+      }
+      // Attempt 2 succeeds using synthesized feedback
+      assert.ok(feedback?.includes("Attempt 1/3"));
+      return { response: "Autonomous repair completed successfully.", value: { status: "repaired" } };
+    },
+    { maxAttempts: 3 }
+  );
+
+  assert.equal(loopOutcome.success, true);
+  assert.equal(loopOutcome.attempts, 2);
+  assert.equal(attemptExecutionCount, 2);
+  assert.equal(loopOutcome.finalResult?.status, "repaired");
+  assert.equal(loopOutcome.attemptHistory.length, 2);
+
+  // 4. Standard Gate Strategy Templates
+  const repairGateCriteria = AttemptCompletionGateStrategy.createAutonomousRepairGate("repair-test");
+  assert.equal(repairGateCriteria.length, 2);
+  assert.equal(repairGateCriteria[0].id, "repair_mutation_applied");
+
+  const triadAuditCriteria = AttemptCompletionGateStrategy.createTriadAuditGate("triad-test");
+  assert.equal(triadAuditCriteria.length, 3);
+
+  const benchmarkCriteria = AttemptCompletionGateStrategy.createBenchmarkWorkloadGate("bench-test");
+  assert.equal(benchmarkCriteria.length, 2);
+
+  const securityCriteria = AttemptCompletionGateStrategy.createSecurityGuardrailGate("sec-test");
+  assert.equal(securityCriteria.length, 2);
+  assert.equal(securityCriteria[0].severity, "critical");
+
+  // 5. Composable Gate Pipelines & Cloning
+  gate.registerDynamicGate("pipe-part-1", repairGateCriteria);
+  gate.registerDynamicGate("pipe-part-2", securityCriteria);
+  gate.pipeGates("composite-pipeline-gate", "pipe-part-1", "pipe-part-2");
+  assert.equal(gate.getGateCriteria("composite-pipeline-gate")?.length, 4);
+
+  gate.cloneGate("composite-pipeline-gate", "cloned-pipeline-gate");
+  assert.equal(gate.getGateCriteria("cloned-pipeline-gate")?.length, 4);
+
+  // 6. Anti-Oscillation Guard & Repeated Failure Detection
+  const oscillatingGateId = "oscillating-test-gate";
+  gate.registerDynamicGate(oscillatingGateId, [
+    {
+      id: "invariant_check",
+      description: "Must preserve system invariant",
+      required: true,
+      evaluated: false,
+      passed: false,
+      severity: "critical",
+      category: "integrity",
+      evaluator: () => false, // Always fails to trigger oscillation detection
+    },
+  ]);
+
+  let oscillationCallbackTriggered = false;
+  let retryCount = 0;
+  const oscillatingOutcome = await gate.executeAutonomousAttemptLoop(
+    oscillatingGateId,
+    async () => ({ response: "attempting patch" }),
+    {
+      maxAttempts: 3,
+      detectOscillation: true,
+      backoffStrategy: "linear",
+      initialBackoffMs: 1,
+      maxBackoffMs: 5,
+      onAttemptRetry: () => {
+        retryCount++;
+      },
+      onOscillationDetected: (attempt, repeated) => {
+        oscillationCallbackTriggered = true;
+        assert.ok(repeated.includes("invariant_check"));
+      },
+    }
+  );
+
+  assert.equal(oscillatingOutcome.success, false);
+  assert.equal(oscillatingOutcome.attempts, 3);
+  assert.equal(oscillatingOutcome.oscillationDetected, true);
+  assert.equal(oscillationCallbackTriggered, true);
+  assert.equal(retryCount, 2);
+  assert.ok(oscillatingOutcome.attemptHistory[1].gateResult.autonomousFeedback?.includes("ANTI_OSCILLATION_GUARD"));
+
+  // 7. Zenith-Tier Differential Analysis & Cognitive Remediation Directives
+  const differentialGateId = "diff-zenith-gate";
+  gate.registerDynamicGate(differentialGateId, [
+    {
+      id: "step_a",
+      description: "Step A verification",
+      required: true,
+      evaluated: false,
+      passed: false,
+      severity: "high",
+      category: "correctness",
+      phase: "completion",
+      weight: 2.0,
+      evaluator: (ctx) => ctx.attempt >= 2, // Fails in attempt 1, passes in attempt 2
+    },
+    {
+      id: "step_b",
+      description: "Step B verification",
+      required: true,
+      evaluated: false,
+      passed: false,
+      severity: "high",
+      category: "correctness",
+      phase: "completion",
+      weight: 2.0,
+      evaluator: (ctx) => ctx.attempt === 1 || ctx.attempt === 3, // Passes in attempt 1, regresses in attempt 2, passes in attempt 3
+    },
+  ]);
+
+  let escalatedStrategyCount = 0;
+  const zenithLoopOutcome = await gate.executeAutonomousAttemptLoop(
+    differentialGateId,
+    async (attempt, feedback, directive) => {
+      if (attempt === 2) {
+        assert.ok(directive);
+        assert.equal(directive.strategy, "PATCH_LOCAL");
+      }
+      return { response: `Attempt ${attempt} candidate output` };
+    },
+    {
+      maxAttempts: 3,
+      onStrategyEscalated: () => {
+        escalatedStrategyCount++;
+      },
+    }
+  );
+
+  assert.equal(zenithLoopOutcome.success, true);
+  assert.equal(zenithLoopOutcome.attempts, 3);
+  assert.equal(zenithLoopOutcome.attemptHistory.length, 3);
+
+  const attempt2Diff = zenithLoopOutcome.attemptHistory[1].gateResult.diffFromPreviousAttempt;
+  assert.ok(attempt2Diff);
+  assert.ok(attempt2Diff.newlyPassing.includes("step_a"));
+  assert.ok(attempt2Diff.newlyFailing.includes("step_b"));
+
+  // 8. Admission Gate & Weighted Score Aggregation
+  const admissionGate = AttemptCompletionGateStrategy.createAdmissionGate("adm-test");
+  assert.equal(admissionGate.length, 2);
+  assert.equal(admissionGate[0].phase, "admission");
+
+  // 9. AgentLoopHarness Multi-Attempt Autonomous Gated Turn
+  const harness = new AgentLoopHarness();
+  const harnessTurn = await harness.runAutonomousGatedTurn("Fix broken database index", {
+    maxAttempts: 3,
+    simulateAttemptFailures: 1,
+    mockToolResultsPerAttempt: {
+      1: { error_probe: "fail" },
+      2: { repair_executor: "applied fix" },
+    },
+  });
+
+  assert.equal(harnessTurn.status, "success");
+  assert.equal(harnessTurn.attempts, 2);
+  assert.equal(harnessTurn.autoRecovered, true);
+  assert.ok(harnessTurn.events.some((e) => e.type === "gate_evaluation"));
+  assert.ok(harnessTurn.events.some((e) => e.type === "autonomous_feedback"));
+  assert.ok(harnessTurn.events.some((e) => e.type === "auto_retry"));
+}
+
+async function main(): Promise<void> {
   validateDslParsingAndSerialization();
   validateIntegrityAndMetrics();
   validatePromptComposerIntegration();
-  console.log("DSL strategy validation passed (AST parsing, serialization, envelope integrity, template compilation, and metrics).\n");
+  await validateAttemptCompletionGateStrategy();
+  console.log("DSL & Attempt Completion Gate Strategy validation passed cleanly.\n");
 }
 
-main();
+main().catch((err) => {
+  console.error("Validation failed:", err);
+  process.exit(1);
+});
+

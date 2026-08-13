@@ -256,6 +256,39 @@ Resolves OAuth, API-key, or unauthenticated mode for the selected model. Codex m
 - `lumi "flappy bird react vite"` or `lumi "/flappy"` materializes the runnable `flappy-bird-react-vite/` project in the active CWD and stages all 12 files in `SessionVfs`.
 - `npm run baseline:update` records all benchmark sub-assertions in the JSON and generated Markdown evidence.
 
+## Completion gates and attempt execution
+
+### `RoadmapCompletionGate`
+
+Source: [`src/tooling/extensions/policy/roadmap-completion-gate.ts`](../../src/tooling/extensions/policy/roadmap-completion-gate.ts)
+
+- `registerGate(gateId: string, criteria: GateCriteria[]): void` registers static required and optional completion criteria.
+- `registerDynamicGate(gateId: string, criteria: DynamicGateCriteria[], metadata?: Record<string, unknown>): void` registers dynamic evaluators with severity and phase taxonomy.
+- `recordCriterionEvidence(gateId, criterionId, passed, detail?, metadata?): void` incrementally records evaluated evidence.
+- `evaluateGate(gateId: string): CompletionGateResult` evaluates criteria with fail-closed safety semantics.
+- `evaluateAttemptGate(gateId, context, aggregationPolicy?, minScoreToPass?): Promise<CompletionGateResult>` evaluates attempt execution context, computing attempt diffs, pass rates, and cognitive remediation directives.
+- `executeAutonomousAttemptLoop<T>(gateId, attemptExecutor, options?): Promise<AutonomousAttemptExecutionResult<T>>` orchestrates multi-attempt autonomous turns with differential analysis, strategy escalation, anti-oscillation guards, backoff delays, and circuit breaker governance.
+- `pipeGates(newGateId: string, ...sourceGateIds: string[]): void` composes multi-stage validation pipelines.
+- `cloneGate(sourceGateId: string, targetGateId: string): void` clones gate definitions with dynamic evaluators.
+
+### `AttemptCompletionGateStrategy`
+
+Source: [`src/tooling/extensions/policy/roadmap-completion-gate.ts`](../../src/tooling/extensions/policy/roadmap-completion-gate.ts)
+
+Factory templates for standard quality gates:
+- `createAdmissionGate(gateId?)`: verifies request token budgets and registered tool availability.
+- `createResponseVerificationGate(gateId?)`: verifies non-empty response candidates and unhandled error containment.
+- `createAutonomousRepairGate(gateId?)`: verifies staged repair mutations and clean syntax diagnostics.
+- `createTriadAuditGate(gateId?)`: enforces Architect, Critic, and SRE triad review perspectives.
+- `createBenchmarkWorkloadGate(gateId?)`: verifies workload execution completion and assertion satisfaction.
+- `createSecurityGuardrailGate(gateId?)`: enforces command execution safety and credential containment.
+
+### `AgentLoopHarness`
+
+Source: [`src/agents/extensions/execution/agent-loop-harness.ts`](../../src/agents/extensions/execution/agent-loop-harness.ts)
+
+- `runAutonomousGatedTurn(prompt: string, options?: AutonomousHarnessOptions): Promise<HarnessExecutionResult>` simulates and validates multi-attempt autonomous turns, recording timeline events (`gate_evaluation`, `autonomous_feedback`, `auto_retry`).
+
 ## Other core subsystems
 
 - [`AbstractAgentEngine`](../../src/core/abstracts/abstract-agent-engine.ts) enforces `preTick -> executeTick -> postTick`.
