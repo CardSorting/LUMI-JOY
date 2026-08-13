@@ -65,6 +65,17 @@ Select your role for tailored navigation and onboarding instructions:
 - **Goal 2: Frame-Perfect State Rewind**: Perform $O(1)$ state rollbacks ($0.04\text{ ms}$) during iterative agent debugging.
 - **Goal 3: Type-Safe Programmatic SDK**: Embed `LumiMonolith` seamlessly into node applications with full TypeScript autocompletion and progress callbacks.
 
+## 💡 Why LUMI-NEW? (The Architectural Imperative)
+
+Traditional AI agent frameworks (LangChain, AutoGen, CrewAI, and raw provider wrappers) suffer from systemic architectural flaws that limit their enterprise production readiness:
+
+| Architectural Challenge | Traditional Agent Frameworks | AKD-DSO Engine (`LUMI-NEW`) | Business & Technical Impact |
+|---|---|---|---|
+| **Framework Overhead** | 18+ micro-packages with RPC/IPC queues | **Single 3-tier monolith** (`agents`, `sessions`, `tooling`) | **$129\times$ Latency Reduction ($0.11\text{ ms}$ tick SLA)** |
+| **Context Safety & DSL** | Loose string joins prone to prompt injection | **Formal `ContextDslEngine` AST parsing & SHA-256 digests** | **Deterministic context bounds & injection defense** |
+| **Memory & GC Latency** | Dynamic heap allocations causing V8 GC sweeps | **Contiguous 16MB ArrayBuffer zero-GC substrate** | **Zero Garbage Collection pauses during live streaming** |
+| **State Rewind & Audit** | Slow transcript re-parsing ($285\text{ ms}$) | **$O(1)$ Memory pointer snapshot assignment ($0.04\text{ ms}$)** | **$7,125\times$ Faster state rollbacks & frame-perfect audit** |
+
 ---
 
 ## 🌟 Business & Technical ROI Highlights
@@ -319,20 +330,26 @@ To prevent code regression, file overwrites, and structural drift as new evoluti
 
 ## ❓ Frequently Asked Questions (FAQ)
 
-### Q: How does LUMI-NEW differ from multi-agent frameworks like LangChain, AutoGen, or CrewAI?
-Traditional frameworks rely on loose, uncoordinated async loops and heavy multi-package abstractions that incur high serialization latency and non-deterministic state drift. **LUMI-NEW** uses a single, deterministic 3-tier monolith (`agents`, `sessions`, `tooling`) operating as a frame-based engine tick ($\mathbf{Step}_t$). This achieves **$0.11\text{ ms}$ tick latency** ($129\times$ faster) and $O(1)$ state snapshot rewinds.
+### Q: Why build a single 3-tier monolith (`agents`, `sessions`, `tooling`) instead of micro-packages?
+Sprawling monorepos with 18+ micro-packages incur heavy IPC/RPC messaging queues, serialization friction, and uncoordinated state drift. **LUMI-NEW** consolidates all agent operations into a single composition root (`LumiMonolith`). Direct in-memory function calls deliver a **$129\times$ latency reduction ($0.11\text{ ms}$ tick latency)** and $58.7\times$ higher throughput ($4,132\text{ turns/sec}$).
 
 ### Q: What security guarantees are provided for OAuth tokens and API keys?
-Credentials configured via `/setup` or `lumi --setup` are stored exclusively in user-restricted storage at `~/.lumi/config.json` (0600 file permissions). PKCE (Proof Key for Code Exchange) S256 verifiers ensure authorization codes cannot be intercepted. Progress activity streaming explicitly redacts secrets, bearer tokens, tool payloads, and raw prompt content.
+Credentials configured via `/setup` or `lumi --setup` are stored exclusively in user-restricted storage at `~/.lumi/config.json` (0600 file permissions). PKCE (Proof Key for Code Exchange) S256 verifiers ensure authorization codes cannot be intercepted. Progress activity streaming (`CodexProgressAdapter`) explicitly redacts secrets, bearer tokens, tool payloads, and raw prompt content.
 
 ### Q: How does the Context DSL Engine prevent prompt injection and context overflow?
 `ContextDslEngine` parses all history envelopes (`LUMI-CONTEXT/1`, `LUMI-THREAD/1`, `LUMI-MEMORY/1`, `LUMI-TOOL-RESULT/1`, `LUMI-GOAL/1`) as strongly typed AST nodes. Quoted user content and evicted history are kept in assistant scope with SHA-256 transcript references, preventing user text from being promoted to system policy. `PromptTemplateEngine` compiles handlebar conditionals (`{{#if}}`/`{{#unless}}`) safely.
+
+### Q: How does `PromptTemplateEngine` handle dynamic prompt templates?
+`PromptTemplateEngine` compiles handlebar variable placeholders (`{{variable}}`), conditional blocks (`{{#if variable}}...{{/if}}`), and negative blocks (`{{#unless variable}}...{{/unless}}`). It allows system prompts to adjust dynamically to active models, skills context, and environment variables without manual string concatenation.
 
 ### Q: How does LUMI-NEW handle memory allocation without Garbage Collection spikes?
 `ArenaAllocator` pre-allocates a contiguous 16MB ArrayBuffer slab for session state and text buffers. By resetting pointers during turn cycles rather than freeing objects dynamically, runtime V8 Garbage Collection sweeps are completely eliminated.
 
 ### Q: Can LUMI-NEW be integrated programmatically as a Node.js library?
 Yes. Import `LumiMonolith` directly from `lumi-new` or `src/index.ts`. Instantiate `new LumiMonolith()` and execute frame turns using `await lumi.tick({ prompt, signal, onProgress })`. Full type safety and progress event hooks are included.
+
+### Q: How can I run latency benchmarks and guardrail checks locally?
+Run `npm test` to execute the full validation suite (`scripts/validate-dsl-strategy.ts`, `scripts/validate-context-management.ts`, and `scripts/validate-repo.ts`). Run `npx tsx src/index.ts --benchmark` to measure turn tick latency and throughput.
 
 ### Q: What open-source license governs LUMI-NEW?
 **LUMI-NEW** is distributed under the enterprise-friendly **Apache License 2.0** and backed by an explicit **Defensive Patent Non-Aggression Pledge** ([PATENT-NON-AGGRESSION-PLEDGE.md](PATENT-NON-AGGRESSION-PLEDGE.md)).
