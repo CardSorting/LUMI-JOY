@@ -388,8 +388,27 @@ export class AgentEngine extends AbstractAgentEngine {
         responseText = `[Timed out] ${liveError}. You can retry with a narrower request.`;
       } else if (liveError) {
         turnOutcome = "failed";
-        responseText = `Live model request failed for ${this.modelResolver.getActiveModel()}: ${liveError}\n` +
-          `[Authentication is configured. Run \x1b[33m/health\x1b[0m for diagnostics or \x1b[33m/setup\x1b[0m to reconnect.]`;
+        const isAuthError =
+          liveError.includes("401") ||
+          liveError.includes("403") ||
+          liveError.toLowerCase().includes("unauthorized") ||
+          liveError.toLowerCase().includes("auth") ||
+          liveError.toLowerCase().includes("token expired") ||
+          liveError.toLowerCase().includes("api key");
+
+        let actionHint = `[Run \x1b[33m/health\x1b[0m for runtime diagnostics or switch models with \x1b[33m/model\x1b[0m.]`;
+        if (isAuthError) {
+          actionHint = `[Authentication issue: Run \x1b[33m/setup\x1b[0m to reconnect credentials or \x1b[33m/health\x1b[0m for diagnostics.]`;
+        } else if (
+          liveError.toLowerCase().includes("stalled") ||
+          liveError.toLowerCase().includes("inactivity") ||
+          liveError.toLowerCase().includes("stream ended") ||
+          liveError.toLowerCase().includes("without a final response")
+        ) {
+          actionHint = `[Stream paused during extended execution. You can prompt again with a narrower step, or reply to continue.]`;
+        }
+
+        responseText = `Live model request failed for ${this.modelResolver.getActiveModel()}: ${liveError}\n${actionHint}`;
       } else {
         turnOutcome = "failed";
         responseText = `Processed turn prompt: "${promptText}".\n` +
