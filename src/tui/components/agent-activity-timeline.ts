@@ -1,5 +1,6 @@
 import type {
   EngineProgressEvent,
+  EngineProgressPhase,
   EngineProgressStatus,
 } from "../../core/contracts/agent.contracts.js";
 import type { Component } from "../tui.js";
@@ -196,6 +197,17 @@ export class AgentActivityTimeline implements Component {
     ];
     const hidden = this.order.length - visibleIds.length;
     const rows: string[] = [header];
+
+    // Live Stage Pipeline in-flight or Executive Artifact Highlights on completion
+    if (!isCompleted) {
+      rows.push(this.renderStagePipeline());
+    } else if (this.terminalStatus === "completed") {
+      const highlights = this.renderCompletionHighlights();
+      if (highlights.length > 0) {
+        rows.push(...highlights);
+      }
+    }
+
     if (hidden > 0) rows.push(`\x1b[90m  … ${hidden} earlier ${hidden === 1 ? "activity" : "activities"}\x1b[0m`);
     for (const id of visibleIds) {
       const event = this.entries.get(id);
@@ -206,6 +218,71 @@ export class AgentActivityTimeline implements Component {
       rows.push("\x1b[33m  ◐\x1b[0m Starting request");
     }
     return rows.join("\n");
+  }
+
+  private renderStagePipeline(): string {
+    let activePhase: EngineProgressPhase = "thinking";
+    for (let i = this.order.length - 1; i >= 0; i--) {
+      const entry = this.entries.get(this.order[i]);
+      if (entry && (entry.status === "started" || entry.status === "in_progress")) {
+        activePhase = entry.phase;
+        break;
+      }
+    }
+
+    const isThink = activePhase === "thinking";
+    const isPlan = activePhase === "planning";
+    const isWrite = activePhase === "writing";
+    const isTool = activePhase === "tool" || activePhase === "verifying";
+    const isReady = activePhase === "responding";
+
+    const sThink = isThink ? "\x1b[1;35m● Think\x1b[0m" : this.entriesHavePhase("thinking") ? "\x1b[32m✓ Think\x1b[0m" : "\x1b[90mThink\x1b[0m";
+    const sPlan = isPlan ? "\x1b[1;36m● Plan\x1b[0m" : this.entriesHavePhase("planning") ? "\x1b[32m✓ Plan\x1b[0m" : "\x1b[90mPlan\x1b[0m";
+    const sWrite = isWrite ? "\x1b[1;32m● Write\x1b[0m" : this.entriesHavePhase("writing") ? "\x1b[32m✓ Write\x1b[0m" : "\x1b[90mWrite\x1b[0m";
+    const sVerify = isTool ? "\x1b[1;33m● Verify\x1b[0m" : (this.entriesHavePhase("tool") || this.entriesHavePhase("verifying")) ? "\x1b[32m✓ Verify\x1b[0m" : "\x1b[90mVerify\x1b[0m";
+    const sReady = isReady ? "\x1b[1;35m● Ready\x1b[0m" : "\x1b[90mReady\x1b[0m";
+
+    return `  \x1b[90mStage:\x1b[0m ${sThink} \x1b[90m──▶\x1b[0m ${sPlan} \x1b[90m──▶\x1b[0m ${sWrite} \x1b[90m──▶\x1b[0m ${sVerify} \x1b[90m──▶\x1b[0m ${sReady}`;
+  }
+
+  private entriesHavePhase(phase: EngineProgressPhase): boolean {
+    return Array.from(this.entries.values()).some((e) => e.phase === phase && e.status === "completed");
+  }
+
+  private renderCompletionHighlights(): string[] {
+    const highlights: string[] = [];
+
+    // Look for preview URLs in commands or messages
+    let previewUrl: string | undefined;
+    for (const entry of this.entries.values()) {
+      const text = `${entry.message} ${entry.detail ?? ""}`;
+      const match = text.match(/https?:\/\/(?:localhost|127\.0\.0\.1):\d+/i);
+      if (match) {
+        previewUrl = match[0];
+        break;
+      }
+    }
+    if (previewUrl) {
+      highlights.push(`  \x1b[1;36m🌐 Preview Active:\x1b[0m \x1b[1;4;36m${previewUrl}\x1b[0m \x1b[32m(Ready in browser)\x1b[0m`);
+    }
+
+    // Look for created/modified files
+    const writtenFiles: string[] = [];
+    for (const entry of this.entries.values()) {
+      if (entry.phase === "writing" && entry.status === "completed") {
+        if (entry.metadata?.files && entry.metadata.files.length > 0) {
+          writtenFiles.push(...entry.metadata.files);
+        } else if (entry.message.startsWith("Created ") || entry.message.startsWith("Updated ")) {
+          writtenFiles.push(entry.message.replace(/^(?:Created|Updated)\s+/, ""));
+        }
+      }
+    }
+    const uniqueFiles = Array.from(new Set(writtenFiles));
+    if (uniqueFiles.length > 0) {
+      highlights.push(`  \x1b[1;32m📄 Artifacts:\x1b[0m \x1b[1;37m${uniqueFiles.slice(0, 4).join(", ")}${uniqueFiles.length > 4 ? ` (+${uniqueFiles.length - 4} more)` : ""}\x1b[0m`);
+    }
+
+    return highlights;
   }
 
   private phaseBadge(phase: string): string {
