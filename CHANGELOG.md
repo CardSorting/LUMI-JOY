@@ -10,12 +10,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added (Attempt Completion Gate Strategy & Autonomous Turn Progression)
 
-- **Dynamic Criteria Evaluators**: Extended `RoadmapCompletionGate` with asynchronous and synchronous criterion evaluator functions (`DynamicGateCriteria`, `CriterionEvaluatorFn`) capable of inspecting candidate responses, tool execution lists, and runtime error context.
+- **Apex / Sovereign Tier Completion Gates**: Upgraded `RoadmapCompletionGate` with multi-phase lifecycle checkpoints (`admission`, `in_flight`, `completion`, `postmortem`), severity and category taxonomy, dynamic criteria evaluators, and quantitative scoring metrics ([ADR-084](.wiki/adr/ADR-084-attempt-completion-gate-strategy.md)).
+- **Deterministic State Fingerprinting & Zero-Delta Stagnation Traps**: Implemented SHA-256 attempt hashing (`computeAttemptFingerprint`) and zero-delta stagnation trap detection (`ZERO_DELTA_STAGNATION_TRAP`) with automatic strategy escalation to `PIVOT_APPROACH` or `SIMPLIFY_SCOPE`.
+- **Forensic Flight Recording (`AttemptFlightRecorder`)**: Added in-memory blackbox audit logging tracking all evaluator runs, durations, and state transitions with JSON export and Markdown postmortem report generation (`generateFlightLogMarkdown`).
+- **Multi-Perspective Consensus Arbitration (`ConsensusArbiter`)**: Implemented consensus quorum evaluation (`unanimous`, `supermajority_66`, `majority_50`) with critical severity veto enforcement.
+- **Multi-Branch Candidate Arbitration**: Added `evaluateAttemptCandidates` to rank and select optimal candidate branches from parallel exploration trees.
+- **Hierarchical DAG Gate Pipelines (`GatePipelineDag`)**: Added Directed Acyclic Graph pipeline execution with topological dependency ordering and upstream causal failure short-circuiting.
+- **Diagnostic Micro-Patch Synthesizer (`DiagnosticPatchSynthesizer`)**: Implemented compiler and tool error extraction for line-anchored self-correcting micro-patches.
 - **Fail-Closed Evidence Integrity**: Hardened quality gates with incremental evidence recording (`recordCriterionEvidence`, `batchRecordEvidence`) and evidence reset (`resetGateEvidence`), maintaining fail-closed governance.
-- **Autonomous Corrective Feedback Synthesis**: Implemented deterministic synthetic feedback derivation (`deriveAutonomousFeedback`) that extracts blocking criteria and actionable repair requirements for automated self-correction without manual user feedback.
-- **Autonomous Multi-Attempt Loop**: Added `executeAutonomousAttemptLoop` to orchestrate automatic multi-attempt execution up to `maxAttempts`, automatically injecting synthesized feedback into subsequent attempts.
-- **Standard Strategy Factories**: Added `AttemptCompletionGateStrategy` providing turnkey gate definitions for response verification, autonomous code repair, triad audits, and benchmark workloads.
-- **Multi-Attempt Harness & Engine Integration**: Enhanced `AgentLoopHarness` with `runAutonomousGatedTurn` emitting structured timeline events (`gate_evaluation`, `autonomous_feedback`, `auto_retry`), and connected `RoadmapCompletionGate` to `AgentEngine` provider dispatch loops ([ADR-084](.wiki/adr/ADR-084-attempt-completion-gate-strategy.md)).
+- **Autonomous Corrective Feedback & Remediation Directives**: Implemented deterministic synthetic feedback (`deriveAutonomousFeedback`) and structured remediation plans (`deriveRemediationDirective`) that drive multi-attempt self-healing turns without manual user prompting.
+- **Anti-Oscillation Guard & Circuit Breakers**: Added repeated failure detection (`[ANTI_OSCILLATION_GUARD]`) and configurable circuit breaker engines (`CircuitBreakerConfig`) to protect against runaway token burn.
+- **Standard Strategy Factories**: Added `AttemptCompletionGateStrategy` providing turnkey gate definitions for pre-flight admission, response verification, autonomous code repair, triad audits, benchmark workloads, and security guardrails.
+- **Multi-Attempt Harness & Engine Integration**: Enhanced `AgentLoopHarness` with `runAutonomousGatedTurn` emitting structured timeline events (`gate_evaluation`, `autonomous_feedback`, `auto_retry`), and connected `RoadmapCompletionGate` to `AgentEngine` provider dispatch loops.
 
 ### Added (Live Runtime Baselines)
 

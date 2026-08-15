@@ -6,6 +6,10 @@ import type { SessionMessage } from "../src/core/contracts/session.contracts.js"
 import {
   RoadmapCompletionGate,
   AttemptCompletionGateStrategy,
+  AttemptFlightRecorder,
+  ConsensusArbiter,
+  GatePipelineDag,
+  DiagnosticPatchSynthesizer,
   type DynamicGateCriteria,
 } from "../src/tooling/extensions/policy/roadmap-completion-gate.js";
 import { AgentLoopHarness } from "../src/agents/extensions/execution/agent-loop-harness.js";
@@ -430,6 +434,164 @@ async function validateAttemptCompletionGateStrategy(): Promise<void> {
   assert.ok(harnessTurn.events.some((e) => e.type === "gate_evaluation"));
   assert.ok(harnessTurn.events.some((e) => e.type === "autonomous_feedback"));
   assert.ok(harnessTurn.events.some((e) => e.type === "auto_retry"));
+
+  // 10. Deterministic Fingerprinting & Zero-Delta Stagnation Trap
+  const stagnationGateId = "stagnation-gate";
+  gate.registerDynamicGate(stagnationGateId, [
+    {
+      id: "non_stagnant_pass",
+      description: "Must pass without stagnation",
+      required: true,
+      evaluated: false,
+      passed: false,
+      severity: "high",
+      evaluator: (ctx) => ctx.attempt >= 3,
+    },
+  ]);
+
+  let stagnationDetectedInCallback = false;
+  const stagnationOutcome = await gate.executeAutonomousAttemptLoop(
+    stagnationGateId,
+    async (attempt) => {
+      // Return identical output in attempts 1 & 2 to trigger zero-delta stagnation trap
+      const text = attempt === 3 ? "Fixed output for attempt 3" : "Same failing output";
+      return { response: text };
+    },
+    {
+      maxAttempts: 3,
+      onStagnationDetected: (att, fp) => {
+        stagnationDetectedInCallback = true;
+        assert.equal(att, 2);
+        assert.equal(fp.isZeroDeltaStagnant, true);
+      },
+    }
+  );
+
+  assert.equal(stagnationOutcome.success, true);
+  assert.equal(stagnationOutcome.attempts, 3);
+  assert.equal(stagnationDetectedInCallback, true);
+  assert.ok(stagnationOutcome.attemptHistory[1].gateResult.fingerprint?.isZeroDeltaStagnant);
+  assert.ok(stagnationOutcome.attemptHistory[1].remediationDirective?.isStagnantEscalation);
+  assert.ok(stagnationOutcome.attemptHistory[1].gateResult.autonomousFeedback?.includes("ZERO_DELTA_STAGNATION_TRAP"));
+
+  // 11. Forensic Flight Recorder & Blackbox Audit Ledger
+  assert.ok(stagnationOutcome.flightLog);
+  assert.equal(stagnationOutcome.flightLog.gateId, stagnationGateId);
+  assert.ok(stagnationOutcome.flightLog.events.length > 5);
+  assert.ok(stagnationOutcome.flightLog.events.some((e) => e.type === "stagnation_trapped"));
+  assert.ok(stagnationOutcome.flightLog.events.some((e) => e.type === "gate_completed"));
+
+  const flightRecorder = new AttemptFlightRecorder("manual-audit-gate");
+  flightRecorder.recordEvent("attempt_started", 1, "Testing flight recorder");
+  flightRecorder.recordEvent("evaluator_invoked", 1, "Invoking evaluators");
+  flightRecorder.setCompletion(true);
+  const markdownLog = flightRecorder.generateFlightLogMarkdown();
+  assert.ok(markdownLog.includes("# 🛫 Flight Log"));
+  assert.ok(markdownLog.includes("manual-audit-gate"));
+  assert.ok(markdownLog.includes("✅ PASSED"));
+
+  // 12. Multi-Perspective Consensus Arbiter & Quorum Thresholds
+  const consensusVotes = [
+    { evaluatorId: "architect", passed: true, score: 100, weight: 2.0, severity: "high" as const },
+    { evaluatorId: "critic", passed: true, score: 100, weight: 1.0, severity: "medium" as const },
+    { evaluatorId: "sre", passed: false, score: 0, weight: 1.0, severity: "low" as const },
+  ];
+  // 3/4 weight = 75% -> passes majority (50%) and supermajority_66 (66.6%), fails unanimous
+  const majorityConsensus = ConsensusArbiter.evaluateConsensus(consensusVotes, { threshold: "majority_50" });
+  assert.equal(majorityConsensus.passed, true);
+  assert.equal(majorityConsensus.score, 75);
+
+  const supermajorityConsensus = ConsensusArbiter.evaluateConsensus(consensusVotes, { threshold: "supermajority_66" });
+  assert.equal(supermajorityConsensus.passed, true);
+
+  const unanimousConsensus = ConsensusArbiter.evaluateConsensus(consensusVotes, { threshold: "unanimous" });
+  assert.equal(unanimousConsensus.passed, false);
+
+  // Critical Veto test
+  const vetoVotes = [
+    { evaluatorId: "security_guardian", passed: false, score: 0, weight: 1.0, severity: "critical" as const, reason: "Detected credential leak" },
+    { evaluatorId: "developer", passed: true, score: 100, weight: 10.0, severity: "low" as const },
+  ];
+  const vetoResult = ConsensusArbiter.evaluateConsensus(vetoVotes, { allowVetoOnSeverity: "critical" });
+  assert.equal(vetoResult.passed, false);
+  assert.equal(vetoResult.vetoEnacted, true);
+  assert.ok(vetoResult.vetoReason?.includes("security_guardian"));
+
+  // 13. Multi-Branch Candidate Arbitration
+  const branchGateId = "branch-arbitration-gate";
+  gate.registerDynamicGate(branchGateId, [
+    {
+      id: "valid_length",
+      description: "Length must be at least 10 chars",
+      required: true,
+      evaluated: false,
+      passed: false,
+      severity: "high",
+      weight: 2.0,
+      evaluator: (ctx) => (ctx.responseCandidate?.length ?? 0) >= 10,
+    },
+    {
+      id: "no_forbidden_keyword",
+      description: "Must not contain forbidden keyword",
+      required: true,
+      evaluated: false,
+      passed: false,
+      severity: "critical",
+      weight: 3.0,
+      evaluator: (ctx) => !ctx.responseCandidate?.includes("FORBIDDEN"),
+    },
+  ]);
+
+  const candidates = [
+    { candidateValue: { id: "branch-A" }, response: "Short" }, // Fails length (<10)
+    { candidateValue: { id: "branch-B" }, response: "Long string with FORBIDDEN keyword" }, // Fails forbidden (critical)
+    { candidateValue: { id: "branch-C" }, response: "Optimal winning solution candidate" }, // Passes both
+  ];
+
+  const arbitrationResult = await gate.evaluateAttemptCandidates(branchGateId, candidates);
+  assert.equal(arbitrationResult.winningCandidateIndex, 2);
+  assert.equal(arbitrationResult.winningCandidate?.id, "branch-C");
+  assert.equal(arbitrationResult.winningGateResult.allowedToProceed, true);
+  assert.equal(arbitrationResult.rankedEvaluations[0].rank, 1);
+  assert.equal(arbitrationResult.rankedEvaluations[0].candidateIndex, 2);
+
+  // 14. Hierarchical DAG Gate Pipeline
+  gate.registerGate("dag-admission", [
+    { id: "adm_ok", description: "Admission passed", required: true, evaluated: true, passed: true },
+  ]);
+  gate.registerGate("dag-syntax", [
+    { id: "syn_ok", description: "Syntax passed", required: true, evaluated: true, passed: true },
+  ]);
+  gate.registerGate("dag-security", [
+    { id: "sec_ok", description: "Security passed", required: true, evaluated: true, passed: true },
+  ]);
+
+  const dag = new GatePipelineDag();
+  dag.addGateNode("dag-admission", [])
+    .addGateNode("dag-syntax", ["dag-admission"])
+    .addGateNode("dag-security", ["dag-syntax"]);
+
+  const executionOrder = dag.getExecutionOrder();
+  assert.deepEqual(executionOrder, ["dag-admission", "dag-syntax", "dag-security"]);
+
+  const dagReport = await dag.executeDag(gate, {
+    gateId: "dag-pipeline",
+    attempt: 1,
+    maxAttempts: 1,
+    prompt: "DAG test",
+  });
+  assert.equal(dagReport.success, true);
+  assert.equal(dagReport.executedGates.length, 3);
+  assert.equal(dagReport.skippedGates.length, 0);
+
+  // 15. Diagnostic Micro-Patch Extraction
+  const extractedPatches = DiagnosticPatchSynthesizer.extractDiagnostics(
+    "src/index.ts:14:2 - TS2304: Cannot find name 'MissingSymbol'",
+    [{ name: "edit_file", error: "File lock timeout" }]
+  );
+  assert.equal(extractedPatches.length, 2);
+  assert.equal(extractedPatches[0].diagnosticCode, "TS2304");
+  assert.ok(extractedPatches[1].message.includes("File lock timeout"));
 }
 
 async function main(): Promise<void> {

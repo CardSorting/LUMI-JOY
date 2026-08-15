@@ -391,6 +391,10 @@ export type { SyntaxSymbol } from "./tooling/extensions/perception/language-synt
 export {
   RoadmapCompletionGate,
   AttemptCompletionGateStrategy,
+  AttemptFlightRecorder,
+  ConsensusArbiter,
+  GatePipelineDag,
+  DiagnosticPatchSynthesizer,
 } from "./tooling/extensions/policy/roadmap-completion-gate.js";
 export type {
   GateCriteria,
@@ -407,7 +411,18 @@ export type {
   RemediationStrategyType,
   RemediationDirective,
   AttemptDiff,
+  AttemptFingerprint,
   CircuitBreakerConfig,
+  FlightEvent,
+  FlightLog,
+  ConsensusConfig,
+  ConsensusVote,
+  ConsensusEvaluationResult,
+  CandidateBranchEvaluation,
+  CandidateArbitrationResult,
+  GateNode,
+  DagExecutionReport,
+  DiagnosticMicroPatch,
   BackoffStrategy,
 } from "./tooling/extensions/policy/roadmap-completion-gate.js";
 export { RoadmapCheckpointDigest } from "./tooling/extensions/policy/roadmap-checkpoint-digest.js";

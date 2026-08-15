@@ -1,3 +1,5 @@
+import { createHash } from "crypto";
+
 export type GateCriterionSeverity = "critical" | "high" | "medium" | "low" | "advisory";
 
 export type GateCriterionCategory =
@@ -31,6 +33,7 @@ export interface RemediationDirective {
   priorityCriteria: string[];
   actionSteps: string[];
   promptPayload: string;
+  isStagnantEscalation?: boolean;
 }
 
 export interface GateCriteria {
@@ -56,6 +59,13 @@ export interface AttemptDiff {
   scoreDelta: number;
 }
 
+export interface AttemptFingerprint {
+  responseHash: string;
+  toolsHash: string;
+  combinedHash: string;
+  isZeroDeltaStagnant?: boolean;
+}
+
 export interface CompletionGateResult {
   allowedToProceed: boolean;
   gateId: string;
@@ -65,6 +75,7 @@ export interface CompletionGateResult {
   advisoryCriteria?: GateCriteria[];
   autonomousFeedback?: string;
   remediationDirective?: RemediationDirective;
+  fingerprint?: AttemptFingerprint;
   evaluatedAt?: number;
   evaluationDurationMs?: number;
   passRate?: number;
@@ -81,7 +92,13 @@ export interface AttemptGateEvaluationContext {
   responseCandidate?: string;
   toolResults?: Array<{ name: string; output?: unknown; error?: string }>;
   errorMessage?: string;
-  history?: Array<{ attempt: number; gateResult: CompletionGateResult; feedbackSent?: string; durationMs?: number }>;
+  history?: Array<{
+    attempt: number;
+    gateResult: CompletionGateResult;
+    feedbackSent?: string;
+    durationMs?: number;
+    fingerprint?: AttemptFingerprint;
+  }>;
   metadata?: Record<string, unknown>;
   now?: () => number;
 }
@@ -105,6 +122,392 @@ export interface CircuitBreakerConfig {
   enabled?: boolean;
 }
 
+export interface FlightEvent {
+  timestamp: number;
+  elapsedMs: number;
+  type:
+    | "attempt_started"
+    | "evaluator_invoked"
+    | "evaluator_completed"
+    | "diff_computed"
+    | "feedback_synthesized"
+    | "directive_escalated"
+    | "oscillation_guarded"
+    | "stagnation_trapped"
+    | "circuit_breaker_tripped"
+    | "candidate_arbitrated"
+    | "dag_step_executed"
+    | "gate_completed";
+  attempt: number;
+  gateId: string;
+  detail: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface FlightLog {
+  gateId: string;
+  startedAt: number;
+  completedAt?: number;
+  totalDurationMs: number;
+  attemptsCount: number;
+  events: FlightEvent[];
+  initialStrategy: RemediationStrategyType;
+  finalStrategy: RemediationStrategyType;
+  success: boolean;
+}
+
+export class AttemptFlightRecorder {
+  private readonly events: FlightEvent[] = [];
+  private readonly startedAt: number;
+  private readonly gateId: string;
+  private initialStrategy: RemediationStrategyType = "PATCH_LOCAL";
+  private finalStrategy: RemediationStrategyType = "PATCH_LOCAL";
+  private success = false;
+
+  constructor(gateId: string) {
+    this.gateId = gateId;
+    this.startedAt = Date.now();
+  }
+
+  recordEvent(
+    type: FlightEvent["type"],
+    attempt: number,
+    detail: string,
+    metadata?: Record<string, unknown>
+  ): void {
+    this.events.push({
+      timestamp: Date.now(),
+      elapsedMs: Date.now() - this.startedAt,
+      type,
+      attempt,
+      gateId: this.gateId,
+      detail,
+      metadata,
+    });
+  }
+
+  setStrategyProgression(initial: RemediationStrategyType, final: RemediationStrategyType): void {
+    this.initialStrategy = initial;
+    this.finalStrategy = final;
+  }
+
+  setCompletion(success: boolean): void {
+    this.success = success;
+  }
+
+  getEvents(): readonly FlightEvent[] {
+    return [...this.events];
+  }
+
+  exportFlightLog(): FlightLog {
+    return {
+      gateId: this.gateId,
+      startedAt: this.startedAt,
+      completedAt: Date.now(),
+      totalDurationMs: Date.now() - this.startedAt,
+      attemptsCount: this.events.reduce((max, e) => Math.max(max, e.attempt), 1),
+      events: [...this.events],
+      initialStrategy: this.initialStrategy,
+      finalStrategy: this.finalStrategy,
+      success: this.success,
+    };
+  }
+
+  generateFlightLogMarkdown(): string {
+    const log = this.exportFlightLog();
+    const rows = log.events.map(
+      (e) => `| +${e.elapsedMs}ms | Attempt ${e.attempt} | \`${e.type}\` | ${e.detail} |`
+    );
+
+    return [
+      `# 🛫 Flight Log: Completion Gate \`${log.gateId}\``,
+      ``,
+      `- **Status**: ${log.success ? "✅ PASSED" : "❌ FAILED"}`,
+      `- **Total Duration**: ${log.totalDurationMs}ms`,
+      `- **Attempts**: ${log.attemptsCount}`,
+      `- **Strategy Progression**: \`${log.initialStrategy}\` ➔ \`${log.finalStrategy}\``,
+      ``,
+      `| Elapsed | Attempt | Event Type | Details |`,
+      `|---|---|---|---|`,
+      ...rows,
+      ``,
+    ].join("\n");
+  }
+}
+
+export interface ConsensusConfig {
+  threshold?: "unanimous" | "supermajority_66" | "majority_50" | number;
+  allowVetoOnSeverity?: GateCriterionSeverity;
+}
+
+export interface ConsensusVote {
+  evaluatorId: string;
+  passed: boolean;
+  score: number;
+  weight: number;
+  severity?: GateCriterionSeverity;
+  reason?: string;
+}
+
+export interface ConsensusEvaluationResult {
+  passed: boolean;
+  score: number;
+  totalVotes: number;
+  affirmativeVotes: number;
+  dissentingVotes: number;
+  vetoEnacted: boolean;
+  vetoReason?: string;
+  summary: string;
+}
+
+export class ConsensusArbiter {
+  static evaluateConsensus(votes: ConsensusVote[], config: ConsensusConfig = {}): ConsensusEvaluationResult {
+    if (votes.length === 0) {
+      return {
+        passed: false,
+        score: 0,
+        totalVotes: 0,
+        affirmativeVotes: 0,
+        dissentingVotes: 0,
+        vetoEnacted: false,
+        summary: "No consensus votes provided.",
+      };
+    }
+
+    const totalWeight = votes.reduce((sum, v) => sum + v.weight, 0);
+    const affirmativeWeight = votes.filter((v) => v.passed).reduce((sum, v) => sum + v.weight, 0);
+    const score = totalWeight > 0 ? Number(((affirmativeWeight / totalWeight) * 100).toFixed(2)) : 0;
+
+    const affirmativeVotes = votes.filter((v) => v.passed).length;
+    const dissentingVotes = votes.filter((v) => !v.passed).length;
+
+    // Check for veto
+    const vetoSeverity = config.allowVetoOnSeverity ?? "critical";
+    const vetoVote = votes.find((v) => !v.passed && v.severity === vetoSeverity);
+
+    let thresholdRatio = 0.5;
+    if (config.threshold === "unanimous") {
+      thresholdRatio = 1.0;
+    } else if (config.threshold === "supermajority_66") {
+      thresholdRatio = 0.666;
+    } else if (typeof config.threshold === "number") {
+      thresholdRatio = config.threshold / 100;
+    }
+
+    const ratioPassed = totalWeight > 0 ? affirmativeWeight / totalWeight : 0;
+    const quorumMet = ratioPassed >= thresholdRatio;
+
+    if (vetoVote) {
+      return {
+        passed: false,
+        score,
+        totalVotes: votes.length,
+        affirmativeVotes,
+        dissentingVotes,
+        vetoEnacted: true,
+        vetoReason: `Veto enacted by evaluator '${vetoVote.evaluatorId}' on ${vetoSeverity} severity: ${vetoVote.reason ?? "failed critical standard"}`,
+        summary: `Consensus blocked by critical veto from '${vetoVote.evaluatorId}'.`,
+      };
+    }
+
+    const passed = quorumMet;
+    const summary = passed
+      ? `Consensus reached with score ${score}% (${affirmativeVotes}/${votes.length} affirmative votes).`
+      : `Consensus failed: score ${score}% below required quorum threshold (${(thresholdRatio * 100).toFixed(1)}%).`;
+
+    return {
+      passed,
+      score,
+      totalVotes: votes.length,
+      affirmativeVotes,
+      dissentingVotes,
+      vetoEnacted: false,
+      summary,
+    };
+  }
+}
+
+export interface CandidateBranchEvaluation<T = unknown> {
+  candidateIndex: number;
+  candidateValue?: T;
+  responseCandidate?: string;
+  gateResult: CompletionGateResult;
+  score: number;
+  criticalViolations: number;
+  rank: number;
+}
+
+export interface CandidateArbitrationResult<T = unknown> {
+  winningCandidateIndex: number;
+  winningCandidate?: T;
+  winningGateResult: CompletionGateResult;
+  candidatesEvaluated: number;
+  rankedEvaluations: CandidateBranchEvaluation<T>[];
+  selectionReason: string;
+}
+
+export interface GateNode {
+  gateId: string;
+  dependencies: string[];
+  shortCircuitOnFailure?: boolean;
+}
+
+export interface DagExecutionReport {
+  success: boolean;
+  totalDurationMs: number;
+  executedGates: string[];
+  skippedGates: string[];
+  gateResults: Record<string, CompletionGateResult>;
+  summary: string;
+}
+
+export class GatePipelineDag {
+  private readonly nodes = new Map<string, GateNode>();
+
+  addGateNode(gateId: string, dependencies: string[] = [], shortCircuitOnFailure = true): this {
+    this.nodes.set(gateId, { gateId, dependencies, shortCircuitOnFailure });
+    return this;
+  }
+
+  getExecutionOrder(): string[] {
+    const visited = new Set<string>();
+    const visiting = new Set<string>();
+    const order: string[] = [];
+
+    const visit = (nodeId: string) => {
+      if (visiting.has(nodeId)) {
+        throw new Error(`Cycle detected in GatePipelineDag at node '${nodeId}'`);
+      }
+      if (!visited.has(nodeId)) {
+        visiting.add(nodeId);
+        const node = this.nodes.get(nodeId);
+        if (node) {
+          for (const dep of node.dependencies) {
+            visit(dep);
+          }
+        }
+        visiting.delete(nodeId);
+        visited.add(nodeId);
+        order.push(nodeId);
+      }
+    };
+
+    for (const nodeId of this.nodes.keys()) {
+      if (!visited.has(nodeId)) {
+        visit(nodeId);
+      }
+    }
+
+    return order;
+  }
+
+  async executeDag(
+    gateEngine: RoadmapCompletionGate,
+    context: AttemptGateEvaluationContext
+  ): Promise<DagExecutionReport> {
+    const start = performance.now();
+    const order = this.getExecutionOrder();
+    const executedGates: string[] = [];
+    const skippedGates: string[] = [];
+    const gateResults: Record<string, CompletionGateResult> = {};
+
+    let overallSuccess = true;
+    let failureGate: string | undefined;
+
+    for (const gateId of order) {
+      const node = this.nodes.get(gateId);
+      // Check if any upstream dependency failed
+      const upstreamFailed = node?.dependencies.some((dep) => {
+        const res = gateResults[dep];
+        return res && !res.allowedToProceed;
+      });
+
+      if (upstreamFailed) {
+        skippedGates.push(gateId);
+        continue;
+      }
+
+      const res = await gateEngine.evaluateAttemptGate(gateId, { ...context, gateId });
+      gateResults[gateId] = res;
+      executedGates.push(gateId);
+
+      if (!res.allowedToProceed) {
+        overallSuccess = false;
+        failureGate = gateId;
+        if (node?.shortCircuitOnFailure !== false) {
+          // Skip remaining gates
+          const remainingIndex = order.indexOf(gateId) + 1;
+          for (let i = remainingIndex; i < order.length; i++) {
+            skippedGates.push(order[i]);
+          }
+          break;
+        }
+      }
+    }
+
+    const summary = overallSuccess
+      ? `All ${executedGates.length} DAG gates passed successfully.`
+      : `DAG execution blocked by gate '${failureGate}' (${skippedGates.length} downstream gates skipped).`;
+
+    return {
+      success: overallSuccess,
+      totalDurationMs: Number((performance.now() - start).toFixed(3)),
+      executedGates,
+      skippedGates,
+      gateResults,
+      summary,
+    };
+  }
+}
+
+export interface DiagnosticMicroPatch {
+  filePath?: string;
+  line?: number;
+  diagnosticCode?: string;
+  message: string;
+  suggestedAction: string;
+}
+
+export class DiagnosticPatchSynthesizer {
+  static extractDiagnostics(
+    errorMessage?: string,
+    toolResults?: Array<{ name: string; output?: unknown; error?: string }>
+  ): DiagnosticMicroPatch[] {
+    const patches: DiagnosticMicroPatch[] = [];
+
+    if (errorMessage) {
+      if (errorMessage.includes("TS") || errorMessage.includes("Error:")) {
+        const tsMatch = errorMessage.match(/TS(\d+):\s*(.*)/);
+        if (tsMatch) {
+          patches.push({
+            diagnosticCode: `TS${tsMatch[1]}`,
+            message: tsMatch[2].trim(),
+            suggestedAction: `Correct TypeScript type constraint violation for TS${tsMatch[1]}.`,
+          });
+        } else {
+          patches.push({
+            message: errorMessage,
+            suggestedAction: "Resolve root-cause exception reported in runtime context.",
+          });
+        }
+      }
+    }
+
+    if (toolResults) {
+      for (const t of toolResults) {
+        if (t.error) {
+          patches.push({
+            message: `Tool '${t.name}' failure: ${t.error}`,
+            suggestedAction: `Verify arguments and execution preconditions for tool '${t.name}'.`,
+          });
+        }
+      }
+    }
+
+    return patches;
+  }
+}
+
 export interface AttemptGateStrategyConfig {
   maxAttempts?: number;
   failClosedOnTimeout?: boolean;
@@ -117,11 +520,17 @@ export interface AttemptGateStrategyConfig {
   detectOscillation?: boolean;
   oscillationThreshold?: number;
   circuitBreaker?: CircuitBreakerConfig;
+  consensusConfig?: ConsensusConfig;
   customFeedbackGenerator?: (result: CompletionGateResult, attempt: number, maxAttempts: number) => string;
   onAttemptEvaluated?: (attempt: number, result: CompletionGateResult) => void;
   onAttemptRetry?: (attempt: number, delayMs: number, reason: string) => void;
   onOscillationDetected?: (attempt: number, repeatedFailures: string[]) => void;
-  onStrategyEscalated?: (attempt: number, oldStrategy: RemediationStrategyType, newStrategy: RemediationStrategyType) => void;
+  onStrategyEscalated?: (
+    attempt: number,
+    oldStrategy: RemediationStrategyType,
+    newStrategy: RemediationStrategyType
+  ) => void;
+  onStagnationDetected?: (attempt: number, fingerprint: AttemptFingerprint) => void;
 }
 
 export interface AutonomousAttemptExecutionResult<T = unknown> {
@@ -135,22 +544,26 @@ export interface AutonomousAttemptExecutionResult<T = unknown> {
     feedbackSent?: string;
     durationMs?: number;
     remediationDirective?: RemediationDirective;
+    fingerprint?: AttemptFingerprint;
   }>;
   summary: string;
   totalDurationMs: number;
   oscillationDetected?: boolean;
   circuitBreakerTripped?: boolean;
+  zeroDeltaStagnant?: boolean;
   activeRemediationStrategy?: RemediationStrategyType;
+  flightLog?: FlightLog;
 }
 
 /**
  * RoadmapCompletionGate.
  * Absorbed from packages/codemarie/src/services/roadmap/RoadmapCompletionGate.ts (Pass 82 / ADR-012).
- * Upgraded with Pass 193 Zenith Tier Attempt Completion Gate Strategy (ADR-084).
+ * Upgraded with Pass 193 Apex / Sovereign Tier Attempt Completion Gate Strategy (ADR-084).
  *
  * Verifies quality gate requirements and completion criteria before phase execution transitions,
- * supporting dynamic evaluators, incremental evidence collection, cognitive remediation directives,
- * differential attempt analysis, anti-oscillation guards, circuit breakers, and multi-attempt self-healing loops.
+ * supporting dynamic evaluators, deterministic fingerprinting, zero-delta stagnation traps,
+ * forensic flight recording, consensus arbitration, multi-branch candidate evaluation,
+ * DAG pipelines, anti-oscillation guards, circuit breakers, and multi-attempt self-healing loops.
  */
 export class RoadmapCompletionGate {
   private readonly gateCriteriaMap = new Map<string, GateCriteria[]>();
@@ -317,6 +730,35 @@ export class RoadmapCompletionGate {
     this.registerDynamicGate(newGateId, combinedCriteria);
   }
 
+  computeAttemptFingerprint(
+    response?: string,
+    toolResults?: Array<{ name: string; output?: unknown; error?: string }>,
+    history?: Array<{ fingerprint?: AttemptFingerprint }>
+  ): AttemptFingerprint {
+    const respStr = response?.trim() ?? "";
+    const responseHash = createHash("sha256").update(respStr).digest("hex").slice(0, 16);
+
+    const toolStr = toolResults ? JSON.stringify(toolResults) : "";
+    const toolsHash = createHash("sha256").update(toolStr).digest("hex").slice(0, 16);
+
+    const combinedHash = createHash("sha256").update(`${responseHash}:${toolsHash}`).digest("hex").slice(0, 16);
+
+    let isZeroDeltaStagnant = false;
+    if (history && history.length > 0) {
+      const prev = history[history.length - 1]?.fingerprint;
+      if (prev && prev.combinedHash === combinedHash) {
+        isZeroDeltaStagnant = true;
+      }
+    }
+
+    return {
+      responseHash,
+      toolsHash,
+      combinedHash,
+      isZeroDeltaStagnant,
+    };
+  }
+
   evaluateGate(gateId: string): CompletionGateResult {
     const evalStartedAt = performance.now();
     const registered = this.gateCriteriaMap.has(gateId);
@@ -324,10 +766,8 @@ export class RoadmapCompletionGate {
     const requiredCriteria = criteria.filter((criterion) => criterion.required);
     const blockingCriteria = requiredCriteria.filter((criterion) => !criterion.evaluated || !criterion.passed);
     const advisoryCriteria = criteria.filter((criterion) => !criterion.required && (!criterion.evaluated || !criterion.passed));
-    const allowedToProceed = registered
-      && criteria.length > 0
-      && requiredCriteria.length > 0
-      && blockingCriteria.length === 0;
+    const allowedToProceed =
+      registered && criteria.length > 0 && requiredCriteria.length > 0 && blockingCriteria.length === 0;
 
     const evaluatedCount = criteria.filter((c) => c.evaluated && c.passed).length;
     const passRate = criteria.length > 0 ? Number((evaluatedCount / criteria.length).toFixed(4)) : 0;
@@ -349,21 +789,23 @@ export class RoadmapCompletionGate {
       summary = `Gate '${gateId}' passed all required evaluated completion criteria.`;
     }
 
-    const autonomousFeedback = blockingCriteria.length > 0
-      ? this.deriveAutonomousFeedback(
-          { allowedToProceed, gateId, criteriaResults: criteria, summary, blockingCriteria, advisoryCriteria },
-          1,
-          1
-        )
-      : undefined;
+    const autonomousFeedback =
+      blockingCriteria.length > 0
+        ? this.deriveAutonomousFeedback(
+            { allowedToProceed, gateId, criteriaResults: criteria, summary, blockingCriteria, advisoryCriteria },
+            1,
+            1
+          )
+        : undefined;
 
-    const remediationDirective = blockingCriteria.length > 0
-      ? this.deriveRemediationDirective(
-          { allowedToProceed, gateId, criteriaResults: criteria, summary, blockingCriteria, advisoryCriteria },
-          1,
-          1
-        )
-      : undefined;
+    const remediationDirective =
+      blockingCriteria.length > 0
+        ? this.deriveRemediationDirective(
+            { allowedToProceed, gateId, criteriaResults: criteria, summary, blockingCriteria, advisoryCriteria },
+            1,
+            1
+          )
+        : undefined;
 
     return {
       allowedToProceed,
@@ -386,7 +828,8 @@ export class RoadmapCompletionGate {
     gateId: string,
     context: AttemptGateEvaluationContext,
     aggregationPolicy: EvaluationAggregationPolicy = "all_required",
-    minScoreToPass = 100.0
+    minScoreToPass = 100.0,
+    consensusConfig?: ConsensusConfig
   ): Promise<CompletionGateResult> {
     const evalStartedAt = performance.now();
     const registered = this.gateCriteriaMap.has(gateId);
@@ -408,6 +851,13 @@ export class RoadmapCompletionGate {
 
     const criteria = this.gateCriteriaMap.get(gateId)!;
     const evaluators = this.gateEvaluatorMap.get(gateId);
+
+    // Compute deterministic state fingerprint
+    const fingerprint = this.computeAttemptFingerprint(
+      context.responseCandidate,
+      context.toolResults,
+      context.history
+    );
 
     // Run dynamic evaluators where attached
     if (evaluators) {
@@ -459,16 +909,30 @@ export class RoadmapCompletionGate {
 
     const clonedCriteria = criteria.map((c) => ({ ...c }));
     const requiredCriteria = clonedCriteria.filter((c) => c.required);
-    const blockingCriteria = requiredCriteria.filter((c) => !c.evaluated || !c.passed);
+    const blockingCriteria = clonedCriteria.filter((c) => !c.evaluated || !c.passed);
     const advisoryCriteria = clonedCriteria.filter((c) => !c.required && (!c.evaluated || !c.passed));
 
     const maxScore = clonedCriteria.reduce((sum, c) => sum + (c.weight ?? 1.0), 0);
-    const actualScore = clonedCriteria.filter((c) => c.evaluated && c.passed).reduce((sum, c) => sum + (c.weight ?? 1.0), 0);
+    const actualScore = clonedCriteria
+      .filter((c) => c.evaluated && c.passed)
+      .reduce((sum, c) => sum + (c.weight ?? 1.0), 0);
     const scorePercentage = maxScore > 0 ? Number(((actualScore / maxScore) * 100).toFixed(2)) : 0;
 
     let allowedToProceed = false;
-    if (aggregationPolicy === "weighted_threshold") {
-      allowedToProceed = clonedCriteria.length > 0 && scorePercentage >= minScoreToPass && blockingCriteria.length === 0;
+    if (aggregationPolicy === "consensus") {
+      const votes: ConsensusVote[] = clonedCriteria.map((c) => ({
+        evaluatorId: c.id,
+        passed: Boolean(c.evaluated && c.passed),
+        score: c.evaluated && c.passed ? 100 : 0,
+        weight: c.weight ?? 1.0,
+        severity: c.severity,
+        reason: c.detail ?? c.description,
+      }));
+      const consensusRes = ConsensusArbiter.evaluateConsensus(votes, consensusConfig);
+      allowedToProceed = consensusRes.passed;
+    } else if (aggregationPolicy === "weighted_threshold") {
+      allowedToProceed =
+        clonedCriteria.length > 0 && scorePercentage >= minScoreToPass && blockingCriteria.length === 0;
     } else {
       allowedToProceed = clonedCriteria.length > 0 && requiredCriteria.length > 0 && blockingCriteria.length === 0;
     }
@@ -489,25 +953,27 @@ export class RoadmapCompletionGate {
 
     const diff = this.computeAttemptDiff(clonedCriteria, scorePercentage, context.history);
 
-    const autonomousFeedback = blockingCriteria.length > 0
-      ? this.deriveAutonomousFeedback(
-          { allowedToProceed, gateId, criteriaResults: clonedCriteria, summary, blockingCriteria, advisoryCriteria },
-          context.attempt,
-          context.maxAttempts,
-          context.history,
-          diff
-        )
-      : undefined;
+    const autonomousFeedback =
+      blockingCriteria.length > 0
+        ? this.deriveAutonomousFeedback(
+            { allowedToProceed, gateId, criteriaResults: clonedCriteria, summary, blockingCriteria, advisoryCriteria, fingerprint },
+            context.attempt,
+            context.maxAttempts,
+            context.history,
+            diff
+          )
+        : undefined;
 
-    const remediationDirective = blockingCriteria.length > 0
-      ? this.deriveRemediationDirective(
-          { allowedToProceed, gateId, criteriaResults: clonedCriteria, summary, blockingCriteria, advisoryCriteria },
-          context.attempt,
-          context.maxAttempts,
-          context.history,
-          diff
-        )
-      : undefined;
+    const remediationDirective =
+      blockingCriteria.length > 0
+        ? this.deriveRemediationDirective(
+            { allowedToProceed, gateId, criteriaResults: clonedCriteria, summary, blockingCriteria, advisoryCriteria, fingerprint },
+            context.attempt,
+            context.maxAttempts,
+            context.history,
+            diff
+          )
+        : undefined;
 
     return {
       allowedToProceed,
@@ -518,6 +984,7 @@ export class RoadmapCompletionGate {
       advisoryCriteria,
       autonomousFeedback,
       remediationDirective,
+      fingerprint,
       evaluatedAt: Date.now(),
       evaluationDurationMs: Number((performance.now() - evalStartedAt).toFixed(3)),
       passRate,
@@ -536,8 +1003,12 @@ export class RoadmapCompletionGate {
     const previous = history[history.length - 1]?.gateResult;
     if (!previous) return undefined;
 
-    const prevPassed = new Set(previous.criteriaResults.filter((c) => c.evaluated && c.passed).map((c) => c.id));
-    const prevFailed = new Set(previous.criteriaResults.filter((c) => !c.evaluated || !c.passed).map((c) => c.id));
+    const prevPassed = new Set(
+      previous.criteriaResults.filter((c) => c.evaluated && c.passed).map((c) => c.id)
+    );
+    const prevFailed = new Set(
+      previous.criteriaResults.filter((c) => !c.evaluated || !c.passed).map((c) => c.id)
+    );
 
     const currentPassed = new Set(currentCriteria.filter((c) => c.evaluated && c.passed).map((c) => c.id));
     const currentFailed = new Set(currentCriteria.filter((c) => !c.evaluated || !c.passed).map((c) => c.id));
@@ -567,9 +1038,12 @@ export class RoadmapCompletionGate {
   ): RemediationDirective {
     const blocking = result.blockingCriteria ?? [];
     const repeatedFailures = this.detectRepeatedFailures(blocking, history);
+    const isStagnant = Boolean(result.fingerprint?.isZeroDeltaStagnant);
 
     let strategy: RemediationStrategyType = "PATCH_LOCAL";
-    if (repeatedFailures.length > 0 || (diff && diff.stagnantFailing.length >= 2)) {
+    if (isStagnant) {
+      strategy = attempt >= 3 ? "SIMPLIFY_SCOPE" : "PIVOT_APPROACH";
+    } else if (repeatedFailures.length > 0 || (diff && diff.stagnantFailing.length >= 2)) {
       strategy = attempt >= 3 ? "PIVOT_APPROACH" : "REWRITE_MODULE";
     } else if (blocking.some((c) => c.category === "safety" || c.severity === "critical")) {
       strategy = "REWRITE_MODULE";
@@ -582,6 +1056,9 @@ export class RoadmapCompletionGate {
       .join("; ");
 
     const actionSteps: string[] = [];
+    if (isStagnant) {
+      actionSteps.push("BREAK STAGNATION: Attempt produced zero delta; discard previous edit pattern completely.");
+    }
     if (diff?.newlyFailing.length) {
       actionSteps.push(`Revert regressions introduced in attempt ${attempt - 1}: [${diff.newlyFailing.join(", ")}].`);
     }
@@ -591,11 +1068,14 @@ export class RoadmapCompletionGate {
 
     const promptPayload = [
       `[AUTONOMOUS_REMEDIATION_DIRECTIVE: Strategy = ${strategy}]`,
+      isStagnant ? `[ZERO_DELTA_STAGNATION_DETECTED: Previous attempt produced identical state hash]` : "",
       `Root Cause: ${rootCauses}`,
       `Action Steps:`,
-      ...actionSteps.map((s, i) => `  ${i + 1}. ${s}`),
+      ...actionSteps.filter(Boolean).map((s, i) => `  ${i + 1}. ${s}`),
       `Execute these steps autonomously to satisfy quality gates on attempt ${attempt + 1}/${maxAttempts}.`,
-    ].join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
 
     return {
       strategy,
@@ -603,6 +1083,7 @@ export class RoadmapCompletionGate {
       priorityCriteria: blocking.map((c) => c.id),
       actionSteps,
       promptPayload,
+      isStagnantEscalation: isStagnant,
     };
   }
 
@@ -617,6 +1098,7 @@ export class RoadmapCompletionGate {
     if (blocking.length === 0) return "";
 
     const repeatedFailures = this.detectRepeatedFailures(blocking, history);
+    const isStagnant = Boolean(result.fingerprint?.isZeroDeltaStagnant);
 
     const blockingDescriptions = blocking
       .map((c) => {
@@ -634,6 +1116,13 @@ export class RoadmapCompletionGate {
       `Blocking required criteria:`,
       blockingDescriptions,
     ];
+
+    if (isStagnant) {
+      feedbackLines.push(
+        `\n[ZERO_DELTA_STAGNATION_TRAP]: Attempt ${attempt} generated an identical state fingerprint to the previous attempt without resolving blocking criteria.`,
+        `Mandatory Action: Do NOT repeat the previous candidate response or tool mutations. Pivot strategy immediately.`
+      );
+    }
 
     if (diff && (diff.newlyPassing.length > 0 || diff.newlyFailing.length > 0)) {
       feedbackLines.push(`\n[ATTEMPT_DELTA_ANALYSIS]:`);
@@ -676,6 +1165,73 @@ export class RoadmapCompletionGate {
     return Array.from(repeated);
   }
 
+  async evaluateAttemptCandidates<T = unknown>(
+    gateId: string,
+    candidates: Array<{ candidateValue?: T; response?: string; toolResults?: Array<{ name: string; output?: unknown; error?: string }> }>,
+    baseContextOptions: Partial<AttemptGateEvaluationContext> = {}
+  ): Promise<CandidateArbitrationResult<T>> {
+    if (candidates.length === 0) {
+      throw new Error(`Cannot arbitrate candidates: Zero candidates provided for gate '${gateId}'`);
+    }
+
+    const branchEvaluations: CandidateBranchEvaluation<T>[] = [];
+
+    for (let i = 0; i < candidates.length; i++) {
+      const candidate = candidates[i];
+      const context: AttemptGateEvaluationContext = {
+        gateId,
+        attempt: 1,
+        maxAttempts: 1,
+        prompt: baseContextOptions.prompt ?? "Candidate evaluation",
+        responseCandidate: candidate.response,
+        toolResults: candidate.toolResults,
+        metadata: baseContextOptions.metadata,
+      };
+
+      const gateRes = await this.evaluateAttemptGate(gateId, context);
+      const criticalCount = (gateRes.blockingCriteria ?? []).filter((c) => c.severity === "critical").length;
+
+      branchEvaluations.push({
+        candidateIndex: i,
+        candidateValue: candidate.candidateValue,
+        responseCandidate: candidate.response,
+        gateResult: gateRes,
+        score: gateRes.score ?? 0,
+        criticalViolations: criticalCount,
+        rank: 0,
+      });
+    }
+
+    // Sort: allowedToProceed (true first) -> criticalViolations (ascending) -> score (descending)
+    branchEvaluations.sort((a, b) => {
+      if (a.gateResult.allowedToProceed !== b.gateResult.allowedToProceed) {
+        return a.gateResult.allowedToProceed ? -1 : 1;
+      }
+      if (a.criticalViolations !== b.criticalViolations) {
+        return a.criticalViolations - b.criticalViolations;
+      }
+      return b.score - a.score;
+    });
+
+    branchEvaluations.forEach((evalItem, idx) => {
+      evalItem.rank = idx + 1;
+    });
+
+    const winner = branchEvaluations[0];
+    const selectionReason = winner.gateResult.allowedToProceed
+      ? `Candidate #${winner.candidateIndex + 1} selected with score ${winner.score}% and zero blocking criteria.`
+      : `Candidate #${winner.candidateIndex + 1} selected as best-effort with score ${winner.score}% (${winner.criticalViolations} critical violations).`;
+
+    return {
+      winningCandidateIndex: winner.candidateIndex,
+      winningCandidate: winner.candidateValue,
+      winningGateResult: winner.gateResult,
+      candidatesEvaluated: candidates.length,
+      rankedEvaluations: branchEvaluations,
+      selectionReason,
+    };
+  }
+
   async executeAutonomousAttemptLoop<T>(
     gateId: string,
     attemptExecutor: (
@@ -692,12 +1248,14 @@ export class RoadmapCompletionGate {
   ): Promise<AutonomousAttemptExecutionResult<T>> {
     const loopStartedAt = performance.now();
     const maxAttempts = Math.max(1, options.maxAttempts ?? 3);
+    const flightRecorder = new AttemptFlightRecorder(gateId);
     const attemptHistory: Array<{
       attempt: number;
       gateResult: CompletionGateResult;
       feedbackSent?: string;
       durationMs?: number;
       remediationDirective?: RemediationDirective;
+      fingerprint?: AttemptFingerprint;
     }> = [];
 
     let currentFeedback: string | undefined;
@@ -705,12 +1263,15 @@ export class RoadmapCompletionGate {
     let finalResult: T | undefined;
     let lastGateResult: CompletionGateResult | undefined;
     let oscillationDetected = false;
+    let zeroDeltaStagnant = false;
     let circuitBreakerTripped = false;
     let activeRemediationStrategy: RemediationStrategyType = "PATCH_LOCAL";
 
     // Check circuit breaker
     if (options.circuitBreaker?.enabled !== false && this.isCircuitBreakerOpen(gateId)) {
       const summary = `Gate '${gateId}' execution blocked by open circuit breaker.`;
+      flightRecorder.recordEvent("circuit_breaker_tripped", 0, summary);
+      flightRecorder.setCompletion(false);
       return {
         success: false,
         attempts: 0,
@@ -724,11 +1285,14 @@ export class RoadmapCompletionGate {
         summary,
         totalDurationMs: 0,
         circuitBreakerTripped: true,
+        flightLog: flightRecorder.exportFlightLog(),
       };
     }
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const attemptStart = performance.now();
+      flightRecorder.recordEvent("attempt_started", attempt, `Attempt ${attempt}/${maxAttempts} started`);
+
       let executionOutput: {
         response?: string;
         toolResults?: Array<{ name: string; output?: unknown; error?: string }>;
@@ -757,20 +1321,44 @@ export class RoadmapCompletionGate {
         history: [...attemptHistory],
       };
 
+      flightRecorder.recordEvent("evaluator_invoked", attempt, `Evaluating gate criteria for attempt ${attempt}`);
+
       const gateResult = await this.evaluateAttemptGate(
         gateId,
         evalContext,
         options.aggregationPolicy ?? "all_required",
-        options.minScoreToPass ?? 100.0
+        options.minScoreToPass ?? 100.0,
+        options.consensusConfig
       );
 
       lastGateResult = gateResult;
       options.onAttemptEvaluated?.(attempt, gateResult);
 
       const attemptDuration = Number((performance.now() - attemptStart).toFixed(3));
+      flightRecorder.recordEvent(
+        "evaluator_completed",
+        attempt,
+        `Evaluation finished in ${attemptDuration}ms. Pass: ${gateResult.allowedToProceed}, Score: ${gateResult.score}%`
+      );
+
+      if (gateResult.fingerprint?.isZeroDeltaStagnant) {
+        zeroDeltaStagnant = true;
+        flightRecorder.recordEvent(
+          "stagnation_trapped",
+          attempt,
+          `Zero-delta stagnation trap detected (Hash: ${gateResult.fingerprint.combinedHash})`
+        );
+        options.onStagnationDetected?.(attempt, gateResult.fingerprint);
+      }
+
       currentDirective = gateResult.remediationDirective;
       if (currentDirective) {
         if (currentDirective.strategy !== activeRemediationStrategy) {
+          flightRecorder.recordEvent(
+            "directive_escalated",
+            attempt,
+            `Remediation strategy escalated from ${activeRemediationStrategy} to ${currentDirective.strategy}`
+          );
           options.onStrategyEscalated?.(attempt, activeRemediationStrategy, currentDirective.strategy);
           activeRemediationStrategy = currentDirective.strategy;
         }
@@ -782,10 +1370,14 @@ export class RoadmapCompletionGate {
         feedbackSent: currentFeedback,
         durationMs: attemptDuration,
         remediationDirective: currentDirective,
+        fingerprint: gateResult.fingerprint,
       });
 
       if (gateResult.allowedToProceed) {
         this.resetCircuitBreaker(gateId);
+        flightRecorder.recordEvent("gate_completed", attempt, `Gate passed on attempt ${attempt}`);
+        flightRecorder.setStrategyProgression("PATCH_LOCAL", activeRemediationStrategy);
+        flightRecorder.setCompletion(true);
         return {
           success: true,
           attempts: attempt,
@@ -796,7 +1388,9 @@ export class RoadmapCompletionGate {
           totalDurationMs: Number((performance.now() - loopStartedAt).toFixed(3)),
           oscillationDetected,
           circuitBreakerTripped: false,
+          zeroDeltaStagnant,
           activeRemediationStrategy,
+          flightLog: flightRecorder.exportFlightLog(),
         };
       }
 
@@ -805,6 +1399,11 @@ export class RoadmapCompletionGate {
         const repeated = this.detectRepeatedFailures(gateResult.blockingCriteria ?? [], attemptHistory.slice(0, -1));
         if (repeated.length >= (options.oscillationThreshold ?? 1)) {
           oscillationDetected = true;
+          flightRecorder.recordEvent(
+            "oscillation_guarded",
+            attempt,
+            `Repeated criteria failure detected: ${repeated.join(", ")}`
+          );
           options.onOscillationDetected?.(attempt, repeated);
         }
       }
@@ -819,7 +1418,15 @@ export class RoadmapCompletionGate {
 
         currentFeedback = options.customFeedbackGenerator
           ? options.customFeedbackGenerator(gateResult, attempt, maxAttempts)
-          : (gateResult.autonomousFeedback ?? this.deriveAutonomousFeedback(gateResult, attempt, maxAttempts, attemptHistory, gateResult.diffFromPreviousAttempt));
+          : gateResult.autonomousFeedback ??
+            this.deriveAutonomousFeedback(
+              gateResult,
+              attempt,
+              maxAttempts,
+              attemptHistory,
+              gateResult.diffFromPreviousAttempt
+            );
+        flightRecorder.recordEvent("feedback_synthesized", attempt, `Synthesized corrective feedback for attempt ${attempt + 1}`);
       }
     }
 
@@ -828,6 +1435,10 @@ export class RoadmapCompletionGate {
     const finalSummary = lastGateResult
       ? `Gate '${gateId}' failed after ${maxAttempts} autonomous attempts: ${lastGateResult.summary}`
       : `Gate '${gateId}' failed without evaluation.`;
+
+    flightRecorder.recordEvent("gate_completed", maxAttempts, finalSummary);
+    flightRecorder.setStrategyProgression("PATCH_LOCAL", activeRemediationStrategy);
+    flightRecorder.setCompletion(false);
 
     return {
       success: false,
@@ -844,7 +1455,9 @@ export class RoadmapCompletionGate {
       totalDurationMs: Number((performance.now() - loopStartedAt).toFixed(3)),
       oscillationDetected,
       circuitBreakerTripped,
+      zeroDeltaStagnant,
       activeRemediationStrategy,
+      flightLog: flightRecorder.exportFlightLog(),
     };
   }
 
@@ -868,7 +1481,7 @@ export class RoadmapCompletionGate {
     this.circuitBreakerStateMap.set(gateId, current);
   }
 
-  private resetCircuitBreaker(gateId: string): void {
+  resetCircuitBreaker(gateId: string): void {
     this.circuitBreakerStateMap.delete(gateId);
   }
 

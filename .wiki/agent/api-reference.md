@@ -266,10 +266,39 @@ Source: [`src/tooling/extensions/policy/roadmap-completion-gate.ts`](../../src/t
 - `registerDynamicGate(gateId: string, criteria: DynamicGateCriteria[], metadata?: Record<string, unknown>): void` registers dynamic evaluators with severity and phase taxonomy.
 - `recordCriterionEvidence(gateId, criterionId, passed, detail?, metadata?): void` incrementally records evaluated evidence.
 - `evaluateGate(gateId: string): CompletionGateResult` evaluates criteria with fail-closed safety semantics.
-- `evaluateAttemptGate(gateId, context, aggregationPolicy?, minScoreToPass?): Promise<CompletionGateResult>` evaluates attempt execution context, computing attempt diffs, pass rates, and cognitive remediation directives.
-- `executeAutonomousAttemptLoop<T>(gateId, attemptExecutor, options?): Promise<AutonomousAttemptExecutionResult<T>>` orchestrates multi-attempt autonomous turns with differential analysis, strategy escalation, anti-oscillation guards, backoff delays, and circuit breaker governance.
+- `evaluateAttemptGate(gateId, context, aggregationPolicy?, minScoreToPass?, consensusConfig?): Promise<CompletionGateResult>` evaluates attempt execution context, computing attempt diffs, deterministic SHA-256 fingerprints, pass rates, and cognitive remediation directives.
+- `evaluateAttemptCandidates<T>(gateId, candidates, baseContextOptions?): Promise<CandidateArbitrationResult<T>>` ranks parallel candidate branches by gate pass rate, minimal critical violations, and score optimization.
+- `executeAutonomousAttemptLoop<T>(gateId, attemptExecutor, options?): Promise<AutonomousAttemptExecutionResult<T>>` orchestrates multi-attempt autonomous turns with differential analysis, zero-delta stagnation traps, strategy escalation, anti-oscillation guards, flight recording, backoff delays, and circuit breaker governance.
 - `pipeGates(newGateId: string, ...sourceGateIds: string[]): void` composes multi-stage validation pipelines.
 - `cloneGate(sourceGateId: string, targetGateId: string): void` clones gate definitions with dynamic evaluators.
+
+### `AttemptFlightRecorder`
+
+Source: [`src/tooling/extensions/policy/roadmap-completion-gate.ts`](../../src/tooling/extensions/policy/roadmap-completion-gate.ts)
+
+- `recordEvent(type, attempt, detail, metadata?)`: records attempt milestones to an in-memory blackbox audit ledger.
+- `exportFlightLog(): FlightLog`: exports full structured JSON flight log.
+- `generateFlightLogMarkdown(): string`: produces formatted Markdown postmortem report with timeline tables.
+
+### `ConsensusArbiter`
+
+Source: [`src/tooling/extensions/policy/roadmap-completion-gate.ts`](../../src/tooling/extensions/policy/roadmap-completion-gate.ts)
+
+- `evaluateConsensus(votes: ConsensusVote[], config?: ConsensusConfig): ConsensusEvaluationResult`: computes multi-judge quorum (`unanimous`, `supermajority_66`, `majority_50`, or custom ratio) and critical severity vetoes.
+
+### `GatePipelineDag`
+
+Source: [`src/tooling/extensions/policy/roadmap-completion-gate.ts`](../../src/tooling/extensions/policy/roadmap-completion-gate.ts)
+
+- `addGateNode(gateId, dependencies?, shortCircuitOnFailure?)`: builds Directed Acyclic Graph pipelines of quality gates.
+- `getExecutionOrder(): string[]`: computes topological execution sequence.
+- `executeDag(gateEngine, context): Promise<DagExecutionReport>`: executes gates in dependency order with upstream failure short-circuiting.
+
+### `DiagnosticPatchSynthesizer`
+
+Source: [`src/tooling/extensions/policy/roadmap-completion-gate.ts`](../../src/tooling/extensions/policy/roadmap-completion-gate.ts)
+
+- `extractDiagnostics(errorMessage?, toolResults?): DiagnosticMicroPatch[]`: parses compiler diagnostics and tool errors into line-anchored micro-patch suggestions.
 
 ### `AttemptCompletionGateStrategy`
 

@@ -12,7 +12,7 @@ Previously, `RoadmapCompletionGate` validated only static, pre-evaluated boolean
 
 ## Decision
 
-LUMI adopts a zenith-tier, industry-standard **Attempt Completion Gate Strategy** across the engine, tooling, and test harnesses:
+LUMI adopts an apex / sovereign-tier, industry-standard **Attempt Completion Gate Strategy** across the engine, tooling, and test harnesses:
 
 1. **Phased Evaluation Taxonomy & Categorization**:
    Gates support multi-phase lifecycle checkpoints (`admission`, `in_flight`, `completion`, `postmortem`) and severity classifications (`critical`, `high`, `medium`, `low`, `advisory`) across core dimensions (`integrity`, `safety`, `correctness`, `quality`, `performance`, `governance`, `admission`).
@@ -29,20 +29,28 @@ LUMI adopts a zenith-tier, industry-standard **Attempt Completion Gate Strategy*
 5. **Differential Attempt Analysis & Regression Detection**:
    `computeAttemptDiff` compares successive attempts to compute exact delta metrics (`newlyPassing`, `newlyFailing`, `stagnantFailing`, `scoreDelta`), identifying whether an attempt made progress or introduced regressions.
 
-6. **Cognitive Remediation Directives & Strategy Escalation**:
-   `deriveRemediationDirective` synthesizes structured remediation plans (`RemediationDirective`), dynamically escalating strategies (`PATCH_LOCAL` -> `REWRITE_MODULE` -> `PIVOT_APPROACH` -> `EXPAND_CONTEXT`) based on root causes, repeated failures, and regression history.
+6. **Deterministic State Fingerprinting & Zero-Delta Stagnation Traps**:
+   `computeAttemptFingerprint` generates SHA-256 hashes of response candidates and tool execution records. If an attempt produces identical failing outputs without changes, the system flags `[ZERO_DELTA_STAGNATION_TRAP]` and immediately escalates the strategy to `PIVOT_APPROACH` or `SIMPLIFY_SCOPE`.
 
-7. **Anti-Oscillation Guard & Anti-Flapping**:
-   If an agent repeatedly encounters identical criteria failures across attempts, `deriveAutonomousFeedback` automatically flags `[ANTI_OSCILLATION_GUARD]` and instructs the agent to pivot from local patching to fundamental structural remediation.
+7. **Forensic Flight Recording & Blackbox Audit Ledgers**:
+   `AttemptFlightRecorder` maintains an immutable chronological event timeline for all evaluator runs, score deltas, duration metrics, and decision boundaries, exporting both machine-readable JSON logs and formatted Markdown postmortem reports (`generateFlightLogMarkdown`).
 
-8. **Circuit Breakers & Adaptive Backoff Policies**:
-   - `CircuitBreakerConfig` prevents runaway token burn by tripping after consecutive failures.
-   - Configurable retry policies (`none`, `linear`, `exponential`, `jittered`) govern execution backoff with lifecycle hooks (`onAttemptRetry`, `onOscillationDetected`, `onStrategyEscalated`, `onAttemptEvaluated`).
+8. **Multi-Perspective Consensus Arbitration**:
+   `ConsensusArbiter` evaluates consensus quorum (`unanimous`, `supermajority_66`, `majority_50`) across multi-agent evaluation panels with critical severity veto enforcement (`vetoBySeverity: "critical"`).
 
-9. **Composable Gate Pipelines**:
-   Gates can be dynamically cloned (`cloneGate`) or piped into composite multi-stage pipelines (`pipeGates`), enabling layered verification across admission, compilation, execution, and security stages.
+9. **Multi-Branch Candidate Arbitration**:
+   `evaluateAttemptCandidates` scores and ranks parallel candidate branches, selecting winning candidates based on score optimization, minimal critical violations, and regression footprint.
 
-10. **Standard Strategy Factories**:
+10. **Hierarchical DAG Gate Pipelines**:
+    `GatePipelineDag` organizes gate evaluation into Directed Acyclic Graphs with topological dependency ordering and upstream failure short-circuiting.
+
+11. **Self-Correction Diagnostic Micro-Patch Synthesis**:
+    `DiagnosticPatchSynthesizer` parses compiler diagnostics, syntax errors, and tool failures into line-anchored micro-patch suggestions for the next attempt.
+
+12. **Anti-Oscillation Guard & Circuit Breakers**:
+    `CircuitBreakerConfig` trips after consecutive systemic failures, and `detectRepeatedFailures` guards against cyclic flapping across attempts.
+
+13. **Standard Strategy Factories**:
     `AttemptCompletionGateStrategy` provides turnkey gate definitions:
     - `createAdmissionGate`: validates pre-flight token budgets and registered tool availability.
     - `createResponseVerificationGate`: ensures non-empty content and zero unhandled errors.
@@ -51,12 +59,14 @@ LUMI adopts a zenith-tier, industry-standard **Attempt Completion Gate Strategy*
     - `createBenchmarkWorkloadGate`: ensures workload completion and assertion satisfaction.
     - `createSecurityGuardrailGate`: ensures command safety verification and credential containment.
 
-11. **Harness & Engine Integration**:
+14. **Harness & Engine Integration**:
     `AgentLoopHarness` implements `runAutonomousGatedTurn` to verify multi-attempt progression and self-recovery with structured timeline events (`gate_evaluation`, `autonomous_feedback`, `auto_retry`). `AgentEngine` integrates `RoadmapCompletionGate` into live provider dispatch loops for verified turn completion.
 
 ## Consequences
 
 - **Autonomous Self-Correction**: Minor errors, tool failures, and incomplete responses are resolved internally in attempt $N+1$ without user intervention.
+- **Zero-Delta Stagnation Elimination**: Prevents token-burning loops where the model repeats identical failing outputs.
+- **Forensic Observability**: Blackbox flight logs capture exact execution traces, durations, and state transitions.
 - **Anti-Flapping & Regression Protection**: Differential analysis prevents regressions and breaks infinite repair loops.
 - **Circuit Breaker Safety**: Prevents runaway token consumption during systemic provider or environment failures.
 - **Fail-Closed Safety**: Incomplete or failing attempts cannot masquerade as successful completions.
