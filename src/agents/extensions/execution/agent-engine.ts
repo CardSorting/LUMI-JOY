@@ -529,6 +529,9 @@ export class AgentEngine extends AbstractAgentEngine {
           ? CODEX_STREAM_TOOL_INACTIVITY_TIMEOUT_MS
           : CODEX_STREAM_INACTIVITY_TIMEOUT_MS;
 
+      // Active telemetry heartbeat to track inactivity budget and stream responsiveness
+      progress.recordHeartbeat(idleMs, currentTimeoutThreshold, currentExecutionPhase);
+
       // Watchdog: Phase-aware inactivity check (180s reasoning, 300s tool execution)
       if (idleMs > currentTimeoutThreshold) {
         watchdogAbort.abort(new Error("inactivity_watchdog_stream_frozen"));

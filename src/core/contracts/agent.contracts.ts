@@ -17,6 +17,18 @@ export type EngineProgressStatus =
   | "failed"
   | "cancelled";
 
+export interface ProgressTelemetryMetrics {
+  elapsedSec?: number;
+  reasoningTimeMs?: number;
+  toolTimeMs?: number;
+  commandsExecuted?: number;
+  filesModified?: number;
+  peakInactivityMs?: number;
+  inactivityBudgetRemainingMs?: number;
+  streamHeartbeatCount?: number;
+  warning?: string;
+}
+
 export interface EngineProgressMetadata {
   source?: "codex-sdk" | "openai-api" | "lumi" | string;
   /** Distinguishes the one overall turn lifecycle from child activity rows. */
@@ -30,6 +42,7 @@ export interface EngineProgressMetadata {
   totalSteps?: number;
   inputTokens?: number;
   outputTokens?: number;
+  telemetry?: ProgressTelemetryMetrics;
 }
 
 export interface EngineProgressEvent {

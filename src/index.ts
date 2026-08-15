@@ -118,6 +118,7 @@ export type {
   EngineTickOutcome,
   EngineTickResult,
   IAgentEngine,
+  ProgressTelemetryMetrics,
 } from "./core/contracts/agent.contracts.js";
 export type { GameStateSnapshot, SessionMessage, ISessionStore, SlabBufferSnapshot } from "./core/contracts/session.contracts.js";
 export type { CommandResult, AnchoredEditResult, ToolingEvent, JsonRpcNotification, TerminalProgressFrame, IHands, IEars, IToolRegistry } from "./core/contracts/tooling.contracts.js";

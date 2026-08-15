@@ -50,6 +50,10 @@ export class CodexProgressAdapter {
   private commandCount = 0;
   private toolCount = 0;
   private terminal = false;
+  private reasoningDurationMs = 0;
+  private toolDurationMs = 0;
+  private peakInactivityMs = 0;
+  private heartbeatCount = 0;
 
   constructor(options: CodexProgressAdapterOptions) {
     this.cwd = path.resolve(options.cwd);
@@ -126,11 +130,66 @@ export class CodexProgressAdapter {
   }
 
   fail(message: string, detail?: string): void {
+    const totalElapsed = this.elapsedSinceTurnStart();
+    const telemetryDetail = detail
+      ? `${detail} (Elapsed: ${this.formatDuration(totalElapsed)}, Peak idle: ${this.formatDuration(this.peakInactivityMs)})`
+      : `Turn failed after ${this.formatDuration(totalElapsed)} (Peak idle: ${this.formatDuration(this.peakInactivityMs)})`;
+
     if (this.deferFailure) {
-      this.finishAttempt(message, detail);
+      this.finishAttempt(message, telemetryDetail);
       return;
     }
-    this.finish("failed", "failed", message, detail);
+    this.finish("failed", "failed", message, telemetryDetail, {
+      ...this.turnMetadata(),
+      telemetry: {
+        elapsedSec: Math.round(totalElapsed / 1000),
+        peakInactivityMs: this.peakInactivityMs,
+        reasoningTimeMs: this.reasoningDurationMs,
+        toolTimeMs: this.toolDurationMs,
+        commandsExecuted: this.commandCount,
+        filesModified: this.changedFiles.size,
+        streamHeartbeatCount: this.heartbeatCount,
+      },
+    });
+  }
+
+  /**
+   * Receives periodic watchdog telemetry pulses and emits real-time status
+   * updates during quiet or long-running stream operations.
+   */
+  recordHeartbeat(
+    idleMs: number,
+    timeoutThresholdMs: number,
+    phase: "REASONING" | "TOOL_EXECUTION"
+  ): void {
+    if (this.terminal) return;
+    this.peakInactivityMs = Math.max(this.peakInactivityMs, idleMs);
+    this.heartbeatCount += 1;
+
+    const totalElapsedMs = this.elapsedSinceTurnStart();
+    const remainingBudgetMs = Math.max(0, timeoutThresholdMs - idleMs);
+
+    // Emit an active status telemetry pulse when operations have been quiet for > 20s
+    if (idleMs >= 20_000 && idleMs % 15_000 < 1500) {
+      const phaseDesc = phase === "TOOL_EXECUTION" ? "Workspace tool execution" : "Model deliberation";
+      this.emit({
+        activityId: `codex:telemetry:${this.attempt}`,
+        phase: phase === "TOOL_EXECUTION" ? "tool" : "thinking",
+        status: "in_progress",
+        message: `${phaseDesc} in progress (${this.formatDuration(totalElapsedMs)} elapsed)`,
+        detail: `Stream quiet for ${this.formatDuration(idleMs)} · Watchdog budget remaining: ${this.formatDuration(remainingBudgetMs)}`,
+        elapsedMs: totalElapsedMs,
+        metadata: {
+          ...this.turnMetadata(),
+          telemetry: {
+            elapsedSec: Math.round(totalElapsedMs / 1000),
+            peakInactivityMs: this.peakInactivityMs,
+            inactivityBudgetRemainingMs: remainingBudgetMs,
+            streamHeartbeatCount: this.heartbeatCount,
+          },
+        },
+      });
+    }
   }
 
   private handleItem(
@@ -333,10 +392,22 @@ export class CodexProgressAdapter {
     if (this.toolCount > 0) detail.push(this.pluralize(this.toolCount, "tool call"));
     if (this.changedFiles.size > 0) detail.push(this.pluralize(this.changedFiles.size, "file changed", "files changed"));
     detail.push(`${usage.input_tokens.toLocaleString()} in / ${usage.output_tokens.toLocaleString()} out tokens`);
+    detail.push(`Peak gap: ${this.formatDuration(this.peakInactivityMs)}`);
+
+    const turnDuration = this.elapsedSinceTurnStart();
     this.finish("completed", "completed", "Agent turn complete", detail.join(" · "), {
       ...this.turnMetadata(),
       inputTokens: usage.input_tokens,
       outputTokens: usage.output_tokens,
+      telemetry: {
+        elapsedSec: Math.round(turnDuration / 1000),
+        reasoningTimeMs: this.reasoningDurationMs,
+        toolTimeMs: this.toolDurationMs,
+        commandsExecuted: this.commandCount,
+        filesModified: this.changedFiles.size,
+        peakInactivityMs: this.peakInactivityMs,
+        streamHeartbeatCount: this.heartbeatCount,
+      },
     });
   }
 
@@ -460,6 +531,15 @@ export class CodexProgressAdapter {
     if (t === "generate_image") return "Generating visual asset";
     if (t === "ask_question") return "Requesting user input";
     return `Executing ${tool.replace(/_/g, " ")}`;
+  }
+
+  private formatDuration(ms: number): string {
+    if (ms < 1000) return `${Math.round(ms)}ms`;
+    const seconds = Math.round(ms / 100) / 10;
+    if (seconds < 60) return `${seconds}s`;
+    const mins = Math.floor(seconds / 60);
+    const remSecs = Math.round(seconds % 60);
+    return `${mins}m ${remSecs}s`;
   }
 
   private pluralize(count: number, singular: string, plural = `${singular}s`): string {
