@@ -163,7 +163,16 @@ export class AgentActivityTimeline implements Component {
         : this.terminalStatus === "cancelled"
           ? `\x1b[1;33mCancelled after ${elapsed}\x1b[0m`
           : `\x1b[1;33mWorking ${elapsed}\x1b[0m`;
-    const header = `\x1b[1;37mAgent activity\x1b[0m  ·  ${state}  ·  \x1b[36m${this.model}\x1b[0m`;
+    let statsBadge = "";
+    if (this.terminalStatus === "completed") {
+      const toolEvents = Array.from(this.entries.values()).filter((e) => e.phase === "tool");
+      const writeEvents = Array.from(this.entries.values()).filter((e) => e.phase === "writing");
+      const parts: string[] = [];
+      if (writeEvents.length > 0) parts.push(`${writeEvents.length} ${writeEvents.length === 1 ? "file edit" : "file edits"}`);
+      if (toolEvents.length > 0) parts.push(`${toolEvents.length} ${toolEvents.length === 1 ? "command" : "commands"}`);
+      if (parts.length > 0) statsBadge = `  ·  \x1b[90m${parts.join(", ")}\x1b[0m`;
+    }
+    const header = `\x1b[1;37mAgent activity\x1b[0m  ·  ${state}${statsBadge}  ·  \x1b[36m${this.model}\x1b[0m`;
 
     let overallId: string | undefined;
     for (const id of this.order) {
@@ -199,13 +208,35 @@ export class AgentActivityTimeline implements Component {
     return rows.join("\n");
   }
 
+  private phaseBadge(phase: string): string {
+    switch (phase) {
+      case "thinking":
+        return "\x1b[35m[Think]\x1b[0m";
+      case "planning":
+        return "\x1b[36m[Plan]\x1b[0m";
+      case "tool":
+        return "\x1b[34m[Tool]\x1b[0m";
+      case "writing":
+        return "\x1b[32m[Write]\x1b[0m";
+      case "verifying":
+        return "\x1b[33m[Check]\x1b[0m";
+      case "responding":
+        return "\x1b[35m[Draft]\x1b[0m";
+      case "connecting":
+        return "\x1b[90m[Init]\x1b[0m";
+      default:
+        return "";
+    }
+  }
+
   private formatRow(event: EngineProgressEvent): string {
     const { icon, color } = this.statusStyle(event.status);
+    const badge = event.phase ? ` ${this.phaseBadge(event.phase)}` : "";
     const detail = event.detail ? ` \x1b[90m— ${event.detail}\x1b[0m` : "";
     const duration = event.elapsedMs && event.elapsedMs >= 1000
       ? ` \x1b[90m(${this.formatElapsed(event.elapsedMs)})\x1b[0m`
       : "";
-    return `  ${color}${icon}\x1b[0m ${event.message}${detail}${duration}`;
+    return `  ${color}${icon}\x1b[0m${badge} ${event.message}${detail}${duration}`;
   }
 
   private settleActiveEntries(

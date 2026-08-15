@@ -774,14 +774,30 @@ export class InteractiveModeController {
               if (printedActivities.get(event.activityId) === fingerprint) return;
               printedActivities.set(event.activityId, fingerprint);
               const icon = event.status === "completed"
-                ? "✓"
+                ? "\x1b[32m✓\x1b[0m"
                 : event.status === "failed"
-                  ? "✗"
+                  ? "\x1b[31m✗\x1b[0m"
                   : event.status === "cancelled"
-                    ? "■"
-                    : "●";
-              const detail = event.detail ? ` — ${event.detail}` : "";
-              console.error(`\x1b[90m  ${icon} ${event.message}${detail}\x1b[0m`);
+                    ? "\x1b[33m■\x1b[0m"
+                    : "\x1b[36m●\x1b[0m";
+              const phaseBadge = event.phase === "thinking"
+                ? " \x1b[35m[Think]\x1b[0m"
+                : event.phase === "planning"
+                  ? " \x1b[36m[Plan]\x1b[0m"
+                  : event.phase === "tool"
+                    ? " \x1b[34m[Tool]\x1b[0m"
+                    : event.phase === "writing"
+                      ? " \x1b[32m[Write]\x1b[0m"
+                      : event.phase === "verifying"
+                        ? " \x1b[33m[Check]\x1b[0m"
+                        : event.phase === "responding"
+                          ? " \x1b[35m[Draft]\x1b[0m"
+                          : "";
+              const detail = event.detail ? ` \x1b[90m— ${event.detail}\x1b[0m` : "";
+              const duration = event.elapsedMs && event.elapsedMs >= 1000
+                ? ` \x1b[90m(${Math.round(event.elapsedMs / 100) / 10}s)\x1b[0m`
+                : "";
+              console.error(`  ${icon}${phaseBadge} ${event.message}${detail}${duration}`);
             },
           });
           const outcomeColor = result.outcome === "completed"
