@@ -70,6 +70,7 @@ export class WriteCoalescerSubstrate {
     const timer = setTimeout(() => {
       this.flushFileNow(filePath);
     }, debounceMs);
+    timer.unref();
 
     this.pendingWrites.set(filePath, {
       dataSupplier,

@@ -6,6 +6,10 @@ This directory contains the authoritative current-worktree runtime evidence.
 
 [`LIVE_BASELINE.json`](LIVE_BASELINE.json) is the machine-readable source. [`BENCHMARK_REPORT.md`](BENCHMARK_REPORT.md) and [`GRAND_ARCHITECTURAL_AUDIT.md`](GRAND_ARCHITECTURAL_AUDIT.md) are generated from the same in-memory run by `npm run baseline:update`.
 
+For architectural deep-dives, see:
+- [`RUNTIME_ARCHITECTURE_GUIDE.md`](RUNTIME_ARCHITECTURE_GUIDE.md) — Comprehensive technical reference for memory layout, TUI rendering, and time-travel rewind.
+- [`RUNTIME_OPTIMIZATION_RECORD.md`](RUNTIME_OPTIMIZATION_RECORD.md) — Exhaustive optimization and hardening changelog across all runtime subsystems.
+
 Do not hand-edit measured values in those three files. The baseline command writes all three atomically, writes failure evidence as well as success evidence, and exits nonzero when smoke, benchmark, or guardrail verification fails.
 
 ## Current verification model

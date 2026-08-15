@@ -12,7 +12,7 @@ Welcome to the central documentation wiki for **LUMI-JOY**, a self-evolving agen
 
 ### Latest generated verification
 
-Generated at **2026-08-13T05:44:24.943Z** on Node.js `v23.5.0`, macOS ARM64:
+Generated at **2026-08-15T04:28:34.865Z** on Node.js `v23.5.0`, macOS ARM64:
 
 | Lane | Result |
 |---|---:|
@@ -74,6 +74,9 @@ The live JSON remains authoritative if this summary and a regenerated run ever d
   - [ADR-084: Attempt Completion Gate Strategy & Autonomous Turn Progression](adr/ADR-084-attempt-completion-gate-strategy.md)
 
 ### 8. Developer & Agent Guides
+- ⚡ [Runtime Universal Pass & Executive Agent Operations](agent/runtime-universal-pass.md)
+- 🏗️ [Runtime Architecture & Executive Subsystem Guide](../docs/RUNTIME_ARCHITECTURE_GUIDE.md)
+- 🚀 [Runtime Universal Optimization & Hardening Record](../docs/RUNTIME_OPTIMIZATION_RECORD.md)
 - 📋 [Agent Orientation Playbook](agent/playbook.md)
 - 📡 [Agent Activity Streaming Strategy](agent/streaming-activity-strategy.md)
 - 📋 [API Reference Guide](agent/api-reference.md)

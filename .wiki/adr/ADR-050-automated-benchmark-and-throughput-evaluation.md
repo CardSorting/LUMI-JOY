@@ -43,9 +43,9 @@ The current implementation also exposes `lumi --baseline`. It runs the capabilit
 - Exact Pass 192 composition: **142/142**.
 - Runtime capability smoke: **9/9**.
 - Heterogeneous benchmark: **5/5**.
-- Complete Flappy Bird React + TypeScript + Vite synthesis: **12/12 generated files**, **8/8 assertions**, **$367.13\text{ ms}$ observed**.
+- Complete Flappy Bird React + TypeScript + Vite synthesis: **12/12 generated files**, **8/8 assertions**, **$341.90\text{ ms}$ observed**.
 - Architecture/performance guardrails: **6/6**.
-- Dedicated local fast path: **$0.12\text{ ms}$ mean** and **$8525.73$ frames/second** observed against requirements of $<1.0\text{ ms}$ and $\geq1,000$ frames/second.
-- Snapshot rewind: **$0.019\text{ ms}$ warmed p95** observed against a $<0.1\text{ ms}$ requirement.
+- Dedicated local fast path: **$0.17\text{ ms}$ mean** and **$5761.61$ frames/second** observed against requirements of $<1.0\text{ ms}$ and $\geq1,000$ frames/second.
+- Snapshot rewind: **$0.027\text{ ms}$ warmed p95** observed against a $<0.1\text{ ms}$ requirement.
 
 The heterogeneous suite reports mean case latency and cases/second because it includes strict compiler work. It must not be compared directly with the dedicated frame-performance guardrail. See [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json) and the generated [benchmark report](../../docs/BENCHMARK_REPORT.md).

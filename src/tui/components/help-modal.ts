@@ -42,25 +42,36 @@ export class HelpModal implements Component, Focusable {
 
     const body = new Markdown(
       `### Keyboard Navigation & Shortcuts\n` +
-        `- \`Enter\` : Submit prompt or run slash command\n` +
+        `- \`Enter\` : Submit prompt or execute slash command\n` +
         `- \`Shift + Enter\` or \`Alt + Enter\` : Insert new line in prompt editor\n` +
         `- \`↑ / ↓\` : Browse prompt history or navigate autocomplete list\n` +
-        `- \`Tab\` : Trigger slash command & file autocomplete menu\n` +
+        `- \`Tab\` : Contextual next-action autofill & slash command / file completion\n` +
+        `- \`Ctrl + S\` or \`/settings\` : Open interactive framework settings modal\n` +
+        `- \`Alt + M\` or \`/model\` : Open interactive model selector modal\n` +
+        `- \`PgUp / PgDn\` or \`Shift + ↑ / ↓\` or \`Ctrl + U / D\` : Scroll output history beyond the fold\n` +
+        `- \`Home / End\` : Jump directly to top / bottom of output history\n` +
         `- \`Ctrl + L\` or \`/clear\` : Clear screen history\n` +
-        `- \`Ctrl + C\` or \`/exit\` : Quit application\n` +
+        `- \`Ctrl + C\` : Clear input line (when typing) or quit application (when empty)\n` +
+        `- \`Ctrl + D\` : Exit interactive REPL session (EOF)\n` +
         `- \`?\` or \`/help\` : Display this Help & Shortcuts Reference\n\n` +
-        `### Slash Commands Reference\n` +
+      `### Slash Commands Reference\n` +
         `- **[Session]** \`/snapshot\` : Create immutable state snapshot checkpoint\n` +
+        `- **[Session]** \`/snapshots\` : List all snapshot checkpoints in session\n` +
+        `- **[Session]** \`/rewind [id]\` : Rollback engine state to a snapshot\n` +
+        `- **[Session]** \`/memory\` : View persistent memory facts & context\n` +
         `- **[Session]** \`/clear\` : Clear message history from TUI view\n` +
-        `- **[Session]** \`/exit\` : Terminate interactive REPL session\n` +
-        `- **[System]**  \`/health\` : Audit subsystem operational health\n` +
-        `- **[System]**  \`/setup\` : Launch interactive API key configuration wizard\n` +
+        `- **[Session]** \`/exit\` / \`/quit\` : Terminate interactive REPL session\n` +
+        `- **[Config]**  \`/model [name]\` : Switch LLM model or open selector\n` +
+        `- **[Config]**  \`/settings\` : Configure reasoning effort & engine policies\n` +
+        `- **[System]**  \`/health\` / \`/status\` : Audit subsystem operational health\n` +
+        `- **[System]**  \`/setup\` / \`/wizard\` : Launch interactive API key setup wizard\n` +
+        `- **[System]**  \`/providers\` : Test live provider connection latencies\n` +
         `- **[System]**  \`/about\` : Display monolith memory slab & performance specs\n\n` +
-        `### Architecture Highlights\n` +
+      `### Architecture Highlights\n` +
         `- **Zero-GC Contiguous Memory**: 16MB ArrayBuffer slab allocation\n` +
         `- **Performance SLA**: Sub-millisecond tick latency & O(1) state rewind\n` +
         `- **Differential Rendering**: High-frequency terminal viewport compositing\n\n` +
-        `\x1b[90mPress [Esc], [q], or [Enter] to dismiss this help guide\x1b[0m`,
+      `\x1b[90mPress [Esc], [q], or [Enter] to dismiss this help guide\x1b[0m`,
       0,
       0,
       HELP_MARKDOWN_THEME

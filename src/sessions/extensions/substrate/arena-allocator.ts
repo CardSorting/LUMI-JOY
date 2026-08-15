@@ -3,6 +3,8 @@
  * Absorbed from packages/broccolidb (Pass 6).
  */
 export class ArenaAllocator {
+  private static readonly encoder = new TextEncoder();
+  private static readonly decoder = new TextDecoder("utf-8");
   private readonly buffer: ArrayBuffer;
   private readonly uint32View: Uint32Array;
   private readonly uint8View: Uint8Array;
@@ -37,11 +39,17 @@ export class ArenaAllocator {
   }
 
   allocateString(str: string): number {
-    const encoder = new TextEncoder();
-    const bytes = encoder.encode(str);
+    const bytes = ArenaAllocator.encoder.encode(str);
     const byteOffset = this.allocateRawBytes(bytes.byteLength);
     this.uint8View.set(bytes, byteOffset);
     return byteOffset;
+  }
+
+  readString(byteOffset: number, byteLength: number): string {
+    if (byteOffset < 0 || byteOffset + byteLength > this.uint8View.length) {
+      throw new Error(`Out of bounds readString: offset ${byteOffset}, length ${byteLength}`);
+    }
+    return ArenaAllocator.decoder.decode(this.uint8View.subarray(byteOffset, byteOffset + byteLength));
   }
 
   getOffset(): number {

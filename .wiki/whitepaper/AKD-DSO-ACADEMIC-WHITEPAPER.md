@@ -18,11 +18,11 @@ The original paper and its Section 3 experiment record the August 9 foundation-e
 | Exact composition manifest | 142/142 components |
 | Runtime capability smoke | 9/9 checks |
 | Heterogeneous benchmark | 5/5 cases |
-| Complete Flappy Bird React + TypeScript + Vite synthesis | 12/12 files; 8/8 assertions; $367.13\text{ ms}$ observed |
+| Complete Flappy Bird React + TypeScript + Vite synthesis | 12/12 files; 8/8 assertions; $341.90\text{ ms}$ observed |
 | Architecture/performance guardrails | 6/6 checks |
-| Local fast-path mean | $0.12\text{ ms}$ observed; $<1.0\text{ ms}$ required |
-| Local fast-path throughput | $8525.73$ frames/second observed; $\geq1,000$ required |
-| Snapshot rewind | $0.019\text{ ms}$ warmed p95 observed; $<0.1\text{ ms}$ required |
+| Local fast-path mean | $0.17\text{ ms}$ observed; $<1.0\text{ ms}$ required |
+| Local fast-path throughput | $5761.61$ frames/second observed; $\geq1,000$ required |
+| Snapshot rewind | $0.027\text{ ms}$ warmed p95 observed; $<0.1\text{ ms}$ required |
 
 The exact machine-readable evidence, runtime identity, and generation timestamp are in [`docs/LIVE_BASELINE.json`](../../docs/LIVE_BASELINE.json). [`docs/BENCHMARK_REPORT.md`](../../docs/BENCHMARK_REPORT.md) contains all eight Flappy assertion results. Performance observations are host-sensitive and are not permanent guarantees.
 

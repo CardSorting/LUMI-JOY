@@ -79,6 +79,9 @@ Provider fidelity is intentionally asymmetric: Codex OAuth is dispatched through
 
 ## Key Documentation & Strategy Links
 
+- [Runtime Universal Pass & Executive Agent Operations](runtime-universal-pass.md)
+- [Runtime Architecture & Executive Subsystem Guide](../../docs/RUNTIME_ARCHITECTURE_GUIDE.md)
+- [Runtime Universal Optimization & Hardening Record](../../docs/RUNTIME_OPTIMIZATION_RECORD.md)
 - [Current Machine-Readable Baseline](../../docs/LIVE_BASELINE.json)
 - [Generated Benchmark Evidence](../../docs/BENCHMARK_REPORT.md)
 - [Generated Architectural Audit](../../docs/GRAND_ARCHITECTURAL_AUDIT.md)

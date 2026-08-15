@@ -23,6 +23,9 @@ import type { SettingItem } from "../../../tui/components/settings-list.js";
 import type { SelectListTheme } from "../../../tui/components/select-list.js";
 import { CombinedAutocompleteProvider, type SlashCommand } from "../../../tui/autocomplete.js";
 import { matchesKey } from "../../../tui/keys.js";
+import { highlightTerminalCode } from "../../../tui/syntax-highlighter.js";
+import type { ReasoningEffortLevel } from "../resolution/reasoning-effort-controller.js";
+import type { GameStateSnapshot } from "../../../core/contracts/session.contracts.js";
 
 export interface InteractiveSessionOptions {
   sessionId?: string;
@@ -36,6 +39,7 @@ const DEFAULT_MARKDOWN_THEME: MarkdownTheme = {
   code: (text) => `\x1b[1;33m${text}\x1b[0m`,
   codeBlock: (text) => text,
   codeBlockBorder: (text) => `\x1b[90m${text}\x1b[0m`,
+  highlightCode: highlightTerminalCode,
   quote: (text) => `\x1b[36m${text}\x1b[0m`,
   quoteBorder: (text) => `\x1b[90m${text}\x1b[0m`,
   hr: (text) => `\x1b[90m${text}\x1b[0m`,
@@ -53,6 +57,74 @@ const DEFAULT_SELECT_LIST_THEME: SelectListTheme = {
   scrollInfo: (text) => `\x1b[90m${text}\x1b[0m`,
   noMatch: (text) => `\x1b[31m${text}\x1b[0m`,
 };
+
+function formatUniversalToolSection(toolResults: Array<{ name: string; output: unknown }>): string {
+  if (!toolResults || toolResults.length === 0) return "";
+
+  const formattedBlocks: string[] = [];
+
+  for (const res of toolResults) {
+    const rawOutput = res.output;
+    if (rawOutput === undefined || rawOutput === null) continue;
+
+    let text = "";
+    let lang = "sh";
+    let statusBadge = `[Tool: ${res.name}]`;
+
+    if (typeof rawOutput === "string") {
+      text = rawOutput.trim();
+      if (text.startsWith("{") || text.startsWith("[")) {
+        try {
+          const parsed = JSON.parse(text);
+          text = JSON.stringify(parsed, null, 2);
+          lang = "json";
+        } catch {
+          // not JSON
+        }
+      } else if (
+        text.includes("@@ -") ||
+        text.startsWith("diff --git") ||
+        (text.includes("\n+") && text.includes("\n-"))
+      ) {
+        lang = "diff";
+      }
+    } else if (typeof rawOutput === "object") {
+      const obj = rawOutput as Record<string, unknown>;
+      if (typeof obj.stdout === "string" || typeof obj.stderr === "string") {
+        const stdout = (obj.stdout as string)?.trim() ?? "";
+        const stderr = (obj.stderr as string)?.trim() ?? "";
+        const exitCode = typeof obj.exitCode === "number" ? obj.exitCode : 0;
+        statusBadge = exitCode !== 0
+          ? `[Tool: ${res.name} · Exit ${exitCode}]`
+          : `[Tool: ${res.name} · Success]`;
+        text = [stdout, stderr ? `[stderr]\n${stderr}` : ""].filter(Boolean).join("\n\n");
+        lang = "sh";
+        if (!text) text = `Command finished with exit code ${exitCode}`;
+      } else {
+        text = JSON.stringify(rawOutput, null, 2);
+        lang = "json";
+      }
+    } else {
+      text = String(rawOutput);
+    }
+
+    if (!text) continue;
+
+    const lines = text.split("\n");
+    let boundedText = text;
+    if (lines.length > 25) {
+      const head = lines.slice(0, 12);
+      const tail = lines.slice(-8);
+      const omitted = lines.length - 20;
+      boundedText = [...head, `... (${omitted} lines omitted) ...`, ...tail].join("\n");
+    }
+
+    formattedBlocks.push(`\`\`\`${lang}\n# ${statusBadge}\n${boundedText}\n\`\`\``);
+  }
+
+  if (formattedBlocks.length === 0) return "";
+  return `\n\n**Tool Executions:**\n${formattedBlocks.join("\n\n")}`;
+}
 
 /**
  * InteractiveModeController (Pass 3 Ergonomic Enhancement).
@@ -121,7 +193,11 @@ export class InteractiveModeController {
 
     // 2. Main History Scroll Container
     const historyContainer = new VStack();
-    const historyScrollView = new ScrollView(historyContainer, { follow: "end" });
+    const historyScrollView = new ScrollView(historyContainer, {
+      follow: "end",
+      scrollbar: "auto",
+      scrollbarStyle: (text) => `\x1b[90m${text}\x1b[0m`,
+    });
 
     // Initial Welcome Card Box
     const welcomeCardBox = new Box(1, 0, (text: string) => `\x1b[48;5;236m${text}\x1b[0m`);
@@ -148,9 +224,13 @@ export class InteractiveModeController {
       { name: "settings", description: "[Config] Open interactive framework settings view" },
       { name: "health", description: "[System] Display subsystem health diagnostic audit" },
       { name: "status", description: "[System] Display subsystem health diagnostic audit" },
-      { name: "about", description: "[System] Display monolith memory slab & performance specs" },
-      { name: "snapshot", description: "[Session] Create immutable state snapshot checkpoint" },
       { name: "setup", description: "[System] Launch interactive API key configuration wizard" },
+      { name: "providers", description: "[System] Test live provider connection latencies" },
+      { name: "snapshot", description: "[Session] Create immutable state snapshot checkpoint" },
+      { name: "snapshots", description: "[Session] List all state snapshots in active session" },
+      { name: "rewind", description: "[Session] Rollback engine state to a snapshot (/rewind <id>)" },
+      { name: "memory", description: "[Session] View active persistent facts & memory context" },
+      { name: "about", description: "[System] Display monolith memory slab & performance specs" },
       { name: "clear", description: "[Session] Clear TUI output history buffer" },
       { name: "exit", description: "[Session] Exit interactive TUI REPL session" },
       { name: "quit", description: "[Session] Exit interactive TUI REPL session" },
@@ -178,7 +258,7 @@ export class InteractiveModeController {
       `\x1b[1;33m[?]\x1b[0m \x1b[90mHelp\x1b[0m   ` +
       `\x1b[1;36m[Ctrl+S]\x1b[0m \x1b[90mSettings\x1b[0m   ` +
       `\x1b[1;35m[Alt+M]\x1b[0m \x1b[90mModel\x1b[0m   ` +
-      `\x1b[1;32m[/]\x1b[0m \x1b[90mCommands\x1b[0m   ` +
+      `\x1b[1;32m[PgUp/PgDn]\x1b[0m \x1b[90mScroll\x1b[0m   ` +
       `\x1b[1;34m[Tab]\x1b[0m \x1b[90mAutocomplete\x1b[0m   ` +
       `\x1b[1;31m[Ctrl+C]\x1b[0m \x1b[90mQuit\x1b[0m`;
 
@@ -245,13 +325,14 @@ export class InteractiveModeController {
       if (activeInlineView || isLoadingInlineView) return;
       let settingsModal: SettingsModal;
       const closeFn = () => closeInlineView(settingsModal);
+      const currentEffort = monolith.reasoningEffortController.getEffortLevel();
       const settingItems: SettingItem[] = [
         {
           id: "reasoning_effort",
           label: "Reasoning Effort Level",
           description: "Controls the depth of model reasoning and reflection before output generation.",
-          currentValue: "medium",
-          values: ["none", "low", "medium", "high"],
+          currentValue: currentEffort,
+          values: ["low", "medium", "high", "max"],
         },
         {
           id: "stderr_guard",
@@ -286,11 +367,15 @@ export class InteractiveModeController {
       settingsModal = new SettingsModal(
         settingItems,
         (id, newValue) => {
+          if (id === "reasoning_effort") {
+            monolith.reasoningEffortController.setEffortLevel(newValue as ReasoningEffortLevel);
+          }
           const cardBox = new Box(1, 0, (str: string) => `\x1b[48;5;236m${str}\x1b[0m`);
           cardBox.addChild(
             new Markdown(`\x1b[32mUpdated Setting:\x1b[0m \`${id}\` = \`${newValue}\``, 0, 0, DEFAULT_MARKDOWN_THEME)
           );
           historyContainer.addChild(cardBox);
+          tui.requestRender();
         },
         closeFn
       );
@@ -368,9 +453,13 @@ export class InteractiveModeController {
     };
 
     const updateHeader = () => {
+      const turnCount = monolith.sessionContext.turnCount;
+      const memCount = monolith.sessionMemoryStore.listMemories().length;
+      const memSuffix = memCount > 0 ? `  │  \x1b[90mMem:\x1b[0m \x1b[36m${memCount}\x1b[0m` : "";
       headerText.setText(
         `\x1b[1;35m❖ LUMI AGENT OS v0.1.0\x1b[0m  │  ` +
           `\x1b[90mModel:\x1b[0m \x1b[1;36m${monolith.config.modelName}\x1b[0m  │  ` +
+          `\x1b[90mFrame:\x1b[0m \x1b[1;33m#${turnCount}\x1b[0m${memSuffix}  │  ` +
           `\x1b[90mHealth:\x1b[0m \x1b[1;32m[OPERATIONAL]\x1b[0m`
       );
       headerBox.invalidate();
@@ -466,7 +555,9 @@ export class InteractiveModeController {
       }
     };
 
-    // Global Key Listener for shortcuts
+    let stopTui: () => void = () => {};
+
+    // Global Key Listener for shortcuts & navigation beyond the fold
     tui.addInputListener((data: string) => {
       if (
         activeTurnAbortController &&
@@ -480,11 +571,42 @@ export class InteractiveModeController {
         return { consume: true };
       }
 
-      // Inline views own their keyboard input. In particular, a legacy terminal
-      // encodes both Enter and Ctrl+M as "\r", so handling Ctrl+M globally while
-      // the model selector is focused would swallow its confirm key.
+      // Inline views own their keyboard input.
       if (activeInlineView) {
+        if (matchesKey(data, "escape")) {
+          closeInlineView(activeInlineView);
+          return { consume: true };
+        }
         return undefined;
+      }
+
+      // Handle Ctrl+C when idle: clear dirty input if typing, or quit if empty
+      if (matchesKey(data, "ctrl+c")) {
+        const text = editor.getText();
+        if (text.trim().length > 0) {
+          editor.setText("");
+          footerText.setText(defaultFooterText);
+          tui.requestRender();
+          return { consume: true };
+        }
+        stopTui();
+        return { consume: true };
+      }
+
+      // Handle Ctrl+D (EOF) on empty line
+      if (matchesKey(data, "ctrl+d") || data === "\x04") {
+        if (editor.getText().trim().length === 0) {
+          stopTui();
+          return { consume: true };
+        }
+      }
+
+      // Handle Ctrl+L (Clear screen history)
+      if (matchesKey(data, "ctrl+l") || data === "\x0c") {
+        historyContainer.clear();
+        historyScrollView.scrollTo(0);
+        tui.requestRender();
+        return { consume: true };
       }
 
       if (data === "?" && editor.getText().trim() === "") {
@@ -503,6 +625,30 @@ export class InteractiveModeController {
         (matchesKey(data, "ctrl+m") && !matchesKey(data, "enter"));
       if (isModelShortcut) {
         openModelSelectModal();
+        return { consume: true };
+      }
+
+      // Direct Jump keys: Home / End
+      if (matchesKey(data, "home")) {
+        historyScrollView.scrollTo(0);
+        tui.requestRender();
+        return { consume: true };
+      }
+      if (matchesKey(data, "end")) {
+        historyScrollView.scrollTo(Number.MAX_SAFE_INTEGER);
+        tui.requestRender();
+        return { consume: true };
+      }
+
+      // History scrolling beyond the fold: PageUp, PageDown, Shift+Up/Down, Ctrl+U/D
+      if (matchesKey(data, "pageUp") || matchesKey(data, "shift+up") || matchesKey(data, "ctrl+u")) {
+        historyScrollView.scrollBy(-12);
+        tui.requestRender();
+        return { consume: true };
+      }
+      if (matchesKey(data, "pageDown") || matchesKey(data, "shift+down") || (matchesKey(data, "ctrl+d") && editor.getText().trim().length > 0)) {
+        historyScrollView.scrollBy(12);
+        tui.requestRender();
         return { consume: true };
       }
       return undefined;
@@ -524,7 +670,7 @@ export class InteractiveModeController {
     return new Promise<void>((resolve) => {
       let isRunning = true;
 
-      const stopTui = () => {
+      stopTui = () => {
         if (!isRunning) return;
         isRunning = false;
         tui.stop();
@@ -595,6 +741,7 @@ export class InteractiveModeController {
 
         if (input === "/clear") {
           historyContainer.clear();
+          historyScrollView.scrollTo(0);
           tui.requestRender();
           return;
         }
@@ -620,16 +767,123 @@ export class InteractiveModeController {
 
         if (input === "/snapshot") {
           const snap = monolith.createSnapshot();
+          updateHeader();
           const cardBox = new Box(1, 0, (str: string) => `\x1b[48;5;236m${str}\x1b[0m`);
           cardBox.addChild(
             new Markdown(
-              `### Immutable State Snapshot Created\n\n- Snapshot ID: \`${snap.snapshotId}\`\n- Frame Index: \`#${snap.frameIndex}\``,
+              `### Immutable State Snapshot Created\n\n- Snapshot ID: \`${snap.snapshotId}\`\n- Frame Index: \`#${snap.frameIndex}\`\n\n*Use \`/rewind ${snap.snapshotId}\` to return to this frame.*`,
               0,
               0,
               DEFAULT_MARKDOWN_THEME
             )
           );
           historyContainer.addChild(cardBox);
+          historyScrollView.scrollToEnd();
+          tui.requestRender();
+          return;
+        }
+
+        if (input === "/snapshots" || input === "/snapshot list") {
+          const snaps = monolith.snapshotStorageIndex.listSnapshotsForSession(monolith.sessionContext.sessionId);
+          const cardBox = new Box(1, 0, (str: string) => `\x1b[48;5;236m${str}\x1b[0m`);
+          if (snaps.length === 0) {
+            cardBox.addChild(
+              new Markdown(
+                `### Session Snapshots Index\n\nNo snapshots found in active session. Use \`/snapshot\` to capture a checkpoint.`,
+                0,
+                0,
+                DEFAULT_MARKDOWN_THEME
+              )
+            );
+          } else {
+            const listItems = snaps
+              .map((s) => `- Snapshot: \`${s.snapshotId}\` · Frame: \`#${s.frameIndex}\` · Created: \`${new Date(s.createdAt).toLocaleTimeString()}\``)
+              .join("\n");
+            cardBox.addChild(
+              new Markdown(
+                `### Session Snapshots Index (${snaps.length} snapshots)\n\n${listItems}\n\n*To rollback: type \`/rewind <snapshotId>\`*`,
+                0,
+                0,
+                DEFAULT_MARKDOWN_THEME
+              )
+            );
+          }
+          historyContainer.addChild(cardBox);
+          historyScrollView.scrollToEnd();
+          tui.requestRender();
+          return;
+        }
+
+        if (input === "/rewind" || input.startsWith("/rewind ") || input.startsWith("/rollback ")) {
+          const parts = input.split(" ");
+          const targetId = parts.length > 1 ? parts[1]!.trim() : undefined;
+          const cardBox = new Box(1, 0, (str: string) => `\x1b[48;5;236m${str}\x1b[0m`);
+
+          let targetSnapshot: GameStateSnapshot | undefined;
+          if (targetId) {
+            targetSnapshot = monolith.snapshotStorageIndex.getSnapshot(targetId) || monolith.snapshotLruCache.get(targetId);
+          } else {
+            const snaps = monolith.snapshotStorageIndex.listSnapshotsForSession(monolith.sessionContext.sessionId);
+            if (snaps.length > 0) {
+              const last = snaps[snaps.length - 1];
+              targetSnapshot = monolith.snapshotStorageIndex.getSnapshot(last.snapshotId);
+            }
+          }
+
+          if (targetSnapshot) {
+            monolith.rewindToSnapshot(targetSnapshot);
+            updateHeader();
+            cardBox.addChild(
+              new Markdown(
+                `\x1b[1;32m[✓] State Rewound Successfully\x1b[0m\n\n- Snapshot ID: \`${targetSnapshot.snapshotId}\`\n- Restored Frame: \`#${targetSnapshot.frameIndex}\`\n- Restored Messages: \`${targetSnapshot.messages.length}\``,
+                0,
+                0,
+                DEFAULT_MARKDOWN_THEME
+              )
+            );
+          } else {
+            cardBox.addChild(
+              new Markdown(
+                `\x1b[1;31m[✗] Snapshot Not Found:\x1b[0m ${targetId ? `\`${targetId}\`` : "No snapshots available to rewind."}\n\nUse \`/snapshots\` to view available snapshot checkpoints.`,
+                0,
+                0,
+                DEFAULT_MARKDOWN_THEME
+              )
+            );
+          }
+          historyContainer.addChild(cardBox);
+          historyScrollView.scrollToEnd();
+          tui.requestRender();
+          return;
+        }
+
+        if (input === "/memory" || input === "/facts") {
+          const memories = monolith.sessionMemoryStore.listMemories();
+          const cardBox = new Box(1, 0, (str: string) => `\x1b[48;5;236m${str}\x1b[0m`);
+          if (memories.length === 0) {
+            cardBox.addChild(
+              new Markdown(
+                `### Active Memory Store & Facts\n\nNo persistent memories recorded in this session.\n\n*To record a persistent fact, type: \`remember: <fact>\`*`,
+                0,
+                0,
+                DEFAULT_MARKDOWN_THEME
+              )
+            );
+          } else {
+            const memoryList = memories
+              .map((m) => `- **[${m.category.toUpperCase()}]** \`${m.key}\`: ${m.value}`)
+              .join("\n");
+            cardBox.addChild(
+              new Markdown(
+                `### Active Memory Store & Facts (${memories.length} entries)\n\n${memoryList}`,
+                0,
+                0,
+                DEFAULT_MARKDOWN_THEME
+              )
+            );
+          }
+          historyContainer.addChild(cardBox);
+          historyScrollView.scrollToEnd();
           tui.requestRender();
           return;
         }
@@ -681,17 +935,27 @@ export class InteractiveModeController {
             tickResult.response,
             Date.now() - activeTurnStartedAt
           );
+          if (tickResult.outcome === "completed") {
+            const followUps = activityTimeline.getFollowUpSuggestions();
+            if (followUps.length > 0) {
+              autocompleteProvider.setDynamicSuggestions(followUps);
+            }
+          }
+          const toolSection = formatUniversalToolSection(tickResult.toolResults ?? []);
+
           const responseBox = new Box(1, 0, (str: string) => `\x1b[48;5;237m${str}\x1b[0m`);
+          const durationStr = tickResult.durationMs ? ` · \x1b[90m${tickResult.durationMs}ms\x1b[0m` : "";
           responseBox.addChild(
             new Markdown(
-              `\x1b[1;35m✦ LUMI Monolith Engine [Frame #${tickResult.frameIndex}]\x1b[0m \x1b[90m(${tickResult.durationMs}ms)\x1b[0m\n\n${tickResult.response}`,
+              `\x1b[1;35m✦ LUMI Monolith Engine [Frame #${tickResult.frameIndex}]\x1b[0m${durationStr}\n\n${tickResult.response}${toolSection}`,
               0,
               0,
               DEFAULT_MARKDOWN_THEME
             )
           );
           historyContainer.addChild(responseBox);
-          historyScrollView.scrollTo(Number.MAX_SAFE_INTEGER);
+          updateHeader();
+          historyScrollView.scrollToEnd();
         } catch (err: unknown) {
           const errorMsg = err instanceof Error ? err.message : String(err);
           const safeErrorMsg = sanitizeProgressText(errorMsg, 700) || "Unknown engine error";
@@ -701,14 +965,15 @@ export class InteractiveModeController {
             new Markdown(`\x1b[1;31m⚠ Engine Tick Error:\x1b[0m ${safeErrorMsg}`, 0, 0, DEFAULT_MARKDOWN_THEME)
           );
           historyContainer.addChild(errorBox);
-          historyScrollView.scrollTo(Number.MAX_SAFE_INTEGER);
+          updateHeader();
+          historyScrollView.scrollToEnd();
         } finally {
           clearInterval(progressInterval);
           if (activeTurnAbortController === turnAbortController) {
             activeTurnAbortController = null;
           }
           footerText.setText(defaultFooterText);
-          historyScrollView.scrollTo(Number.MAX_SAFE_INTEGER);
+          historyScrollView.scrollToEnd();
           tui.requestRender();
         }
       };
@@ -720,7 +985,7 @@ export class InteractiveModeController {
   private async startFallbackReadlineSession(monolith: LumiMonolith): Promise<void> {
     console.log("\x1b[1;36m========================================================\x1b[0m");
     console.log("\x1b[1;36m   LUMI Agent CLI - Interactive REPL (Fallback Mode)    \x1b[0m");
-    console.log("\x1b[90m   Commands: /setup, /settings, /health, /snapshot, /about, /clear, /exit  \x1b[0m");
+    console.log("\x1b[90m   Commands: /help, /model, /setup, /settings, /health, /providers, /snapshot, /about, /clear, /exit  \x1b[0m");
     console.log("\x1b[1;36m========================================================\x1b[0m\n");
 
     const rl = readline.createInterface({
@@ -752,8 +1017,66 @@ export class InteractiveModeController {
           return;
         }
 
-        if (input === "/health" || input === "/status") {
+        if (input === "/help" || input === "?") {
+          console.log("\x1b[1;36m--- LUMI REPL Commands Reference ---\x1b[0m");
+          console.log("  \x1b[35m/model [name]\x1b[0m : Switch active LLM model");
+          console.log("  \x1b[35m/settings\x1b[0m     : View active engine configuration");
+          console.log("  \x1b[35m/health\x1b[0m       : Display subsystem health diagnostics");
+          console.log("  \x1b[35m/providers\x1b[0m    : Run provider connectivity test");
+          console.log("  \x1b[35m/snapshot\x1b[0m     : Create immutable state snapshot");
+          console.log("  \x1b[35m/about\x1b[0m        : Display monolith specifications");
+          console.log("  \x1b[35m/clear\x1b[0m        : Clear screen");
+          console.log("  \x1b[35m/exit\x1b[0m         : Quit REPL");
+          rl.prompt();
+          return;
+        }
+
+        if (input === "/model" || input.startsWith("/model ")) {
+          const parts = input.split(" ");
+          if (parts.length > 1 && parts[1]!.trim().length > 0) {
+            const targetModel = parts[1]!.trim();
+            monolith.setModel(targetModel);
+            console.log(`\x1b[1;32m[✓] Active LLM Model set to:\x1b[0m '${targetModel}'`);
+          } else {
+            console.log(`\x1b[36mActive Model:\x1b[0m ${monolith.config.modelName}`);
+          }
+          rl.prompt();
+          return;
+        }
+
+        if (input === "/settings" || input === "/config") {
+          console.log("\x1b[1;36m--- Active Framework Settings ---\x1b[0m");
+          console.log(`  Reasoning Effort : \x1b[33m${monolith.reasoningEffortController.getEffortLevel()}\x1b[0m`);
+          console.log(`  Active Model     : \x1b[33m${monolith.config.modelName}\x1b[0m`);
+          console.log(`  Session ID       : \x1b[33m${monolith.sessionContext.sessionId}\x1b[0m`);
+          console.log(`  Frame Turn Count : \x1b[33m#${monolith.sessionContext.turnCount}\x1b[0m`);
+          rl.prompt();
+          return;
+        }
+
+        if (input === "/providers") {
+          console.log("\x1b[1;36mTesting provider connections...\x1b[0m");
+          const providers = ["anthropic", "openai", "google", "deepseek", "openai-codex"];
+          for (const p of providers) {
+            const res = await monolith.setupWizard.testProviderConnection(p);
+            const icon = res.passed ? "\x1b[32m[PASS]\x1b[0m" : "\x1b[31m[FAIL]\x1b[0m";
+            console.log(`  ${icon} ${p.toUpperCase().padEnd(14)} : ${res.details}`);
+          }
+          rl.prompt();
+          return;
+        }
+
+        if (input === "/health" || input === "/status" || input === "/diagnostics") {
           console.log("\x1b[32mOverall Subsystem Status:\x1b[0m", monolith.systemHealthAggregator.getOverallStatus());
+          rl.prompt();
+          return;
+        }
+
+        if (input === "/about") {
+          console.log("\x1b[1;36m--- LUMI Monolith System Specifications ---\x1b[0m");
+          console.log("  Contiguous ArrayBuffer Slab : 16MB (Zero-GC)");
+          console.log("  Turn Tick SLA               : < 1.0ms");
+          console.log("  State Rewind SLA            : < 0.1ms O(1)");
           rl.prompt();
           return;
         }
@@ -761,6 +1084,58 @@ export class InteractiveModeController {
         if (input === "/snapshot") {
           const snap = monolith.createSnapshot();
           console.log(`\x1b[32mCreated Snapshot ID:\x1b[0m '${snap.snapshotId}' at Frame #${snap.frameIndex}`);
+          rl.prompt();
+          return;
+        }
+
+        if (input === "/snapshots" || input === "/snapshot list") {
+          const snaps = monolith.snapshotStorageIndex.listSnapshotsForSession(monolith.sessionContext.sessionId);
+          if (snaps.length === 0) {
+            console.log("\x1b[33mNo snapshots found in active session.\x1b[0m");
+          } else {
+            console.log(`\x1b[1;36m--- Session Snapshots (${snaps.length}) ---\x1b[0m`);
+            for (const s of snaps) {
+              console.log(`  - \x1b[35m${s.snapshotId}\x1b[0m (Frame #${s.frameIndex} · ${new Date(s.createdAt).toLocaleTimeString()})`);
+            }
+          }
+          rl.prompt();
+          return;
+        }
+
+        if (input === "/rewind" || input.startsWith("/rewind ") || input.startsWith("/rollback ")) {
+          const parts = input.split(" ");
+          const targetId = parts.length > 1 ? parts[1]!.trim() : undefined;
+          let targetSnapshot: GameStateSnapshot | undefined;
+          if (targetId) {
+            targetSnapshot = monolith.snapshotStorageIndex.getSnapshot(targetId) || monolith.snapshotLruCache.get(targetId);
+          } else {
+            const snaps = monolith.snapshotStorageIndex.listSnapshotsForSession(monolith.sessionContext.sessionId);
+            if (snaps.length > 0) {
+              const last = snaps[snaps.length - 1];
+              targetSnapshot = monolith.snapshotStorageIndex.getSnapshot(last.snapshotId);
+            }
+          }
+
+          if (targetSnapshot) {
+            monolith.rewindToSnapshot(targetSnapshot);
+            console.log(`\x1b[1;32m[✓] State rewound to Frame #${targetSnapshot.frameIndex} (Snapshot: '${targetSnapshot.snapshotId}')\x1b[0m`);
+          } else {
+            console.log(`\x1b[1;31m[✗] Snapshot not found.\x1b[0m Run \x1b[33m/snapshots\x1b[0m to list checkpoints.`);
+          }
+          rl.prompt();
+          return;
+        }
+
+        if (input === "/memory" || input === "/facts") {
+          const memories = monolith.sessionMemoryStore.listMemories();
+          if (memories.length === 0) {
+            console.log("\x1b[33mNo persistent memories recorded in this session.\x1b[0m");
+          } else {
+            console.log(`\x1b[1;36m--- Persistent Memory Store (${memories.length}) ---\x1b[0m`);
+            for (const m of memories) {
+              console.log(`  - \x1b[36m[${m.category.toUpperCase()}]\x1b[0m ${m.key}: ${m.value}`);
+            }
+          }
           rl.prompt();
           return;
         }

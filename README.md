@@ -20,11 +20,11 @@
 |---|---|---|
 | 📌 [Executive Brief](#-why-lumi-joy-the-architectural-imperative) | 📖 [Author's Preface](PREFACE.md) | ⚡ [Composition Root](src/index.ts) |
 | ⚡ [Comparison Matrix](#-comparison-matrix--empirical-benchmarks) | 🎮 [Game Engine Paradigm](#-inspired-by-game-engines-deterministic-agent-architecture) | 🏭 [Engine Factory](src/factories/monolith-factory.ts) |
-| 🏗️ [Architecture Tree](#%EF%B8%8F-subsystem-architecture--file-tree) | 🎓 [Academic Whitepaper](.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md) | ⚙️ [Core Abstracts](src/core/abstracts/) |
-| 🧪 [Osmosis Methodology](#-the-osmosis-learning-methodology) | 📦 [1-to-1 Package Matrix](.wiki/package-mappings/PACKAGE-MAPPING-MATRIX.md) | 🧠 [Agents Tier](src/agents/) |
-| 🚀 [Quick Start Guide](#-quick-start--installation) | 🧠 [Handoff Strategy Guide](.wiki/agent/osmosis-methodology.md) | 💾 [Sessions Tier](src/sessions/) |
-| 📡 [Live Activity Streaming](#-live-agent-activity-streaming) | 📋 [API Reference Guide](.wiki/agent/api-reference.md) | 🖥️ [TUI Components](src/tui/components/) |
-| 🤝 [Contributing Guide](CONTRIBUTING.md) | 📖 [Game Engine ADR-008](.wiki/adr/ADR-008-deterministic-game-engine-architecture.md) | 📜 [Core Contracts](src/core/contracts/) |
+| 🏗️ [Architecture Tree](#%EF%B8%8F-subsystem-architecture--file-tree) | ⚡ [Runtime Universal Pass](.wiki/agent/runtime-universal-pass.md) | ⚙️ [Core Abstracts](src/core/abstracts/) |
+| 🧪 [Osmosis Methodology](#-the-osmosis-learning-methodology) | 🏗️ [Runtime Architecture](docs/RUNTIME_ARCHITECTURE_GUIDE.md) | 🧠 [Agents Tier](src/agents/) |
+| 🚀 [Quick Start Guide](#-quick-start--installation) | 🎓 [Academic Whitepaper](.wiki/whitepaper/AKD-DSO-ACADEMIC-WHITEPAPER.md) | 💾 [Sessions Tier](src/sessions/) |
+| 📡 [Live Activity Streaming](#-live-agent-activity-streaming) | 📦 [1-to-1 Package Matrix](.wiki/package-mappings/PACKAGE-MAPPING-MATRIX.md) | 🖥️ [TUI Components](src/tui/components/) |
+| 🤝 [Contributing Guide](CONTRIBUTING.md) | 📋 [API Reference Guide](.wiki/agent/api-reference.md) | 📜 [Core Contracts](src/core/contracts/) |
 
 ---
 
@@ -54,6 +54,35 @@ By reframing an AI agent runtime as a deterministic game engine kernel (`tick()`
 
 — **William Andrew Cruz** (`bozoegg` / `CardSorting`), *Primary Author & Inventor*  
 📖 *Read the complete [Author's Preface & Dedication](PREFACE.md).*
+
+---
+
+## 🌟 Executive Summary: What LUMI-JOY Is & Why This Matters
+
+**LUMI-JOY** is an enterprise-grade TypeScript autonomous AI agent framework engineered from the ground up like a **Deterministic Game Engine Kernel**.
+
+### The Core Problem in Modern AI Agents
+Traditional AI agent frameworks (such as LangChain, AutoGen, CrewAI, and uncoordinated REST micro-packages) treat LLM interactions as loose asynchronous network wrappers. This approach incurs severe structural bottlenecks:
+- **Framework Soup & Latency**: Multi-package microservices and IPC queues introduce $14\text{ ms} - 500\text{ ms}$ of serialization overhead per turn before model reasoning even begins.
+- **State Drift & Tool Desynchronization**: Multi-turn agent loops lose context and produce non-deterministic file edits when intermediate tool steps fail.
+- **Garbage Collection (GC) Stutter**: Generating thousands of short-lived V8 heap objects per turn triggers Node.js garbage collection sweeps, causing stutter and memory pressure during live streaming.
+- **Costly Re-Execution**: When an agent makes a mistake on turn 8, traditional frameworks require restarting the entire session from scratch.
+
+### The Architectural Breakthrough: Game Engine Architecture for AI Agents
+LUMI-JOY eliminates software friction by applying proven principles from high-performance video game physics and rendering engines:
+
+| Core Architecture Pillar | Implementation Mechanism | Concrete Impact & Measured Result |
+| :--- | :--- | :--- |
+| 🕹️ **Deterministic Frame Ticks (`tick()`)** | Single-threaded atomic frame lifecycle (`Input -> Context Assembly -> Provider Dispatch -> State Mutation -> Telemetry`) | **$0.17\text{ ms}$ fast-path mean latency**; eliminates microservice queues |
+| ⚡ **Zero-GC Contiguous Memory Slab** | 16MB pre-allocated `ArrayBuffer` slab (`ArenaAllocator`) with static cached UTF-8 encoders | **Zero Garbage Collection pauses** during live token streaming and rapid multi-tool loops |
+| 🚀 **High-Throughput Execution** | In-process monolithic dispatch bypassing network IPC | **$5761.61\text{ frames/second}$** throughput ($>5.7\times$ above the $1,000\text{ fps}$ SLA) |
+| ⏪ **$O(1)$ State Time-Travel (`rewindToSnapshot()`)** | Restores conversation transcripts, staged virtual files (`SessionVfs`), and memory facts (`SessionMemoryStore`) | **$0.027\text{ ms p95}$** instant rollback; enables multi-branch search (MCTS) |
+| 🖥️ **Differential Terminal User Interface** | Synchronized ANSI cell rendering (`\x1b[?2026h`), adaptive box borders, syntax highlighting, fuzzy autocomplete | **Zero visual flicker**; borders never wrap on split-screen terminals |
+
+### 🎯 Who This Is For & Why It Matters
+- **For Developers**: Instant feedback, zero UI tearing, instant state rollback (`/rewind`) during iterative debugging without restarting the agent or re-parsing transcripts, and sub-millisecond execution without garbage collection pauses.
+- **For AI Systems & Researchers**: Eliminating software friction enables high-frequency agent search techniques (Monte Carlo Tree Search, branch-and-bound, self-reflection loops) to run locally at thousands of frames per second instead of paying cloud microservice latency penalties.
+- **For Enterprises & Leaders**: Dramatic reduction in infrastructure compute costs, deterministic predictable behavior with 0 state drift, enterprise OAuth PKCE security, and Apache 2.0 open-source licensing backed by a defensive patent non-aggression pledge.
 
 ---
 
@@ -162,7 +191,7 @@ Traditional AI agent frameworks treat LLM interactions as loose async request/re
 
 ### Latest verified workspace baseline
 
-The authoritative run was generated on **2026-08-13T05:44:24.943Z** using Node.js `v23.5.0` on macOS ARM64. It passed:
+The authoritative run was generated on **2026-08-15T04:28:34.865Z** using Node.js `v23.5.0` on macOS ARM64. It passed:
 
 | Verification lane | Latest result |
 |---|---:|
@@ -237,6 +266,21 @@ const result = await lumi.tick({
 
 console.log("Agent Response:", result.response);
 ```
+
+### 🖥️ Interactive TUI & Slash Commands
+
+LUMI includes a high-performance differential-rendering Terminal User Interface (`lumi` or `npx tsx src/index.ts`):
+
+- **Shortcuts**: `?` (Help Modal), `Ctrl+S` (Settings), `Alt+M` (Model Selector), `Home`/`End` (Jump History), `PgUp`/`PgDn`/`Shift+Up/Down` (Scroll), `Ctrl+L` (Clear Screen), `Ctrl+C` (Clear/Quit), `Ctrl+D` (EOF Exit).
+- **Slash Commands**:
+  - `/snapshots` & `/rewind [id]`: Snapshot inspection and sub-millisecond state time-travel rollback.
+  - `/memory`: Active cognitive facts and rules inspector.
+  - `/model [name]`: Interactive model selector and active model switcher.
+  - `/settings`: Interactive reasoning effort configuration (`low`, `medium`, `high`, `max`).
+  - `/health`: Comprehensive subsystem operational diagnostics.
+  - `/providers`: Provider latency and authentication connectivity tests.
+
+📖 Read the complete [Runtime Architecture Guide](docs/RUNTIME_ARCHITECTURE_GUIDE.md) and [Runtime Universal Pass Guide](.wiki/agent/runtime-universal-pass.md).
 
 ### 🛠️ Common Operational Commands
 
@@ -428,7 +472,7 @@ To prevent code regression, file overwrites, and structural drift as new evoluti
 Traditional AI agent frameworks suffer from state drift, non-reproducible turns, microservice overhead, and V8 Garbage Collection pauses. Modeling the agent runtime like a **Deterministic Game Engine** establishes frame ticks (`tick()`), immutable state snapshots (`GameStateSnapshot`), sub-millisecond state rewind (`rewindToSnapshot()`), and a pre-allocated 16MB contiguous slab memory substrate (`ArenaAllocator`). This guarantees frame-perfect isolation, instant time-travel debugging, and zero-GC performance stability.
 
 ### Q: How does LUMI-JOY reduce AI infrastructure and cloud operating costs?
-By eliminating internal microservice RPC queues, LUMI-JOY keeps deterministic local orchestration in-process. The enforced floor is **$1,000$ local frames/second**; the latest host run observed **$8525.73$ frames/second**. These figures are local framework measurements—not provider responses, model tokens, or a universal server-capacity promise—and should be regenerated on deployment hardware.
+By eliminating internal microservice RPC queues, LUMI-JOY keeps deterministic local orchestration in-process. The enforced floor is **$1,000$ local frames/second**; the latest host run observed **$5761.61$ frames/second**. These figures are local framework measurements—not provider responses, model tokens, or a universal server-capacity promise—and should be regenerated on deployment hardware.
 
 ### Q: Which LLM providers and AI models are supported?
 LUMI-JOY natively supports major provider ecosystems including **OpenAI** (`gpt-4o`, `gpt-5`, `Codex`), **Anthropic** (`Claude 3.5 Sonnet`), and standard OpenAI-compatible proxy gateways. It features automatic model resolution, fallback routing, and PKCE OAuth 2.0 authentication.

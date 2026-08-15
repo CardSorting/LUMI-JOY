@@ -519,17 +519,21 @@ export class Markdown implements Component {
 
 			case "code": {
 				const indent = this.theme.codeBlockIndent ?? "  ";
+				const maxCodeWidth = Math.max(1, width - visibleWidth(indent));
 				lines.push(this.theme.codeBlockBorder(`\`\`\`${token.lang || ""}`));
-				if (this.theme.highlightCode) {
-					const highlightedLines = this.theme.highlightCode(token.text, token.lang);
-					for (const hlLine of highlightedLines) {
+				const rawHighlighted = this.theme.highlightCode
+					? this.theme.highlightCode(token.text, token.lang)
+					: token.text.split("\n").map((line: string) => this.theme.codeBlock(line));
+
+				for (const hlLine of rawHighlighted) {
+					if (visibleWidth(hlLine) <= maxCodeWidth) {
 						lines.push(`${indent}${hlLine}`);
-					}
-				} else {
-					// Split code by newlines and style each line
-					const codeLines = token.text.split("\n");
-					for (const codeLine of codeLines) {
-						lines.push(`${indent}${this.theme.codeBlock(codeLine)}`);
+					} else {
+						const wrapped = wrapTextWithAnsi(hlLine, maxCodeWidth);
+						for (let wi = 0; wi < wrapped.length; wi++) {
+							const prefix = wi === 0 ? indent : `${indent}\x1b[90m↳ \x1b[0m`;
+							lines.push(`${prefix}${wrapped[wi]}`);
+						}
 					}
 				}
 				lines.push(this.theme.codeBlockBorder("```"));

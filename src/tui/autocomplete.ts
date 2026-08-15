@@ -162,7 +162,7 @@ async function walkDirectoryWithFd(
 		}
 
 		const child = spawn(fdPath, args, {
-			stdio: ["ignore", "pipe", "pipe"],
+			stdio: ["ignore", "pipe", "ignore"],
 		});
 		let stdout = "";
 		let resolved = false;
@@ -220,6 +220,7 @@ export interface AutocompleteItem {
 	value: string;
 	label: string;
 	description?: string;
+	kind?: "command" | "file" | "suggestion" | "argument";
 }
 
 type Awaitable<T> = T | Promise<T>;
@@ -269,16 +270,24 @@ export interface AutocompleteProvider {
 	shouldTriggerFileCompletion?(lines: string[], cursorLine: number, cursorCol: number): boolean;
 }
 
-// Combined provider that handles both slash commands and file paths
 export class CombinedAutocompleteProvider implements AutocompleteProvider {
 	private commands: (SlashCommand | AutocompleteItem)[];
 	private basePath: string;
 	private fdPath: string | null;
+	private dynamicSuggestions: string[] = [];
 
 	constructor(commands: (SlashCommand | AutocompleteItem)[] = [], basePath: string, fdPath: string | null = null) {
 		this.commands = commands;
 		this.basePath = basePath;
 		this.fdPath = fdPath;
+	}
+
+	setDynamicSuggestions(suggestions: string[]): void {
+		this.dynamicSuggestions = [...suggestions];
+	}
+
+	getDynamicSuggestions(): string[] {
+		return [...this.dynamicSuggestions];
 	}
 
 	async getSuggestions(
@@ -289,6 +298,35 @@ export class CombinedAutocompleteProvider implements AutocompleteProvider {
 	): Promise<AutocompleteSuggestions | null> {
 		const currentLine = lines[cursorLine] || "";
 		const textBeforeCursor = currentLine.slice(0, cursorCol);
+
+		// If prompt is empty or forced or matches dynamic suggestions, present them
+		if (this.dynamicSuggestions.length > 0 && !textBeforeCursor.startsWith("/") && !textBeforeCursor.startsWith("@")) {
+			const query = textBeforeCursor.trim();
+			if (query === "" || options.force) {
+				return {
+					items: this.dynamicSuggestions.map((s) => ({
+						value: s,
+						label: s,
+						description: "💡 Next Action",
+						kind: "suggestion" as const,
+					})),
+					prefix: textBeforeCursor,
+				};
+			}
+
+			const filtered = fuzzyFilter(this.dynamicSuggestions, query, (s) => s);
+			if (filtered.length > 0) {
+				return {
+					items: filtered.map((s) => ({
+						value: s,
+						label: s,
+						description: "💡 Next Action",
+						kind: "suggestion" as const,
+					})),
+					prefix: textBeforeCursor,
+				};
+			}
+		}
 
 		const atPrefix = this.extractAtPrefix(textBeforeCursor);
 		if (atPrefix) {
@@ -379,6 +417,17 @@ export class CombinedAutocompleteProvider implements AutocompleteProvider {
 		item: AutocompleteItem,
 		prefix: string,
 	): { lines: string[]; cursorLine: number; cursorCol: number } {
+		// Check if completing a dynamic suggestion (replaces line content cleanly)
+		if (item.kind === "suggestion" || this.dynamicSuggestions.includes(item.value)) {
+			const newLines = [...lines];
+			newLines[cursorLine] = item.value;
+			return {
+				lines: newLines,
+				cursorLine,
+				cursorCol: item.value.length,
+			};
+		}
+
 		const currentLine = lines[cursorLine] || "";
 		const beforePrefix = currentLine.slice(0, cursorCol - prefix.length);
 		const afterCursor = currentLine.slice(cursorCol);
@@ -716,13 +765,21 @@ export class CombinedAutocompleteProvider implements AutocompleteProvider {
 		return score;
 	}
 
-	// Fuzzy file search using fd (fast, respects .gitignore)
+	// Fuzzy file search using fd (fast, respects .gitignore, with pure TS fallback)
 	private async getFuzzyFileSuggestions(
 		query: string,
 		options: { isQuotedPrefix: boolean; signal: AbortSignal },
 	): Promise<AutocompleteItem[]> {
-		if (!this.fdPath || options.signal.aborted) {
+		if (options.signal.aborted) {
 			return [];
+		}
+
+		if (!this.fdPath) {
+			const fallback = this.getFileSuggestions(query);
+			return fallback.map((item) => ({
+				...item,
+				kind: "file" as const,
+			}));
 		}
 
 		try {

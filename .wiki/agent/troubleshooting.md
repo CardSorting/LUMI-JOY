@@ -106,6 +106,14 @@ If an autonomous turn fails or circuit breakers trip:
 3. **Check for anti-oscillation guards**: If `[ANTI_OSCILLATION_GUARD]` is flagged, the agent is repeating the same failing edits across attempts; pivot to structural refactoring instead of localized patching.
 4. **Reset or cool down circuit breakers**: If `circuitBreakerTripped` is true, wait for the configured cooldown period or call `gate.resetCircuitBreaker(gateId)`.
 
+## Snapshot Time-Travel & State Rollback Diagnostics
+
+When diagnosing state snapshots or using `/rewind`:
+
+1. **Snapshot not found**: Run `/snapshots` to inspect all active snapshot identifiers and creation timestamps in the active session.
+2. **Deterministic Rewind**: Calling `/rewind <snapshotId>` restores the conversation transcript, frame index counter, virtual filesystem staging overlays (`SessionVfs`), and cognitive memory facts (`SessionMemoryStore`) in $< 0.05\text{ ms}$.
+3. **Memory Store Inspection**: Run `/memory` or `/facts` to view all currently active persistent rules, user facts, and troubleshooting insights.
+
 ## Repository verification
 
 Run the full local gate after changing provider dispatch, activity mapping, TUI behavior, or setup:

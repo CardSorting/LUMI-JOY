@@ -15,6 +15,14 @@ Source: [`src/index.ts`](../../src/index.ts)
 - `rewindToSnapshot(snapshot: GameStateSnapshot): void` performs $O(1)$ time-travel state restoration to a target snapshot ($<0.1\text{ ms}$ warmed p95).
 - `forkSession(newSessionId?: string): LumiMonolith` forks game engine session state into an isolated child engine instance for subagent swarms.
 
+### `InteractiveModeController`
+
+Source: [`src/agents/extensions/execution/interactive-mode-controller.ts`](../../src/agents/extensions/execution/interactive-mode-controller.ts)
+
+- `startInteractiveSession(monolith: LumiMonolith): Promise<void>` initializes the differential-rendering TUI alt-screen interface with live streaming progress, multi-language syntax highlighting, and autocomplete.
+- `startFallbackReadlineSession(monolith: LumiMonolith): Promise<void>` initializes the non-TTY stream readline REPL with full slash command parity.
+- Evaluates slash commands: `/help`, `/model`, `/settings`, `/snapshots`, `/rewind`, `/memory`, `/health`, `/providers`, `/setup`, `/about`, `/clear`, `/exit`.
+
 ## Turn and progress contracts
 
 Source: [`src/core/contracts/agent.contracts.ts`](../../src/core/contracts/agent.contracts.ts)

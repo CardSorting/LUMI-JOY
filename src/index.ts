@@ -708,6 +708,21 @@ export class LumiMonolith implements IAgentEngine {
   rewindToSnapshot(snapshot: GameStateSnapshot): void {
     this.sessionStore.rewindToSnapshot(snapshot);
     this.sessionContext.turnCount = snapshot.frameIndex;
+    if (snapshot.memories) {
+      this.sessionMemoryStore.clear();
+      for (const m of snapshot.memories) {
+        const cat = (m.category === "rule" || m.category === "troubleshooting" || m.category === "ki")
+          ? m.category
+          : "fact";
+        this.sessionMemoryStore.saveMemory(m.key, m.value, cat);
+      }
+    }
+    if (snapshot.stagedFiles) {
+      this.sessionVfs.clear();
+      for (const file of snapshot.stagedFiles) {
+        this.sessionVfs.stageWrite(file.path, file.stagedContent);
+      }
+    }
   }
 
   /** Forks game engine state into a new isolated engine instance */

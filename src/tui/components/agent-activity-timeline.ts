@@ -151,11 +151,17 @@ export class AgentActivityTimeline implements Component {
   }
 
   render(width: number): string[] {
-    this.text.setText(this.buildText());
+    this.text.setText(this.buildText(width));
     return this.text.render(width);
   }
 
-  private buildText(): string {
+  private buildText(width = 80): string {
+    const boxWidth = Math.max(24, Math.min(width, 100));
+    const hr = "─".repeat(Math.max(10, boxWidth - 2));
+    const topBorder = `\x1b[90m╭${hr}╮\x1b[0m`;
+    const midBorder = `\x1b[90m├${hr}┤\x1b[0m`;
+    const botBorder = `\x1b[90m╰${hr}╯\x1b[0m`;
+
     const elapsed = this.formatElapsed(this.elapsedMs);
     const state = this.terminalStatus === "completed"
       ? `\x1b[1;32m✓ Completed in ${elapsed}\x1b[0m`
@@ -197,22 +203,22 @@ export class AgentActivityTimeline implements Component {
     ];
     const hidden = this.order.length - visibleIds.length;
     const rows: string[] = [
-      `\x1b[90m╭─────────────────────────────────────────────────────────────────────────────╮\x1b[0m`,
+      topBorder,
       `  ${header}`,
     ];
 
     // Live Stage Pipeline in-flight or Executive Artifact Highlights on completion
     if (!isCompleted) {
-      rows.push(this.renderStagePipeline());
+      rows.push(this.renderStagePipeline(boxWidth));
     } else if (this.terminalStatus === "completed") {
       const highlights = this.renderCompletionHighlights();
       if (highlights.length > 0) {
         rows.push(...highlights);
       }
-      rows.push(this.renderStagePipeline());
+      rows.push(this.renderStagePipeline(boxWidth));
     }
 
-    rows.push(`\x1b[90m├─────────────────────────────────────────────────────────────────────────────┤\x1b[0m`);
+    rows.push(midBorder);
 
     if (hidden > 0) rows.push(`\x1b[90m  … ${hidden} earlier ${hidden === 1 ? "activity" : "activities"}\x1b[0m`);
     for (const id of visibleIds) {
@@ -228,16 +234,16 @@ export class AgentActivityTimeline implements Component {
     if (this.terminalStatus === "completed") {
       const suggestions = this.renderFollowUpSuggestions();
       if (suggestions.length > 0) {
-        rows.push(`\x1b[90m├─────────────────────────────────────────────────────────────────────────────┤\x1b[0m`);
+        rows.push(midBorder);
         rows.push(...suggestions);
       }
     }
 
-    rows.push(`\x1b[90m╰─────────────────────────────────────────────────────────────────────────────╯\x1b[0m`);
+    rows.push(botBorder);
     return rows.join("\n");
   }
 
-  private renderStagePipeline(): string {
+  private renderStagePipeline(width = 80): string {
     let activePhase: EngineProgressPhase = "thinking";
     for (let i = this.order.length - 1; i >= 0; i--) {
       const entry = this.entries.get(this.order[i]);
@@ -259,11 +265,65 @@ export class AgentActivityTimeline implements Component {
     const sVerify = isTool ? "\x1b[1;33m● Verify\x1b[0m" : (this.entriesHavePhase("tool") || this.entriesHavePhase("verifying")) ? "\x1b[32m✓ Verify\x1b[0m" : "\x1b[90mVerify\x1b[0m";
     const sReady = isReady ? "\x1b[1;35m● Ready\x1b[0m" : "\x1b[90mReady\x1b[0m";
 
-    return `  \x1b[90mStage:\x1b[0m ${sThink} \x1b[90m──▶\x1b[0m ${sPlan} \x1b[90m──▶\x1b[0m ${sWrite} \x1b[90m──▶\x1b[0m ${sVerify} \x1b[90m──▶\x1b[0m ${sReady}`;
+    const arrow = width < 65 ? " \x1b[90m→\x1b[0m " : " \x1b[90m──▶\x1b[0m ";
+    return `  \x1b[90mStage:\x1b[0m ${sThink}${arrow}${sPlan}${arrow}${sWrite}${arrow}${sVerify}${arrow}${sReady}`;
   }
 
   private entriesHavePhase(phase: EngineProgressPhase): boolean {
     return Array.from(this.entries.values()).some((e) => e.phase === phase && e.status === "completed");
+  }
+
+  getFollowUpSuggestions(): string[] {
+    const suggestions: string[] = [];
+    const entries = Array.from(this.entries.values());
+    const hasFailures = entries.some((e) => e.status === "failed");
+
+    // If an error or failed command occurred, prioritize error recovery
+    if (hasFailures) {
+      suggestions.push("Analyze error diagnostics and apply automated recovery fix");
+    }
+
+    // Inspect modified files
+    const writtenFiles: string[] = [];
+    for (const entry of entries) {
+      if (entry.phase === "writing" && entry.status === "completed") {
+        if (entry.metadata?.files && entry.metadata.files.length > 0) {
+          writtenFiles.push(...entry.metadata.files);
+        } else if (entry.message.startsWith("Created ") || entry.message.startsWith("Updated ")) {
+          writtenFiles.push(entry.message.replace(/^(?:Created|Updated)\s+/, ""));
+        }
+      }
+    }
+    const uniqueFiles = Array.from(new Set(writtenFiles));
+    const hasTs = uniqueFiles.some((f) => /\.[jt]sx?$/i.test(f));
+    const hasCss = uniqueFiles.some((f) => /\.(css|scss|html)$/i.test(f));
+    const hasTest = uniqueFiles.some((f) => /(test|spec)\.[jt]sx?$/i.test(f));
+
+    // Check for active preview URL
+    const hasPreview = entries.some((e) => /https?:\/\/(?:localhost|127\.0\.0\.1):\d+/i.test(`${e.message} ${e.detail ?? ""}`));
+    if (hasPreview) {
+      suggestions.push("Test interactive functionality in the active browser preview");
+    }
+
+    if (hasTs && !hasTest) {
+      suggestions.push("Run tsc --noEmit and execute test suite to verify changes");
+      suggestions.push("Add automated unit tests for modified components");
+    } else if (hasTest) {
+      suggestions.push("Run full test suite and verify edge cases");
+    }
+
+    if (hasCss) {
+      suggestions.push("Verify responsive layout and theme styling across breakpoints");
+    }
+
+    const allText = entries.map((e) => `${e.message} ${e.detail ?? ""}`).join(" ").toLowerCase();
+    if (allText.includes("game") || allText.includes("canvas") || allText.includes("kart") || allText.includes("audio")) {
+      suggestions.push("Add sound effects and audio feedback using Web Audio API");
+      suggestions.push("Implement persistent high scores with localStorage");
+    }
+
+    suggestions.push("Review git diff and stage verified changes");
+    return Array.from(new Set(suggestions)).slice(0, 5);
   }
 
   private renderCompletionHighlights(): string[] {
@@ -303,28 +363,15 @@ export class AgentActivityTimeline implements Component {
   }
 
   private renderFollowUpSuggestions(): string[] {
-    const suggestions: string[] = [];
-    const allText = Array.from(this.entries.values())
-      .map((e) => `${e.message} ${e.detail ?? ""}`)
-      .join(" ")
-      .toLowerCase();
-
-    if (allText.includes("index.html") || allText.includes("game") || allText.includes("racing") || allText.includes("canvas")) {
-      suggestions.push("💡 Next: 'Add retro 8-bit sound effects using Web Audio API'");
-      suggestions.push("💡 Next: 'Add difficulty selection: Novice, Standard, Master'");
-    } else if (allText.includes("test") || allText.includes("check") || allText.includes("tsc")) {
-      suggestions.push("💡 Next: 'Run full test coverage and verify boundary conditions'");
-    } else if (allText.includes("api") || allText.includes("server") || allText.includes("route")) {
-      suggestions.push("💡 Next: 'Add automated integration tests and OpenAPI docs'");
-    }
-
-    return suggestions.map((s) => `  \x1b[90m${s}\x1b[0m`);
+    const rawSuggestions = this.getFollowUpSuggestions();
+    return rawSuggestions.slice(0, 3).map((s) => `  \x1b[90m💡 Next (Tab to autofill):\x1b[0m \x1b[36m'${s}'\x1b[0m`);
   }
 
-  private phaseBadge(phase: string): string {
+  private phaseBadge(phase: string, attempt?: number): string {
+    const attemptTag = attempt && attempt > 1 ? ` #${attempt}` : "";
     switch (phase) {
       case "thinking":
-        return "\x1b[35m[Think]\x1b[0m";
+        return `\x1b[35m[Think${attemptTag}]\x1b[0m`;
       case "planning":
         return "\x1b[36m[Plan]\x1b[0m";
       case "tool":
@@ -336,7 +383,7 @@ export class AgentActivityTimeline implements Component {
       case "responding":
         return "\x1b[35m[Draft]\x1b[0m";
       case "connecting":
-        return "\x1b[90m[Init]\x1b[0m";
+        return `\x1b[90m[Init${attemptTag}]\x1b[0m`;
       default:
         return "";
     }
@@ -344,12 +391,15 @@ export class AgentActivityTimeline implements Component {
 
   private formatRow(event: EngineProgressEvent): string {
     const { icon, color } = this.statusStyle(event.status);
-    const badge = event.phase ? ` ${this.phaseBadge(event.phase)}` : "";
+    const badge = event.phase ? ` ${this.phaseBadge(event.phase, event.metadata?.attempt)}` : "";
     const detail = event.detail ? ` \x1b[90m— ${event.detail}\x1b[0m` : "";
     const duration = event.elapsedMs && event.elapsedMs >= 1000
       ? ` \x1b[90m(${this.formatElapsed(event.elapsedMs)})\x1b[0m`
       : "";
-    return `  ${color}${icon}\x1b[0m${badge} ${event.message}${detail}${duration}`;
+    const warning = event.metadata?.telemetry?.warning
+      ? ` \x1b[33m[⚠ ${event.metadata.telemetry.warning}]\x1b[0m`
+      : "";
+    return `  ${color}${icon}\x1b[0m${badge} ${event.message}${detail}${duration}${warning}`;
   }
 
   private settleActiveEntries(
