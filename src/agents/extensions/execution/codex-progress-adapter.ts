@@ -149,12 +149,16 @@ export class CodexProgressAdapter {
       case "reasoning": {
         // The SDK exposes this field as a readable reasoning summary, not raw
         // chain-of-thought. Keep it short and sanitized for the activity view.
-        const reasoningDetail = item.text?.trim() || "Analyzing requirements & formulating next action";
+        const cleanSummary = (item.text || "")
+          .replace(/^#+\s+/gm, "")
+          .replace(/\*\*/g, "")
+          .trim();
+        const reasoningDetail = cleanSummary || "Analyzing requirements & formulating next action";
         this.emit({
           activityId,
           phase: "thinking",
           status,
-          message: status === "completed" ? "Reasoning complete" : "Analyzing approach",
+          message: status === "completed" ? "Reasoning complete" : "Analyzing next action",
           detail: reasoningDetail,
           elapsedMs,
           metadata: this.activityMetadata({ itemType: item.type }),
@@ -164,14 +168,17 @@ export class CodexProgressAdapter {
       case "todo_list": {
         const completedSteps = item.items.filter((todo) => todo.completed).length;
         const nextStep = item.items.find((todo) => !todo.completed)?.text;
-        const detailParts = [`${completedSteps}/${item.items.length} steps complete`];
-        if (nextStep) detailParts.push(`Next: ${nextStep}`);
+        const statusLabel =
+          status === "completed"
+            ? `Plan completed (${completedSteps}/${item.items.length} steps)`
+            : `Executing plan [${completedSteps}/${item.items.length}]`;
+        const detailText = nextStep ? `Active step: "${nextStep}"` : `Completed ${completedSteps}/${item.items.length} steps`;
         this.emit({
           activityId,
           phase: "planning",
           status,
-          message: status === "completed" ? "Implementation plan complete" : "Updating implementation plan",
-          detail: detailParts.join(" · "),
+          message: statusLabel,
+          detail: detailText,
           elapsedMs,
           metadata: {
             ...this.activityMetadata(),
@@ -250,17 +257,17 @@ export class CodexProgressAdapter {
           this.countedTools.add(activityId);
           this.toolCount += 1;
         }
+        const toolAction = this.describeToolAction(item.server, item.tool);
         const toolName = `${sanitizeProgressText(item.server, 60)}/${sanitizeProgressText(item.tool, 60)}`;
-        const readableAction = item.tool.replace(/_/g, " ");
         this.emit({
           activityId,
           phase: status === "failed" ? "failed" : "tool",
           status,
           message: status === "failed"
-            ? `Tool '${item.tool}' failed`
+            ? `${toolAction} failed`
             : status === "completed"
-              ? `Tool '${item.tool}' complete`
-              : `Executing ${readableAction}`,
+              ? `${toolAction} complete`
+              : toolAction,
           detail: toolName,
           elapsedMs,
           metadata: this.activityMetadata({ itemType: item.type }),
@@ -411,18 +418,48 @@ export class CodexProgressAdapter {
 
   private describeCommandIntent(command: string): string {
     const trimmed = command.trim();
+    if (/rg\s+--files/i.test(trimmed)) return "Listing workspace file paths";
+
+    const rgQuery = trimmed.match(/rg\s+(?:-[a-zA-Z]+\s+)*["']([^"']+)["']/i);
+    if (rgQuery) return `Searching codebase for '${rgQuery[1]}'`;
+
     if (/^(?:rg|grep|ripgrep|ag)\b/i.test(trimmed)) return "Searching codebase";
-    if (/^(?:find|fd)\b/i.test(trimmed)) return "Locating files";
-    if (/^(?:ls|tree|dir)\b/i.test(trimmed)) return "Inspecting directory";
-    if (/^git\s+(?:status|diff|log|branch)/i.test(trimmed)) return "Inspecting Git state";
-    if (/^git\s+(?:add|commit|push|checkout)/i.test(trimmed)) return "Updating Git repository";
+    if (/^(?:find|fd)\b/i.test(trimmed)) return "Locating files in workspace";
+    if (/^(?:ls|dir)\b/i.test(trimmed)) return "Inspecting directory contents";
+    if (/^tree\b/i.test(trimmed)) return "Viewing workspace directory tree";
+
+    if (/^git\s+diff/i.test(trimmed)) return "Viewing Git code diffs";
+    if (/^git\s+status/i.test(trimmed)) return "Checking Git working tree status";
+    if (/^git\s+log/i.test(trimmed)) return "Viewing Git commit history";
+    if (/^git\s+commit\s+-m\s+["']([^"']+)["']/i.test(trimmed)) {
+      const msg = trimmed.match(/^git\s+commit\s+-m\s+["']([^"']+)["']/i)?.[1];
+      return msg ? `Committing: "${msg.slice(0, 36)}..."` : "Committing Git changes";
+    }
+    if (/^git\s+(?:add|commit|push|checkout|branch)/i.test(trimmed)) return "Updating Git repository";
+
     if (/^(?:tsc|npm run check|npm run typecheck)\b/i.test(trimmed)) return "Checking TypeScript types";
     if (/^(?:npm test|npm run test|vitest|jest|pytest)\b/i.test(trimmed)) return "Running test suite";
-    if (/^(?:npm run build|npm run compile|vite build|tsc -b)\b/i.test(trimmed)) return "Building project";
+    if (/^(?:npm run build|npm run compile|vite build|tsc -b)\b/i.test(trimmed)) return "Building production bundle";
     if (/^(?:npm install|npm i|yarn add|pnpm add|bun add)\b/i.test(trimmed)) return "Installing dependencies";
-    if (/^(?:npm run smoke|npm run benchmark)\b/i.test(trimmed)) return "Running benchmarks";
+    if (/^npm run smoke\b/i.test(trimmed)) return "Running runtime smoke checks";
+    if (/^npm run benchmark\b/i.test(trimmed)) return "Benchmarking performance SLAs";
     if (/^(?:cat|head|tail|view|read)\b/i.test(trimmed)) return "Reading file contents";
     return "Running workspace command";
+  }
+
+  private describeToolAction(_server: string, tool: string): string {
+    const t = tool.toLowerCase();
+    if (t === "replace_file_content") return "Patching file";
+    if (t === "multi_replace_file_content") return "Patching code blocks";
+    if (t === "write_to_file") return "Writing file";
+    if (t === "view_file") return "Reading file";
+    if (t === "grep_search") return "Searching files";
+    if (t === "list_dir") return "Listing directory";
+    if (t === "run_command") return "Executing shell command";
+    if (t === "read_url_content") return "Reading URL content";
+    if (t === "generate_image") return "Generating visual asset";
+    if (t === "ask_question") return "Requesting user input";
+    return `Executing ${tool.replace(/_/g, " ")}`;
   }
 
   private pluralize(count: number, singular: string, plural = `${singular}s`): string {
