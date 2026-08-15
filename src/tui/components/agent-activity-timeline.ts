@@ -217,6 +217,15 @@ export class AgentActivityTimeline implements Component {
     if (visibleIds.length === 0) {
       rows.push("\x1b[33m  ◐\x1b[0m Starting request");
     }
+
+    // Follow-up suggestions upon completion
+    if (this.terminalStatus === "completed") {
+      const suggestions = this.renderFollowUpSuggestions();
+      if (suggestions.length > 0) {
+        rows.push(...suggestions);
+      }
+    }
+
     return rows.join("\n");
   }
 
@@ -283,6 +292,25 @@ export class AgentActivityTimeline implements Component {
     }
 
     return highlights;
+  }
+
+  private renderFollowUpSuggestions(): string[] {
+    const suggestions: string[] = [];
+    const allText = Array.from(this.entries.values())
+      .map((e) => `${e.message} ${e.detail ?? ""}`)
+      .join(" ")
+      .toLowerCase();
+
+    if (allText.includes("index.html") || allText.includes("game") || allText.includes("racing") || allText.includes("canvas")) {
+      suggestions.push("💡 Next: 'Add retro 8-bit sound effects using Web Audio API'");
+      suggestions.push("💡 Next: 'Add difficulty selection: Novice, Standard, Master'");
+    } else if (allText.includes("test") || allText.includes("check") || allText.includes("tsc")) {
+      suggestions.push("💡 Next: 'Run full test coverage and verify boundary conditions'");
+    } else if (allText.includes("api") || allText.includes("server") || allText.includes("route")) {
+      suggestions.push("💡 Next: 'Add automated integration tests and OpenAPI docs'");
+    }
+
+    return suggestions.map((s) => `  \x1b[90m${s}\x1b[0m`);
   }
 
   private phaseBadge(phase: string): string {
