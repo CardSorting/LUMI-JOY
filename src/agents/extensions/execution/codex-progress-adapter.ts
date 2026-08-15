@@ -149,12 +149,13 @@ export class CodexProgressAdapter {
       case "reasoning": {
         // The SDK exposes this field as a readable reasoning summary, not raw
         // chain-of-thought. Keep it short and sanitized for the activity view.
+        const reasoningDetail = item.text?.trim() || "Analyzing requirements & formulating next action";
         this.emit({
           activityId,
           phase: "thinking",
           status,
-          message: status === "completed" ? "Reasoning step complete" : "Reviewing the approach",
-          detail: item.text || "Evaluating the next action",
+          message: status === "completed" ? "Reasoning complete" : "Analyzing approach",
+          detail: reasoningDetail,
           elapsedMs,
           metadata: this.activityMetadata({ itemType: item.type }),
         });
@@ -169,7 +170,7 @@ export class CodexProgressAdapter {
           activityId,
           phase: "planning",
           status,
-          message: status === "completed" ? "Implementation plan complete" : "Updating the implementation plan",
+          message: status === "completed" ? "Implementation plan complete" : "Updating implementation plan",
           detail: detailParts.join(" · "),
           elapsedMs,
           metadata: {
@@ -187,15 +188,16 @@ export class CodexProgressAdapter {
           this.commandCount += 1;
         }
         const failed = status === "failed";
+        const intent = this.describeCommandIntent(item.command);
         this.emit({
           activityId,
           phase: failed ? "failed" : "tool",
           status,
           message: failed
-            ? "Command failed"
+            ? `${intent} failed`
             : status === "completed"
-              ? "Command completed"
-              : "Running workspace command",
+              ? `${intent} complete`
+              : intent,
           detail: sanitizeProgressText(item.command, MAX_COMMAND_LENGTH),
           elapsedMs,
           metadata: {
@@ -217,6 +219,17 @@ export class CodexProgressAdapter {
         if (item.changes.length > 3) {
           changeSummary.push(`+${item.changes.length - 3} more`);
         }
+        const firstKind = String(item.changes[0]?.kind ?? "").toLowerCase();
+        const actionVerb = firstKind.includes("add") || firstKind.includes("creat")
+          ? "Creating"
+          : firstKind.includes("del") || firstKind.includes("remov")
+            ? "Deleting"
+            : "Updating";
+        const actionDesc =
+          item.changes.length === 1
+            ? `${actionVerb} ${files[0]}`
+            : `Updating ${item.changes.length} workspace files`;
+
         this.emit({
           activityId,
           phase: status === "failed" ? "failed" : "writing",
@@ -224,8 +237,8 @@ export class CodexProgressAdapter {
           message: status === "failed"
             ? "File changes failed"
             : status === "completed"
-              ? "Workspace files updated"
-              : "Applying file changes",
+              ? (item.changes.length === 1 ? `Updated ${files[0]}` : "Workspace files updated")
+              : actionDesc,
           detail: changeSummary.join(" · ") || "Workspace update",
           elapsedMs,
           metadata: this.activityMetadata({ itemType: item.type, files }),
@@ -238,15 +251,16 @@ export class CodexProgressAdapter {
           this.toolCount += 1;
         }
         const toolName = `${sanitizeProgressText(item.server, 60)}/${sanitizeProgressText(item.tool, 60)}`;
+        const readableAction = item.tool.replace(/_/g, " ");
         this.emit({
           activityId,
           phase: status === "failed" ? "failed" : "tool",
           status,
           message: status === "failed"
-            ? "Tool call failed"
+            ? `Tool '${item.tool}' failed`
             : status === "completed"
-              ? "Tool call completed"
-              : "Running tool",
+              ? `Tool '${item.tool}' complete`
+              : `Executing ${readableAction}`,
           detail: toolName,
           elapsedMs,
           metadata: this.activityMetadata({ itemType: item.type }),
@@ -393,6 +407,22 @@ export class CodexProgressAdapter {
 
   private turnMetadata(extra: EngineProgressMetadata = {}): EngineProgressMetadata {
     return { source: "codex-sdk", scope: "turn", attempt: this.attempt, ...extra };
+  }
+
+  private describeCommandIntent(command: string): string {
+    const trimmed = command.trim();
+    if (/^(?:rg|grep|ripgrep|ag)\b/i.test(trimmed)) return "Searching codebase";
+    if (/^(?:find|fd)\b/i.test(trimmed)) return "Locating files";
+    if (/^(?:ls|tree|dir)\b/i.test(trimmed)) return "Inspecting directory";
+    if (/^git\s+(?:status|diff|log|branch)/i.test(trimmed)) return "Inspecting Git state";
+    if (/^git\s+(?:add|commit|push|checkout)/i.test(trimmed)) return "Updating Git repository";
+    if (/^(?:tsc|npm run check|npm run typecheck)\b/i.test(trimmed)) return "Checking TypeScript types";
+    if (/^(?:npm test|npm run test|vitest|jest|pytest)\b/i.test(trimmed)) return "Running test suite";
+    if (/^(?:npm run build|npm run compile|vite build|tsc -b)\b/i.test(trimmed)) return "Building project";
+    if (/^(?:npm install|npm i|yarn add|pnpm add|bun add)\b/i.test(trimmed)) return "Installing dependencies";
+    if (/^(?:npm run smoke|npm run benchmark)\b/i.test(trimmed)) return "Running benchmarks";
+    if (/^(?:cat|head|tail|view|read)\b/i.test(trimmed)) return "Reading file contents";
+    return "Running workspace command";
   }
 
   private pluralize(count: number, singular: string, plural = `${singular}s`): string {
