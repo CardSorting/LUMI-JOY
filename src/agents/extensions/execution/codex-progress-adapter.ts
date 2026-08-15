@@ -206,6 +206,9 @@ export class CodexProgressAdapter {
 
     switch (item.type) {
       case "reasoning": {
+        if (status === "completed") {
+          this.reasoningDurationMs += elapsedMs;
+        }
         // The SDK exposes this field as a readable reasoning summary, not raw
         // chain-of-thought. Keep it short and sanitized for the activity view.
         const cleanSummary = (item.text || "")
@@ -217,7 +220,7 @@ export class CodexProgressAdapter {
           activityId,
           phase: "thinking",
           status,
-          message: status === "completed" ? "Reasoning complete" : "Analyzing next action",
+          message: status === "completed" ? "Reasoning complete" : "Analyzing approach",
           detail: reasoningDetail,
           elapsedMs,
           metadata: this.activityMetadata({ itemType: item.type }),
@@ -225,6 +228,9 @@ export class CodexProgressAdapter {
         return;
       }
       case "todo_list": {
+        if (status === "completed") {
+          this.reasoningDurationMs += elapsedMs;
+        }
         const completedSteps = item.items.filter((todo) => todo.completed).length;
         const nextStep = item.items.find((todo) => !todo.completed)?.text;
         const statusLabel =
@@ -253,18 +259,18 @@ export class CodexProgressAdapter {
           this.countedCommands.add(activityId);
           this.commandCount += 1;
         }
+        if (status === "completed") {
+          this.toolDurationMs += elapsedMs;
+        }
         const failed = status === "failed";
         const intent = this.describeCommandIntent(item.command);
+        const unwrapped = this.unwrapShellCommand(item.command);
         this.emit({
           activityId,
           phase: failed ? "failed" : "tool",
           status,
-          message: failed
-            ? `${intent} failed`
-            : status === "completed"
-              ? `${intent} complete`
-              : intent,
-          detail: sanitizeProgressText(item.command, MAX_COMMAND_LENGTH),
+          message: failed ? `${intent} failed` : intent,
+          detail: sanitizeProgressText(unwrapped, MAX_COMMAND_LENGTH),
           elapsedMs,
           metadata: {
             ...this.activityMetadata(),
@@ -278,34 +284,33 @@ export class CodexProgressAdapter {
         const files = item.changes.map((change) => this.safePath(change.path));
         if (lifecycle === "item.completed" && item.status === "completed") {
           files.forEach((file) => this.changedFiles.add(file));
-        }
-        const changeSummary = item.changes
-          .slice(0, 3)
-          .map((change, index) => `${change.kind} ${files[index]}`);
-        if (item.changes.length > 3) {
-          changeSummary.push(`+${item.changes.length - 3} more`);
+          this.toolDurationMs += elapsedMs;
         }
         const firstKind = String(item.changes[0]?.kind ?? "").toLowerCase();
-        const actionVerb = firstKind.includes("add") || firstKind.includes("creat")
-          ? "Creating"
-          : firstKind.includes("del") || firstKind.includes("remov")
-            ? "Deleting"
-            : "Updating";
-        const actionDesc =
-          item.changes.length === 1
-            ? `${actionVerb} ${files[0]}`
-            : `Updating ${item.changes.length} workspace files`;
+        const isAdd = firstKind.includes("add") || firstKind.includes("creat");
+        const isDel = firstKind.includes("del") || firstKind.includes("remov");
+
+        let messageText = "Workspace files updated";
+        if (item.changes.length === 1) {
+          const actionVerb = isAdd
+            ? (status === "completed" ? "Created" : "Creating")
+            : isDel
+              ? (status === "completed" ? "Deleted" : "Deleting")
+              : (status === "completed" ? "Updated" : "Updating");
+          messageText = `${actionVerb} ${files[0]}`;
+        } else {
+          messageText = `${status === "completed" ? "Updated" : "Updating"} ${item.changes.length} workspace files`;
+        }
+
+        const detailSummary = files.slice(0, 3).join(", ");
+        const detailText = item.changes.length > 3 ? `${detailSummary} +${item.changes.length - 3} more` : detailSummary;
 
         this.emit({
           activityId,
           phase: status === "failed" ? "failed" : "writing",
           status,
-          message: status === "failed"
-            ? "File changes failed"
-            : status === "completed"
-              ? (item.changes.length === 1 ? `Updated ${files[0]}` : "Workspace files updated")
-              : actionDesc,
-          detail: changeSummary.join(" · ") || "Workspace update",
+          message: status === "failed" ? "File changes failed" : messageText,
+          detail: detailText,
           elapsedMs,
           metadata: this.activityMetadata({ itemType: item.type, files }),
         });
@@ -315,6 +320,9 @@ export class CodexProgressAdapter {
         if (!this.countedTools.has(activityId)) {
           this.countedTools.add(activityId);
           this.toolCount += 1;
+        }
+        if (status === "completed") {
+          this.toolDurationMs += elapsedMs;
         }
         const toolAction = this.describeToolAction(item.server, item.tool);
         const toolName = `${sanitizeProgressText(item.server, 60)}/${sanitizeProgressText(item.tool, 60)}`;
@@ -487,18 +495,63 @@ export class CodexProgressAdapter {
     return { source: "codex-sdk", scope: "turn", attempt: this.attempt, ...extra };
   }
 
+  private unwrapShellCommand(command: string): string {
+    let unwrapped = command.trim();
+    // Strip /bin/zsh -lc, /bin/bash -c, sh -c, etc.
+    const shellMatch = unwrapped.match(/^(?:\/bin\/|\/usr\/bin\/)?(?:zsh|bash|sh)\s+-[a-zA-Z]*c\s+["']([\s\S]+?)["']$/);
+    if (shellMatch && shellMatch[1]) {
+      unwrapped = shellMatch[1].trim();
+    } else {
+      const altMatch = unwrapped.match(/^(?:\/bin\/|\/usr\/bin\/)?(?:zsh|bash|sh)\s+-[a-zA-Z]*c\s+(.+)$/);
+      if (altMatch && altMatch[1]) {
+        unwrapped = altMatch[1].trim().replace(/^['"]|['"]$/g, "");
+      }
+    }
+    return unwrapped;
+  }
+
   private describeCommandIntent(command: string): string {
-    const trimmed = command.trim();
+    const raw = this.unwrapShellCommand(command);
+    const trimmed = raw.trim();
+
+    // Node / Syntax checking
+    if (/node\s+--check/i.test(trimmed)) {
+      const fileMatch = trimmed.match(/index\.html|[a-zA-Z0-9_.-]+\.(?:js|mjs|ts|tsx)/i);
+      return fileMatch ? `Syntax-checking ${fileMatch[0]}` : "Syntax-checking JavaScript";
+    }
+
+    // Local Preview Servers
+    if (/python3?\s+-m\s+http\.server\s+(\d+)/i.test(trimmed)) {
+      const port = trimmed.match(/http\.server\s+(\d+)/i)?.[1] || "4173";
+      return `Serving preview on http://localhost:${port}`;
+    }
+    if (/npx\s+serve|vite\s+preview|http-server/i.test(trimmed)) {
+      return "Starting local preview server";
+    }
+
+    // Endpoint Verification
+    if (/curl\s+(?:-[a-zA-Z]+\s+)*https?:\/\/(?:localhost|127\.0\.0\.1):?(\d+)?/i.test(trimmed)) {
+      return "Verifying local HTTP server response";
+    }
+    if (/curl\b/i.test(trimmed)) return "Testing HTTP endpoint";
+
+    // Code Search
     if (/rg\s+--files/i.test(trimmed)) return "Listing workspace file paths";
-
-    const rgQuery = trimmed.match(/rg\s+(?:-[a-zA-Z]+\s+)*["']([^"']+)["']/i);
+    const rgQuery = trimmed.match(/rg\s+(?:-[a-zA-Z0-9_-]+\s+)*["']([^"']+)["']/i);
     if (rgQuery) return `Searching codebase for '${rgQuery[1]}'`;
-
     if (/^(?:rg|grep|ripgrep|ag)\b/i.test(trimmed)) return "Searching codebase";
     if (/^(?:find|fd)\b/i.test(trimmed)) return "Locating files in workspace";
-    if (/^(?:ls|dir)\b/i.test(trimmed)) return "Inspecting directory contents";
-    if (/^tree\b/i.test(trimmed)) return "Viewing workspace directory tree";
 
+    // Directory & File Inspection
+    if (/^tree\b/i.test(trimmed)) return "Viewing workspace directory tree";
+    if (/^(?:ls|dir)\b/i.test(trimmed)) return "Inspecting directory contents";
+    if (/^wc\s+-l\s+([a-zA-Z0-9_.-]+)/i.test(trimmed)) {
+      const f = trimmed.match(/^wc\s+-l\s+([a-zA-Z0-9_.-]+)/i)?.[1];
+      return `Counting lines in ${f}`;
+    }
+    if (/^(?:cat|head|tail|view|read)\b/i.test(trimmed)) return "Reading file contents";
+
+    // Git Operations
     if (/^git\s+diff/i.test(trimmed)) return "Viewing Git code diffs";
     if (/^git\s+status/i.test(trimmed)) return "Checking Git working tree status";
     if (/^git\s+log/i.test(trimmed)) return "Viewing Git commit history";
@@ -508,13 +561,14 @@ export class CodexProgressAdapter {
     }
     if (/^git\s+(?:add|commit|push|checkout|branch)/i.test(trimmed)) return "Updating Git repository";
 
+    // Typechecking, Tests & Builds
     if (/^(?:tsc|npm run check|npm run typecheck)\b/i.test(trimmed)) return "Checking TypeScript types";
     if (/^(?:npm test|npm run test|vitest|jest|pytest)\b/i.test(trimmed)) return "Running test suite";
     if (/^(?:npm run build|npm run compile|vite build|tsc -b)\b/i.test(trimmed)) return "Building production bundle";
     if (/^(?:npm install|npm i|yarn add|pnpm add|bun add)\b/i.test(trimmed)) return "Installing dependencies";
     if (/^npm run smoke\b/i.test(trimmed)) return "Running runtime smoke checks";
     if (/^npm run benchmark\b/i.test(trimmed)) return "Benchmarking performance SLAs";
-    if (/^(?:cat|head|tail|view|read)\b/i.test(trimmed)) return "Reading file contents";
+
     return "Running workspace command";
   }
 
