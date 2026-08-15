@@ -35,8 +35,8 @@ LUMI adopts an apex / sovereign-tier, industry-standard **Attempt Completion Gat
 7. **Forensic Flight Recording & Blackbox Audit Ledgers**:
    `AttemptFlightRecorder` maintains an immutable chronological event timeline for all evaluator runs, score deltas, duration metrics, and decision boundaries, exporting both machine-readable JSON logs and formatted Markdown postmortem reports (`generateFlightLogMarkdown`).
 
-8. **Deadlock-Free Consensus Arbitration**:
-   `ConsensusArbiter` evaluates multi-perspective consensus using continuous affirmative scoring and calibrated soft severity deductions rather than hard unrecoverable veto locks, preventing deadlock states while supporting configurable quorum thresholds (`majority_50`, `supermajority_66`, `unanimous`, or custom ratios).
+8. **Direct Quantitative Criterion Scoring (`CriterionScoreEvaluator`)**:
+   Eliminates subjective voting matrices and quorum locks in favor of direct, objective quantitative scoring ($S = \frac{\sum w_{\text{passed}}}{\sum w_{\text{total}}} \times 100$), ensuring instantaneous mathematical evaluation with zero deadlock risk.
 
 9. **Flattened Single-Pass Candidate Arbitration**:
    `evaluateAttemptCandidates` deterministically scores and ranks parallel candidate branches in a single clean pass, sorting by pass rate, score optimization, and minimal critical violations, guaranteeing forward progression and decisive selection.

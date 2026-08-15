@@ -7,6 +7,7 @@ import {
   RoadmapCompletionGate,
   AttemptCompletionGateStrategy,
   AttemptFlightRecorder,
+  CriterionScoreEvaluator,
   ConsensusArbiter,
   GatePipelineDag,
   DiagnosticPatchSynthesizer,
@@ -490,35 +491,27 @@ async function validateAttemptCompletionGateStrategy(): Promise<void> {
   assert.ok(markdownLog.includes("manual-audit-gate"));
   assert.ok(markdownLog.includes("✅ PASSED"));
 
-  // 12. Deadlock-Free Consensus Arbiter & Flattened Calibrated Scoring
-  const consensusVotes = [
-    { evaluatorId: "architect", passed: true, score: 100, weight: 2.0, severity: "high" as const },
-    { evaluatorId: "critic", passed: true, score: 100, weight: 1.0, severity: "medium" as const },
-    { evaluatorId: "sre", passed: false, score: 0, weight: 1.0, severity: "low" as const },
+  // 12. Direct Quantitative Criterion Scoring (No Voting, No Quorum Deadlocks)
+  const sampleCriteria = [
+    { id: "syntax_check", description: "Syntax valid", required: true, evaluated: true, passed: true, weight: 2.0 },
+    { id: "type_check", description: "Types valid", required: true, evaluated: true, passed: true, weight: 1.0 },
+    { id: "style_check", description: "Style guidelines", required: false, evaluated: true, passed: false, weight: 1.0 },
   ];
-  // 3/4 raw weight = 75% -> passes majority (50%) and supermajority_66 (66.6%), fails unanimous
-  const majorityConsensus = ConsensusArbiter.evaluateConsensus(consensusVotes, { threshold: "majority_50" });
-  assert.equal(majorityConsensus.passed, true);
-  assert.equal(majorityConsensus.score, 75);
+  // 3/4 raw weight = 75% -> passes weighted threshold 70%, fails weighted threshold 80%
+  const passScoreResult = CriterionScoreEvaluator.evaluateScore(sampleCriteria, 70.0, "weighted_threshold");
+  assert.equal(passScoreResult.passed, true);
+  assert.equal(passScoreResult.score, 75);
+  assert.equal(passScoreResult.passedCount, 2);
+  assert.equal(passScoreResult.totalCount, 3);
+  assert.equal(passScoreResult.blockingCount, 0);
 
-  const supermajorityConsensus = ConsensusArbiter.evaluateConsensus(consensusVotes, { threshold: "supermajority_66" });
-  assert.equal(supermajorityConsensus.passed, true);
+  const failScoreResult = CriterionScoreEvaluator.evaluateScore(sampleCriteria, 80.0, "weighted_threshold");
+  assert.equal(failScoreResult.passed, false);
+  assert.equal(failScoreResult.score, 75);
 
-  const unanimousConsensus = ConsensusArbiter.evaluateConsensus(consensusVotes, { threshold: "unanimous" });
-  assert.equal(unanimousConsensus.passed, false);
-
-  // Deadlock-Free Calibrated Penalty test (critical failure applies score penalty without hard deadlock lockup)
-  const penaltyVotes = [
-    { evaluatorId: "security_guardian", passed: false, score: 0, weight: 1.0, severity: "critical" as const, reason: "Detected security warning" },
-    { evaluatorId: "developer", passed: true, score: 100, weight: 3.0, severity: "low" as const },
-  ];
-  const penaltyResult = ConsensusArbiter.evaluateConsensus(penaltyVotes, { threshold: "majority_50", criticalPenalty: 30 });
-  // Raw score: 3/4 = 75%. Penalty: 30%. Final score = 45%. Does not deadlock; yields clean 45% score.
-  assert.equal(penaltyResult.rawAffirmativeScore, 75);
-  assert.equal(penaltyResult.penaltyDeduction, 30);
-  assert.equal(penaltyResult.score, 45);
-  assert.equal(penaltyResult.passed, false);
-  assert.ok(penaltyResult.summary.includes("Consensus score 45% below required threshold"));
+  // All required policy
+  const allReqResult = CriterionScoreEvaluator.evaluateScore(sampleCriteria, 100.0, "all_required");
+  assert.equal(allReqResult.passed, true); // Required criteria (syntax_check & type_check) both passed
 
   // 13. Multi-Branch Candidate Arbitration
   const branchGateId = "branch-arbitration-gate";

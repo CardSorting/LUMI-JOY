@@ -280,11 +280,11 @@ Source: [`src/tooling/extensions/policy/roadmap-completion-gate.ts`](../../src/t
 - `exportFlightLog(): FlightLog`: exports full structured JSON flight log.
 - `generateFlightLogMarkdown(): string`: produces formatted Markdown postmortem report with timeline tables.
 
-### `ConsensusArbiter`
+### `CriterionScoreEvaluator`
 
 Source: [`src/tooling/extensions/policy/roadmap-completion-gate.ts`](../../src/tooling/extensions/policy/roadmap-completion-gate.ts)
 
-- `evaluateConsensus(votes: ConsensusVote[], config?: ConsensusConfig): ConsensusEvaluationResult`: computes deadlock-free quorum scoring (`unanimous`, `supermajority_66`, `majority_50`, or custom ratio) with calibrated soft severity deductions instead of blocking veto deadlocks.
+- `evaluateScore(criteria: GateCriteria[], minScoreToPass?, policy?): CriterionScoreResult`: calculates exact linear weighted criterion score ($S \in [0, 100]$), pass rate, and blocking counts without voting or quorum locks.
 
 ### `GatePipelineDag`
 

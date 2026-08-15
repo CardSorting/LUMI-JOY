@@ -16,8 +16,7 @@ export type GatePhase = "admission" | "in_flight" | "completion" | "postmortem";
 export type EvaluationAggregationPolicy =
   | "all_required"
   | "weighted_threshold"
-  | "short_circuit_on_critical"
-  | "consensus";
+  | "short_circuit_on_critical";
 
 export type RemediationStrategyType =
   | "PATCH_LOCAL"
@@ -235,101 +234,103 @@ export class AttemptFlightRecorder {
   }
 }
 
-export interface ConsensusConfig {
-  threshold?: "unanimous" | "supermajority_66" | "majority_50" | number;
-  criticalPenalty?: number;
-  highPenalty?: number;
-  allowVetoOnSeverity?: GateCriterionSeverity;
-}
-
-export interface ConsensusVote {
-  evaluatorId: string;
-  passed: boolean;
+export interface CriterionScoreResult {
   score: number;
-  weight: number;
-  severity?: GateCriterionSeverity;
-  reason?: string;
-}
-
-export interface ConsensusEvaluationResult {
+  maxScore: number;
+  passRate: number;
+  passedCount: number;
+  totalCount: number;
+  blockingCount: number;
   passed: boolean;
-  score: number;
-  rawAffirmativeScore: number;
-  penaltyDeduction: number;
-  totalVotes: number;
-  affirmativeVotes: number;
-  dissentingVotes: number;
-  vetoEnacted?: boolean;
-  vetoReason?: string;
   summary: string;
 }
 
-export class ConsensusArbiter {
-  static evaluateConsensus(votes: ConsensusVote[], config: ConsensusConfig = {}): ConsensusEvaluationResult {
-    if (votes.length === 0) {
+export class CriterionScoreEvaluator {
+  static evaluateScore(
+    criteria: GateCriteria[],
+    minScoreToPass = 100.0,
+    policy: EvaluationAggregationPolicy = "all_required"
+  ): CriterionScoreResult {
+    const totalCount = criteria.length;
+    if (totalCount === 0) {
       return {
-        passed: false,
         score: 0,
-        rawAffirmativeScore: 0,
-        penaltyDeduction: 0,
-        totalVotes: 0,
-        affirmativeVotes: 0,
-        dissentingVotes: 0,
-        vetoEnacted: false,
-        summary: "No consensus votes provided.",
+        maxScore: 0,
+        passRate: 0,
+        passedCount: 0,
+        totalCount: 0,
+        blockingCount: 0,
+        passed: false,
+        summary: "No criteria provided for evaluation.",
       };
     }
 
-    const totalWeight = votes.reduce((sum, v) => sum + v.weight, 0);
-    const affirmativeWeight = votes.filter((v) => v.passed).reduce((sum, v) => sum + v.weight, 0);
-    const rawScore = totalWeight > 0 ? (affirmativeWeight / totalWeight) * 100 : 0;
+    const passedCriteria = criteria.filter((c) => c.evaluated && c.passed);
+    const passedCount = passedCriteria.length;
+    const passRate = totalCount > 0 ? Number((passedCount / totalCount).toFixed(4)) : 0;
 
-    const affirmativeVotes = votes.filter((v) => v.passed).length;
-    const dissentingVotes = votes.filter((v) => !v.passed).length;
+    const maxScore = criteria.reduce((sum, c) => sum + (c.weight ?? 1.0), 0);
+    const actualScore = passedCriteria.reduce((sum, c) => sum + (c.weight ?? 1.0), 0);
+    const score = maxScore > 0 ? Number(((actualScore / maxScore) * 100).toFixed(2)) : 0;
 
-    // Calibrated soft penalties instead of deadlocking hard vetoes
-    let penaltyDeduction = 0;
-    const criticalFailures = votes.filter((v) => !v.passed && v.severity === "critical");
-    const highFailures = votes.filter((v) => !v.passed && v.severity === "high");
+    const requiredCriteria = criteria.filter((c) => c.required);
+    const blockingCriteria = requiredCriteria.filter((c) => !c.evaluated || !c.passed);
+    const blockingCount = blockingCriteria.length;
 
-    const criticalPenaltyRate = config.criticalPenalty ?? 25.0;
-    const highPenaltyRate = config.highPenalty ?? 10.0;
-
-    penaltyDeduction += criticalFailures.length * criticalPenaltyRate;
-    penaltyDeduction += highFailures.length * highPenaltyRate;
-
-    const finalScore = Number(Math.max(0, Math.min(100, rawScore - penaltyDeduction)).toFixed(2));
-
-    let thresholdRatio = 0.5;
-    if (config.threshold === "unanimous") {
-      thresholdRatio = 1.0;
-    } else if (config.threshold === "supermajority_66") {
-      thresholdRatio = 0.666;
-    } else if (typeof config.threshold === "number") {
-      thresholdRatio = config.threshold / 100;
-    }
-
-    const passed = (finalScore / 100) >= thresholdRatio && (config.threshold === "unanimous" ? dissentingVotes === 0 : true);
-
-    let summary: string;
-    if (passed) {
-      summary = `Consensus achieved: score ${finalScore}% (${affirmativeVotes}/${votes.length} votes affirmative).`;
+    let passed = false;
+    if (policy === "weighted_threshold") {
+      passed = score >= minScoreToPass && blockingCount === 0;
     } else {
-      const reasonList = votes.filter((v) => !v.passed).map((v) => `${v.evaluatorId} (${v.severity ?? "standard"})`).join(", ");
-      summary = `Consensus score ${finalScore}% below required threshold (${(thresholdRatio * 100).toFixed(1)}%). Dissenting: [${reasonList}].`;
+      passed = requiredCriteria.length > 0 && blockingCount === 0;
     }
+
+    const summary = passed
+      ? `Criterion score evaluation passed with score ${score}% (${passedCount}/${totalCount} criteria satisfied).`
+      : `Criterion score evaluation failed with score ${score}% (${blockingCount} blocking criteria).`;
 
     return {
+      score,
+      maxScore,
+      passRate,
+      passedCount,
+      totalCount,
+      blockingCount,
       passed,
-      score: finalScore,
-      rawAffirmativeScore: Number(rawScore.toFixed(2)),
-      penaltyDeduction,
-      totalVotes: votes.length,
-      affirmativeVotes,
-      dissentingVotes,
-      vetoEnacted: false,
       summary,
     };
+  }
+}
+
+/**
+ * Backward compatibility alias for direct criterion scoring without voting or quorum locks.
+ */
+export class ConsensusArbiter {
+  static evaluateConsensus(
+    votes: Array<{ evaluatorId: string; passed: boolean; score?: number; weight?: number; severity?: GateCriterionSeverity }>,
+    config: { threshold?: string | number; minScoreToPass?: number } = {}
+  ): CriterionScoreResult {
+    let minScore = 50.0;
+    if (typeof config.threshold === "number") {
+      minScore = config.threshold;
+    } else if (config.threshold === "unanimous") {
+      minScore = 100.0;
+    } else if (config.threshold === "supermajority_66") {
+      minScore = 66.6;
+    } else if (typeof config.minScoreToPass === "number") {
+      minScore = config.minScoreToPass;
+    }
+
+    const criteria: GateCriteria[] = votes.map((v) => ({
+      id: v.evaluatorId,
+      description: v.evaluatorId,
+      required: true,
+      evaluated: true,
+      passed: v.passed,
+      weight: v.weight ?? 1.0,
+      severity: v.severity,
+    }));
+
+    return CriterionScoreEvaluator.evaluateScore(criteria, minScore, "weighted_threshold");
   }
 }
 
@@ -526,7 +527,6 @@ export interface AttemptGateStrategyConfig {
   detectOscillation?: boolean;
   oscillationThreshold?: number;
   circuitBreaker?: CircuitBreakerConfig;
-  consensusConfig?: ConsensusConfig;
   customFeedbackGenerator?: (result: CompletionGateResult, attempt: number, maxAttempts: number) => string;
   onAttemptEvaluated?: (attempt: number, result: CompletionGateResult) => void;
   onAttemptRetry?: (attempt: number, delayMs: number, reason: string) => void;
@@ -834,8 +834,7 @@ export class RoadmapCompletionGate {
     gateId: string,
     context: AttemptGateEvaluationContext,
     aggregationPolicy: EvaluationAggregationPolicy = "all_required",
-    minScoreToPass = 100.0,
-    consensusConfig?: ConsensusConfig
+    minScoreToPass = 100.0
   ): Promise<CompletionGateResult> {
     const evalStartedAt = performance.now();
     const registered = this.gateCriteriaMap.has(gateId);
@@ -925,18 +924,7 @@ export class RoadmapCompletionGate {
     const scorePercentage = maxScore > 0 ? Number(((actualScore / maxScore) * 100).toFixed(2)) : 0;
 
     let allowedToProceed = false;
-    if (aggregationPolicy === "consensus") {
-      const votes: ConsensusVote[] = clonedCriteria.map((c) => ({
-        evaluatorId: c.id,
-        passed: Boolean(c.evaluated && c.passed),
-        score: c.evaluated && c.passed ? 100 : 0,
-        weight: c.weight ?? 1.0,
-        severity: c.severity,
-        reason: c.detail ?? c.description,
-      }));
-      const consensusRes = ConsensusArbiter.evaluateConsensus(votes, consensusConfig);
-      allowedToProceed = consensusRes.passed;
-    } else if (aggregationPolicy === "weighted_threshold") {
+    if (aggregationPolicy === "weighted_threshold") {
       allowedToProceed =
         clonedCriteria.length > 0 && scorePercentage >= minScoreToPass && blockingCriteria.length === 0;
     } else {
@@ -1333,8 +1321,7 @@ export class RoadmapCompletionGate {
         gateId,
         evalContext,
         options.aggregationPolicy ?? "all_required",
-        options.minScoreToPass ?? 100.0,
-        options.consensusConfig
+        options.minScoreToPass ?? 100.0
       );
 
       lastGateResult = gateResult;
