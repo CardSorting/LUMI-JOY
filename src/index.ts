@@ -414,6 +414,8 @@ export type {
   AttemptDiff,
   AttemptFingerprint,
   CircuitBreakerConfig,
+  CircuitBreakerStatus,
+  CircuitBreakerState,
   FlightEvent,
   FlightLog,
   CriterionScoreResult,

@@ -45,10 +45,10 @@ LUMI adopts an apex / sovereign-tier, industry-standard **Attempt Completion Gat
     `GatePipelineDag` organizes gate evaluation into Directed Acyclic Graphs with topological dependency ordering and upstream failure short-circuiting.
 
 11. **Self-Correction Diagnostic Micro-Patch Synthesis**:
-    `DiagnosticPatchSynthesizer` parses compiler diagnostics, syntax errors, and tool failures into line-anchored micro-patch suggestions for the next attempt.
+    `DiagnosticPatchSynthesizer` parses compiler diagnostics (`TS\d+`), module resolution (`ENOENT`, `ERR_MODULE_NOT_FOUND`), permission violations (`ERR_FS_PERMISSION`), non-zero process exit codes, and tool failures into line-anchored micro-patch suggestions for the next attempt.
 
-12. **Anti-Oscillation Guard & Circuit Breakers**:
-    `CircuitBreakerConfig` trips after consecutive systemic failures, and `detectRepeatedFailures` guards against cyclic flapping across attempts.
+12. **Tri-State Circuit Breakers & Divergence Sentinel**:
+    `RoadmapCompletionGate` implements a self-healing `CLOSED` $\to$ `OPEN` $\to$ `HALF_OPEN` state machine with canary probe trial recovery. `deriveRemediationDirective` integrates a Divergence Sentinel that detects severe regressions ($\ge 20\%$ score drop or broken safety invariants) and synthesizes a `RESTORE_CHECKPOINT` directive to unwind breaking changes. In addition, `AgentEngine` uses phase-aware watchdogs (180s reasoning, 300s tool execution) with active heartbeat sensing.
 
 13. **Standard Strategy Factories**:
     `AttemptCompletionGateStrategy` provides turnkey gate definitions:

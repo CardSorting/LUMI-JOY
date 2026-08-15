@@ -33,6 +33,7 @@ import { sanitizeProgressText } from "../../../core/utilities/progress-sanitizer
 
 const CODEX_TURN_TIMEOUT_MS = 10 * 60 * 1000;
 const CODEX_STREAM_INACTIVITY_TIMEOUT_MS = 180_000;
+const CODEX_STREAM_TOOL_INACTIVITY_TIMEOUT_MS = 300_000;
 
 interface PreparedProviderContext {
   messages: SessionMessage[];
@@ -497,15 +498,20 @@ export class AgentEngine extends AbstractAgentEngine {
     progress.start();
 
     let lastEventAt = Date.now();
+    let currentExecutionPhase: "REASONING" | "TOOL_EXECUTION" = "REASONING";
     let finalResponse = "";
     let completionUsage: Usage | null = null;
 
     const watchdogInterval = setInterval(() => {
       if (completionUsage || watchdogAbort.signal.aborted) return;
       const idleMs = Date.now() - lastEventAt;
+      const currentTimeoutThreshold =
+        currentExecutionPhase === "TOOL_EXECUTION"
+          ? CODEX_STREAM_TOOL_INACTIVITY_TIMEOUT_MS
+          : CODEX_STREAM_INACTIVITY_TIMEOUT_MS;
 
-      // Watchdog: Entire stream frozen for 180s without any events
-      if (idleMs > CODEX_STREAM_INACTIVITY_TIMEOUT_MS) {
+      // Watchdog: Phase-aware inactivity check (180s reasoning, 300s tool execution)
+      if (idleMs > currentTimeoutThreshold) {
         watchdogAbort.abort(new Error("inactivity_watchdog_stream_frozen"));
       }
     }, 1000);
@@ -519,6 +525,18 @@ export class AgentEngine extends AbstractAgentEngine {
 
       for await (const event of events) {
         lastEventAt = Date.now();
+
+        // Track execution phase to dynamically adjust watchdog timeouts during heavy tools
+        if (
+          event.type === "item.started" &&
+          (event.item.type === "command_execution" ||
+            event.item.type === "mcp_tool_call" ||
+            event.item.type === "file_change")
+        ) {
+          currentExecutionPhase = "TOOL_EXECUTION";
+        } else if (event.type === "item.completed") {
+          currentExecutionPhase = "REASONING";
+        }
 
         // Match the SDK's buffered run() semantics: only a completed message
         // may become the response candidate. The overall turn is still active

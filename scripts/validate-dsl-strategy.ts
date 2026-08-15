@@ -580,14 +580,82 @@ async function validateAttemptCompletionGateStrategy(): Promise<void> {
   assert.equal(dagReport.executedGates.length, 3);
   assert.equal(dagReport.skippedGates.length, 0);
 
-  // 15. Diagnostic Micro-Patch Extraction
-  const extractedPatches = DiagnosticPatchSynthesizer.extractDiagnostics(
-    "src/index.ts:14:2 - TS2304: Cannot find name 'MissingSymbol'",
+  // 15. Tri-State Circuit Breaker (CLOSED -> OPEN -> HALF_OPEN -> CLOSED)
+  const cbGateId = "tri-state-cb-gate";
+  gate.registerGate(cbGateId, [{ id: "c1", description: "req", required: true, evaluated: true, passed: false }]);
+  assert.equal(gate.getCircuitBreakerStatus(cbGateId), "CLOSED");
+
+  // Run autonomous loop that fails with circuit breaker config (maxFailures = 2, cooldown = 50ms)
+  await gate.executeAutonomousAttemptLoop(cbGateId, async () => ({ value: "fail" }), {
+    maxAttempts: 2,
+    circuitBreaker: { maxConsecutiveFailures: 2, cooldownMs: 50 },
+  });
+  assert.equal(gate.getCircuitBreakerStatus(cbGateId), "OPEN");
+
+  // Wait for cooldown to expire
+  await new Promise((resolve) => setTimeout(resolve, 60));
+  assert.equal(gate.getCircuitBreakerStatus(cbGateId), "HALF_OPEN");
+
+  // Successful probe resets to CLOSED
+  gate.registerGate(cbGateId, [{ id: "c1", description: "req", required: true, evaluated: true, passed: true }]);
+  const probeResult = await gate.executeAutonomousAttemptLoop(cbGateId, async () => ({ value: "pass" }), {
+    maxAttempts: 1,
+    circuitBreaker: { maxConsecutiveFailures: 2, cooldownMs: 50 },
+  });
+  assert.equal(probeResult.success, true);
+  assert.equal(gate.getCircuitBreakerStatus(cbGateId), "CLOSED");
+
+  // 16. Divergence Sentinel & Checkpoint Unwind Remediation
+  const prevGateResult: any = {
+    criteriaResults: [
+      { id: "c1", evaluated: true, passed: true },
+      { id: "c2", evaluated: true, passed: true },
+    ],
+    score: 90,
+  };
+  const divergentDiff = gate.computeAttemptDiff(
+    [
+      { id: "c1", description: "c1", required: true, evaluated: true, passed: false },
+      { id: "c2", description: "c2", required: true, evaluated: true, passed: false },
+    ],
+    30,
+    [{ attempt: 1, gateResult: prevGateResult }]
+  );
+  assert.ok(divergentDiff);
+  assert.equal(divergentDiff.isDivergent, true);
+  assert.equal(divergentDiff.scoreDelta, -60);
+
+  const divergentDirective = gate.deriveRemediationDirective(
+    {
+      allowedToProceed: false,
+      gateId: "divergence-test",
+      criteriaResults: [],
+      blockingCriteria: [{ id: "c1", description: "c1", required: true, evaluated: true, passed: false }],
+      summary: "Divergence test",
+    },
+    2,
+    3,
+    [{ attempt: 1, gateResult: prevGateResult }],
+    divergentDiff
+  );
+  assert.equal(divergentDirective.strategy, "RESTORE_CHECKPOINT");
+  assert.ok(divergentDirective.actionSteps[0].includes("UNWIND REGRESSION"));
+
+  // 17. Expanded Diagnostic Micro-Patch Extraction
+  const expandedPatches = DiagnosticPatchSynthesizer.extractDiagnostics(
+    "src/server.ts:42:10 - TS2304: Cannot find name 'AppRouter'\n" +
+      "Error: Cannot find module 'lodash-es'\n" +
+      "Command failed with exit code 127\n" +
+      "EACCES: permission denied, open '/var/run/test.sock'",
     [{ name: "edit_file", error: "File lock timeout" }]
   );
-  assert.equal(extractedPatches.length, 2);
-  assert.equal(extractedPatches[0].diagnosticCode, "TS2304");
-  assert.ok(extractedPatches[1].message.includes("File lock timeout"));
+  assert.ok(expandedPatches.length >= 4);
+  assert.equal(expandedPatches[0].filePath, "src/server.ts");
+  assert.equal(expandedPatches[0].line, 42);
+  assert.equal(expandedPatches[0].diagnosticCode, "TS2304");
+  assert.ok(expandedPatches.some((p) => p.diagnosticCode === "ERR_MODULE_NOT_FOUND"));
+  assert.ok(expandedPatches.some((p) => p.diagnosticCode === "EXIT_127"));
+  assert.ok(expandedPatches.some((p) => p.diagnosticCode === "ERR_FS_PERMISSION"));
 }
 
 async function main(): Promise<void> {

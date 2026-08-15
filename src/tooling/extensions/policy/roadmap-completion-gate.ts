@@ -24,7 +24,8 @@ export type RemediationStrategyType =
   | "PIVOT_APPROACH"
   | "EXPAND_CONTEXT"
   | "SIMPLIFY_SCOPE"
-  | "ESCALATE_REASONING";
+  | "ESCALATE_REASONING"
+  | "RESTORE_CHECKPOINT";
 
 export interface RemediationDirective {
   strategy: RemediationStrategyType;
@@ -56,6 +57,7 @@ export interface AttemptDiff {
   stagnantFailing: string[];
   improvedScore: boolean;
   scoreDelta: number;
+  isDivergent?: boolean;
 }
 
 export interface AttemptFingerprint {
@@ -114,6 +116,15 @@ export interface DynamicGateCriteria extends GateCriteria {
 }
 
 export type BackoffStrategy = "none" | "linear" | "exponential" | "jittered";
+
+export type CircuitBreakerStatus = "CLOSED" | "OPEN" | "HALF_OPEN";
+
+export interface CircuitBreakerState {
+  status: CircuitBreakerStatus;
+  consecutiveFailures: number;
+  trippedUntil: number;
+  probeInFlight?: boolean;
+}
 
 export interface CircuitBreakerConfig {
   maxConsecutiveFailures?: number;
@@ -483,20 +494,66 @@ export class DiagnosticPatchSynthesizer {
     const patches: DiagnosticMicroPatch[] = [];
 
     if (errorMessage) {
-      if (errorMessage.includes("TS") || errorMessage.includes("Error:")) {
-        const tsMatch = errorMessage.match(/TS(\d+):\s*(.*)/);
-        if (tsMatch) {
-          patches.push({
-            diagnosticCode: `TS${tsMatch[1]}`,
-            message: tsMatch[2].trim(),
-            suggestedAction: `Correct TypeScript type constraint violation for TS${tsMatch[1]}.`,
-          });
-        } else {
-          patches.push({
-            message: errorMessage,
-            suggestedAction: "Resolve root-cause exception reported in runtime context.",
-          });
-        }
+      // 1. File path and line extraction (e.g., src/index.ts:42:10)
+      const fileLineMatch = errorMessage.match(/([a-zA-Z0-9_\-\.\/]+\.(?:ts|tsx|js|jsx|json|md)):(\d+)(?::(\d+))?/);
+      const filePath = fileLineMatch?.[1];
+      const line = fileLineMatch?.[2] ? parseInt(fileLineMatch[2], 10) : undefined;
+
+      // 2. TypeScript diagnostics: TS\d+
+      const tsMatch = errorMessage.match(/TS(\d+):\s*(.*)/);
+      if (tsMatch) {
+        patches.push({
+          filePath,
+          line,
+          diagnosticCode: `TS${tsMatch[1]}`,
+          message: tsMatch[2].trim(),
+          suggestedAction: `Correct TypeScript type constraint violation for TS${tsMatch[1]}${filePath ? ` in ${filePath}` : ""}.`,
+        });
+      }
+
+      // 3. Module / File resolution error
+      const moduleMatch = errorMessage.match(/(?:Cannot find module|ENOENT: no such file or directory|Module not found: Error: Can't resolve)\s*['"]?([^'"\n]+)['"]?/i);
+      if (moduleMatch) {
+        patches.push({
+          filePath,
+          line,
+          diagnosticCode: "ERR_MODULE_NOT_FOUND",
+          message: `Cannot resolve module or file: '${moduleMatch[1]}'`,
+          suggestedAction: `Verify import path and ensure file '${moduleMatch[1]}' exists.`,
+        });
+      }
+
+      // 4. Permission / Lock error
+      const permMatch = errorMessage.match(/(?:EACCES|permission denied|EEXIST|file already exists)/i);
+      if (permMatch) {
+        patches.push({
+          filePath,
+          line,
+          diagnosticCode: "ERR_FS_PERMISSION",
+          message: errorMessage,
+          suggestedAction: "Check filesystem permissions, directory write access, and remove stale locks.",
+        });
+      }
+
+      // 5. Non-zero exit code
+      const exitMatch = errorMessage.match(/(?:Command failed with exit code|Process exited with code)\s*(\d+)/i);
+      if (exitMatch) {
+        patches.push({
+          filePath,
+          line,
+          diagnosticCode: `EXIT_${exitMatch[1]}`,
+          message: `Process terminated abnormally with exit code ${exitMatch[1]}`,
+          suggestedAction: `Inspect stdout/stderr diagnostics and remediate non-zero exit code ${exitMatch[1]}.`,
+        });
+      }
+
+      if (patches.length === 0) {
+        patches.push({
+          filePath,
+          line,
+          message: errorMessage,
+          suggestedAction: "Resolve root-cause exception reported in runtime context.",
+        });
       }
     }
 
@@ -575,7 +632,7 @@ export class RoadmapCompletionGate {
   private readonly gateCriteriaMap = new Map<string, GateCriteria[]>();
   private readonly gateEvaluatorMap = new Map<string, Map<string, CriterionEvaluatorFn>>();
   private readonly gateMetadataMap = new Map<string, Record<string, unknown>>();
-  private readonly circuitBreakerStateMap = new Map<string, { consecutiveFailures: number; trippedUntil: number }>();
+  private readonly circuitBreakerStateMap = new Map<string, CircuitBreakerState>();
 
   registerGate(gateId: string, criteria: GateCriteria[]): void {
     if (gateId.trim().length === 0) throw new Error("Completion gate ID must not be empty");
@@ -1013,6 +1070,7 @@ export class RoadmapCompletionGate {
 
     const prevScore = previous.score ?? 0;
     const scoreDelta = Number((currentScore - prevScore).toFixed(2));
+    const isDivergent = scoreDelta <= -20 || newlyFailing.length >= 2;
 
     return {
       newlyPassing,
@@ -1020,6 +1078,7 @@ export class RoadmapCompletionGate {
       stagnantFailing,
       improvedScore: scoreDelta > 0,
       scoreDelta,
+      isDivergent,
     };
   }
 
@@ -1035,7 +1094,9 @@ export class RoadmapCompletionGate {
     const isStagnant = Boolean(result.fingerprint?.isZeroDeltaStagnant);
 
     let strategy: RemediationStrategyType = "PATCH_LOCAL";
-    if (isStagnant) {
+    if (diff?.isDivergent) {
+      strategy = "RESTORE_CHECKPOINT";
+    } else if (isStagnant) {
       strategy = attempt >= 3 ? "SIMPLIFY_SCOPE" : "PIVOT_APPROACH";
     } else if (repeatedFailures.length > 0 || (diff && diff.stagnantFailing.length >= 2)) {
       strategy = attempt >= 3 ? "PIVOT_APPROACH" : "REWRITE_MODULE";
@@ -1050,10 +1111,15 @@ export class RoadmapCompletionGate {
       .join("; ");
 
     const actionSteps: string[] = [];
+    if (diff?.isDivergent) {
+      actionSteps.push(
+        `UNWIND REGRESSION: Attempt ${attempt} caused divergence (Score delta: ${diff.scoreDelta}%). Revert breaking edits before retrying.`
+      );
+    }
     if (isStagnant) {
       actionSteps.push("BREAK STAGNATION: Attempt produced zero delta; discard previous edit pattern completely.");
     }
-    if (diff?.newlyFailing.length) {
+    if (diff?.newlyFailing.length && !diff.isDivergent) {
       actionSteps.push(`Revert regressions introduced in attempt ${attempt - 1}: [${diff.newlyFailing.join(", ")}].`);
     }
     for (const c of blocking) {
@@ -1387,6 +1453,9 @@ export class RoadmapCompletionGate {
         };
       }
 
+      // Record failure on circuit breaker for this attempt
+      this.recordCircuitBreakerTrip(gateId, options.circuitBreaker);
+
       // Check for oscillation
       if (options.detectOscillation !== false && attempt > 1) {
         const repeated = this.detectRepeatedFailures(gateResult.blockingCriteria ?? [], attemptHistory.slice(0, -1));
@@ -1423,8 +1492,6 @@ export class RoadmapCompletionGate {
       }
     }
 
-    this.recordCircuitBreakerTrip(gateId, options.circuitBreaker);
-
     const finalSummary = lastGateResult
       ? `Gate '${gateId}' failed after ${maxAttempts} autonomous attempts: ${lastGateResult.summary}`
       : `Gate '${gateId}' failed without evaluation.`;
@@ -1454,11 +1521,34 @@ export class RoadmapCompletionGate {
     };
   }
 
+  getCircuitBreakerStatus(gateId: string): CircuitBreakerStatus {
+    const state = this.circuitBreakerStateMap.get(gateId);
+    if (!state) return "CLOSED";
+    if (state.status === "OPEN" && Date.now() >= state.trippedUntil) {
+      return "HALF_OPEN";
+    }
+    return state.status;
+  }
+
   private isCircuitBreakerOpen(gateId: string): boolean {
     const state = this.circuitBreakerStateMap.get(gateId);
     if (!state) return false;
-    if (state.trippedUntil > Date.now()) {
-      return true;
+    if (state.status === "OPEN") {
+      if (Date.now() < state.trippedUntil) {
+        return true;
+      }
+      // Cooldown expired -> transition to HALF_OPEN to allow canary probe
+      state.status = "HALF_OPEN";
+      state.probeInFlight = true;
+      return false;
+    }
+    if (state.status === "HALF_OPEN") {
+      if (state.probeInFlight) {
+        // A canary probe is already in flight; block concurrent attempts
+        return true;
+      }
+      state.probeInFlight = true;
+      return false;
     }
     return false;
   }
@@ -1466,10 +1556,23 @@ export class RoadmapCompletionGate {
   private recordCircuitBreakerTrip(gateId: string, config?: CircuitBreakerConfig): void {
     const maxFailures = config?.maxConsecutiveFailures ?? 5;
     const cooldown = config?.cooldownMs ?? 10000;
-    const current = this.circuitBreakerStateMap.get(gateId) ?? { consecutiveFailures: 0, trippedUntil: 0 };
-    current.consecutiveFailures++;
-    if (current.consecutiveFailures >= maxFailures) {
+    const current = this.circuitBreakerStateMap.get(gateId) ?? {
+      status: "CLOSED",
+      consecutiveFailures: 0,
+      trippedUntil: 0,
+    };
+
+    if (current.status === "HALF_OPEN") {
+      // Canary probe failed -> immediately trip to OPEN with full cooldown
+      current.status = "OPEN";
+      current.probeInFlight = false;
       current.trippedUntil = Date.now() + cooldown;
+    } else {
+      current.consecutiveFailures++;
+      if (current.consecutiveFailures >= maxFailures) {
+        current.status = "OPEN";
+        current.trippedUntil = Date.now() + cooldown;
+      }
     }
     this.circuitBreakerStateMap.set(gateId, current);
   }

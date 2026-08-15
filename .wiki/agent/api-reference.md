@@ -294,11 +294,14 @@ Source: [`src/tooling/extensions/policy/roadmap-completion-gate.ts`](../../src/t
 - `getExecutionOrder(): string[]`: computes topological execution sequence.
 - `executeDag(gateEngine, context): Promise<DagExecutionReport>`: executes gates in dependency order with upstream failure short-circuiting.
 
+- `getCircuitBreakerStatus(gateId)`: returns current tri-state circuit breaker status (`CLOSED`, `OPEN`, `HALF_OPEN`).
+- `resetCircuitBreaker(gateId)`: resets circuit breaker state back to `CLOSED`.
+
 ### `DiagnosticPatchSynthesizer`
 
 Source: [`src/tooling/extensions/policy/roadmap-completion-gate.ts`](../../src/tooling/extensions/policy/roadmap-completion-gate.ts)
 
-- `extractDiagnostics(errorMessage?, toolResults?): DiagnosticMicroPatch[]`: parses compiler diagnostics and tool errors into line-anchored micro-patch suggestions.
+- `extractDiagnostics(errorMessage?, toolResults?): DiagnosticMicroPatch[]`: parses compiler diagnostics (`TS\d+`), module resolution errors (`ERR_MODULE_NOT_FOUND`), permission violations (`ERR_FS_PERMISSION`), non-zero process exit codes, and tool errors into line-anchored micro-patch suggestions.
 
 ### `AttemptCompletionGateStrategy`
 
