@@ -158,12 +158,12 @@ export class AgentActivityTimeline implements Component {
   private buildText(): string {
     const elapsed = this.formatElapsed(this.elapsedMs);
     const state = this.terminalStatus === "completed"
-      ? `\x1b[1;32mCompleted in ${elapsed}\x1b[0m`
+      ? `\x1b[1;32m✓ Completed in ${elapsed}\x1b[0m`
       : this.terminalStatus === "failed"
-        ? `\x1b[1;31mFailed after ${elapsed}\x1b[0m`
+        ? `\x1b[1;31m✗ Failed after ${elapsed}\x1b[0m`
         : this.terminalStatus === "cancelled"
-          ? `\x1b[1;33mCancelled after ${elapsed}\x1b[0m`
-          : `\x1b[1;33mWorking ${elapsed}\x1b[0m`;
+          ? `\x1b[1;33m■ Cancelled after ${elapsed}\x1b[0m`
+          : `\x1b[1;33m◐ Working (${elapsed})\x1b[0m`;
     let statsBadge = "";
     if (this.terminalStatus === "completed") {
       const toolEvents = Array.from(this.entries.values()).filter((e) => e.phase === "tool");
@@ -173,7 +173,7 @@ export class AgentActivityTimeline implements Component {
       if (toolEvents.length > 0) parts.push(`${toolEvents.length} ${toolEvents.length === 1 ? "command" : "commands"}`);
       if (parts.length > 0) statsBadge = `  ·  \x1b[90m${parts.join(", ")}\x1b[0m`;
     }
-    const header = `\x1b[1;37mAgent activity\x1b[0m  ·  ${state}${statsBadge}  ·  \x1b[36m${this.model}\x1b[0m`;
+    const header = `\x1b[1;37m✦ LUMI ENGINE\x1b[0m  ·  ${state}${statsBadge}  ·  \x1b[36m${this.model}\x1b[0m`;
 
     let overallId: string | undefined;
     for (const id of this.order) {
@@ -196,7 +196,10 @@ export class AgentActivityTimeline implements Component {
       ...activityIds.slice(-activityBudget),
     ];
     const hidden = this.order.length - visibleIds.length;
-    const rows: string[] = [header];
+    const rows: string[] = [
+      `\x1b[90m╭─────────────────────────────────────────────────────────────────────────────╮\x1b[0m`,
+      `  ${header}`,
+    ];
 
     // Live Stage Pipeline in-flight or Executive Artifact Highlights on completion
     if (!isCompleted) {
@@ -206,7 +209,10 @@ export class AgentActivityTimeline implements Component {
       if (highlights.length > 0) {
         rows.push(...highlights);
       }
+      rows.push(this.renderStagePipeline());
     }
+
+    rows.push(`\x1b[90m├─────────────────────────────────────────────────────────────────────────────┤\x1b[0m`);
 
     if (hidden > 0) rows.push(`\x1b[90m  … ${hidden} earlier ${hidden === 1 ? "activity" : "activities"}\x1b[0m`);
     for (const id of visibleIds) {
@@ -222,10 +228,12 @@ export class AgentActivityTimeline implements Component {
     if (this.terminalStatus === "completed") {
       const suggestions = this.renderFollowUpSuggestions();
       if (suggestions.length > 0) {
+        rows.push(`\x1b[90m├─────────────────────────────────────────────────────────────────────────────┤\x1b[0m`);
         rows.push(...suggestions);
       }
     }
 
+    rows.push(`\x1b[90m╰─────────────────────────────────────────────────────────────────────────────╯\x1b[0m`);
     return rows.join("\n");
   }
 
