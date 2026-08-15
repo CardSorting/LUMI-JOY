@@ -521,9 +521,11 @@ export class CodexProgressAdapter {
     }
 
     // Local Preview Servers
-    if (/python3?\s+-m\s+http\.server\s+(\d+)/i.test(trimmed)) {
-      const port = trimmed.match(/http\.server\s+(\d+)/i)?.[1] || "4173";
-      return `Serving preview on http://localhost:${port}`;
+    if (/python3?\s+-m\s+http\.server\s+(\d+)(?:\s+--bind\s+([\d.]+))?/i.test(trimmed)) {
+      const match = trimmed.match(/http\.server\s+(\d+)(?:\s+--bind\s+([\d.]+))?/i);
+      const port = match?.[1] || "4173";
+      const host = match?.[2] || "localhost";
+      return `Serving preview on http://${host}:${port}`;
     }
     if (/npx\s+serve|vite\s+preview|http-server/i.test(trimmed)) {
       return "Starting local preview server";
@@ -535,8 +537,17 @@ export class CodexProgressAdapter {
     }
     if (/curl\b/i.test(trimmed)) return "Testing HTTP endpoint";
 
+    // Script Extraction & Text Processing
+    if (/sed\s+.*<script>/i.test(trimmed)) return "Extracting embedded script content";
+    if (/^wc\s+-l\s+([a-zA-Z0-9_.-]+)/i.test(trimmed)) {
+      const f = trimmed.match(/^wc\s+-l\s+([a-zA-Z0-9_.-]+)/i)?.[1];
+      return `Counting lines in ${f}`;
+    }
+
     // Code Search
     if (/rg\s+--files/i.test(trimmed)) return "Listing workspace file paths";
+    const rgQueryWithFile = trimmed.match(/rg\s+(?:-[a-zA-Z0-9_-]+\s+)*["']([^"']+)["']\s+([a-zA-Z0-9_.-]+)/i);
+    if (rgQueryWithFile) return `Searching for '${rgQueryWithFile[1]}' in ${rgQueryWithFile[2]}`;
     const rgQuery = trimmed.match(/rg\s+(?:-[a-zA-Z0-9_-]+\s+)*["']([^"']+)["']/i);
     if (rgQuery) return `Searching codebase for '${rgQuery[1]}'`;
     if (/^(?:rg|grep|ripgrep|ag)\b/i.test(trimmed)) return "Searching codebase";
@@ -545,10 +556,6 @@ export class CodexProgressAdapter {
     // Directory & File Inspection
     if (/^tree\b/i.test(trimmed)) return "Viewing workspace directory tree";
     if (/^(?:ls|dir)\b/i.test(trimmed)) return "Inspecting directory contents";
-    if (/^wc\s+-l\s+([a-zA-Z0-9_.-]+)/i.test(trimmed)) {
-      const f = trimmed.match(/^wc\s+-l\s+([a-zA-Z0-9_.-]+)/i)?.[1];
-      return `Counting lines in ${f}`;
-    }
     if (/^(?:cat|head|tail|view|read)\b/i.test(trimmed)) return "Reading file contents";
 
     // Git Operations
@@ -568,6 +575,12 @@ export class CodexProgressAdapter {
     if (/^(?:npm install|npm i|yarn add|pnpm add|bun add)\b/i.test(trimmed)) return "Installing dependencies";
     if (/^npm run smoke\b/i.test(trimmed)) return "Running runtime smoke checks";
     if (/^npm run benchmark\b/i.test(trimmed)) return "Benchmarking performance SLAs";
+
+    // File System Mutation Helpers
+    if (/^mkdir\b/i.test(trimmed)) return "Creating directories";
+    if (/^chmod\b/i.test(trimmed)) return "Updating file permissions";
+    if (/^(?:cp|mv)\b/i.test(trimmed)) return "Managing workspace files";
+    if (/^node\s+-e\b/i.test(trimmed)) return "Executing inline Node script";
 
     return "Running workspace command";
   }

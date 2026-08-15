@@ -173,7 +173,13 @@ export class AgentActivityTimeline implements Component {
         : event.metadata.scope === "turn";
       if (isTurnEvent) overallId = id;
     }
-    const activityIds = overallId ? this.order.filter((id) => id !== overallId) : this.order;
+    const isCompleted = this.terminalStatus !== null;
+    const activityIds = this.order.filter((id) => {
+      if (id === overallId) return false;
+      // Filter out transient watchdog telemetry heartbeats once the turn finishes
+      if (isCompleted && id.includes(":telemetry:")) return false;
+      return true;
+    });
     const activityBudget = Math.max(0, this.maxVisibleActivities - (overallId ? 1 : 0));
     const visibleIds = [
       ...(overallId ? [overallId] : []),
