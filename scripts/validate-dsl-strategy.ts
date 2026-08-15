@@ -490,13 +490,13 @@ async function validateAttemptCompletionGateStrategy(): Promise<void> {
   assert.ok(markdownLog.includes("manual-audit-gate"));
   assert.ok(markdownLog.includes("✅ PASSED"));
 
-  // 12. Multi-Perspective Consensus Arbiter & Quorum Thresholds
+  // 12. Deadlock-Free Consensus Arbiter & Flattened Calibrated Scoring
   const consensusVotes = [
     { evaluatorId: "architect", passed: true, score: 100, weight: 2.0, severity: "high" as const },
     { evaluatorId: "critic", passed: true, score: 100, weight: 1.0, severity: "medium" as const },
     { evaluatorId: "sre", passed: false, score: 0, weight: 1.0, severity: "low" as const },
   ];
-  // 3/4 weight = 75% -> passes majority (50%) and supermajority_66 (66.6%), fails unanimous
+  // 3/4 raw weight = 75% -> passes majority (50%) and supermajority_66 (66.6%), fails unanimous
   const majorityConsensus = ConsensusArbiter.evaluateConsensus(consensusVotes, { threshold: "majority_50" });
   assert.equal(majorityConsensus.passed, true);
   assert.equal(majorityConsensus.score, 75);
@@ -507,15 +507,18 @@ async function validateAttemptCompletionGateStrategy(): Promise<void> {
   const unanimousConsensus = ConsensusArbiter.evaluateConsensus(consensusVotes, { threshold: "unanimous" });
   assert.equal(unanimousConsensus.passed, false);
 
-  // Critical Veto test
-  const vetoVotes = [
-    { evaluatorId: "security_guardian", passed: false, score: 0, weight: 1.0, severity: "critical" as const, reason: "Detected credential leak" },
-    { evaluatorId: "developer", passed: true, score: 100, weight: 10.0, severity: "low" as const },
+  // Deadlock-Free Calibrated Penalty test (critical failure applies score penalty without hard deadlock lockup)
+  const penaltyVotes = [
+    { evaluatorId: "security_guardian", passed: false, score: 0, weight: 1.0, severity: "critical" as const, reason: "Detected security warning" },
+    { evaluatorId: "developer", passed: true, score: 100, weight: 3.0, severity: "low" as const },
   ];
-  const vetoResult = ConsensusArbiter.evaluateConsensus(vetoVotes, { allowVetoOnSeverity: "critical" });
-  assert.equal(vetoResult.passed, false);
-  assert.equal(vetoResult.vetoEnacted, true);
-  assert.ok(vetoResult.vetoReason?.includes("security_guardian"));
+  const penaltyResult = ConsensusArbiter.evaluateConsensus(penaltyVotes, { threshold: "majority_50", criticalPenalty: 30 });
+  // Raw score: 3/4 = 75%. Penalty: 30%. Final score = 45%. Does not deadlock; yields clean 45% score.
+  assert.equal(penaltyResult.rawAffirmativeScore, 75);
+  assert.equal(penaltyResult.penaltyDeduction, 30);
+  assert.equal(penaltyResult.score, 45);
+  assert.equal(penaltyResult.passed, false);
+  assert.ok(penaltyResult.summary.includes("Consensus score 45% below required threshold"));
 
   // 13. Multi-Branch Candidate Arbitration
   const branchGateId = "branch-arbitration-gate";

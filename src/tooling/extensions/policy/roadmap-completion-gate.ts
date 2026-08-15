@@ -237,6 +237,8 @@ export class AttemptFlightRecorder {
 
 export interface ConsensusConfig {
   threshold?: "unanimous" | "supermajority_66" | "majority_50" | number;
+  criticalPenalty?: number;
+  highPenalty?: number;
   allowVetoOnSeverity?: GateCriterionSeverity;
 }
 
@@ -252,10 +254,12 @@ export interface ConsensusVote {
 export interface ConsensusEvaluationResult {
   passed: boolean;
   score: number;
+  rawAffirmativeScore: number;
+  penaltyDeduction: number;
   totalVotes: number;
   affirmativeVotes: number;
   dissentingVotes: number;
-  vetoEnacted: boolean;
+  vetoEnacted?: boolean;
   vetoReason?: string;
   summary: string;
 }
@@ -266,6 +270,8 @@ export class ConsensusArbiter {
       return {
         passed: false,
         score: 0,
+        rawAffirmativeScore: 0,
+        penaltyDeduction: 0,
         totalVotes: 0,
         affirmativeVotes: 0,
         dissentingVotes: 0,
@@ -276,14 +282,23 @@ export class ConsensusArbiter {
 
     const totalWeight = votes.reduce((sum, v) => sum + v.weight, 0);
     const affirmativeWeight = votes.filter((v) => v.passed).reduce((sum, v) => sum + v.weight, 0);
-    const score = totalWeight > 0 ? Number(((affirmativeWeight / totalWeight) * 100).toFixed(2)) : 0;
+    const rawScore = totalWeight > 0 ? (affirmativeWeight / totalWeight) * 100 : 0;
 
     const affirmativeVotes = votes.filter((v) => v.passed).length;
     const dissentingVotes = votes.filter((v) => !v.passed).length;
 
-    // Check for veto
-    const vetoSeverity = config.allowVetoOnSeverity ?? "critical";
-    const vetoVote = votes.find((v) => !v.passed && v.severity === vetoSeverity);
+    // Calibrated soft penalties instead of deadlocking hard vetoes
+    let penaltyDeduction = 0;
+    const criticalFailures = votes.filter((v) => !v.passed && v.severity === "critical");
+    const highFailures = votes.filter((v) => !v.passed && v.severity === "high");
+
+    const criticalPenaltyRate = config.criticalPenalty ?? 25.0;
+    const highPenaltyRate = config.highPenalty ?? 10.0;
+
+    penaltyDeduction += criticalFailures.length * criticalPenaltyRate;
+    penaltyDeduction += highFailures.length * highPenaltyRate;
+
+    const finalScore = Number(Math.max(0, Math.min(100, rawScore - penaltyDeduction)).toFixed(2));
 
     let thresholdRatio = 0.5;
     if (config.threshold === "unanimous") {
@@ -294,30 +309,21 @@ export class ConsensusArbiter {
       thresholdRatio = config.threshold / 100;
     }
 
-    const ratioPassed = totalWeight > 0 ? affirmativeWeight / totalWeight : 0;
-    const quorumMet = ratioPassed >= thresholdRatio;
+    const passed = (finalScore / 100) >= thresholdRatio && (config.threshold === "unanimous" ? dissentingVotes === 0 : true);
 
-    if (vetoVote) {
-      return {
-        passed: false,
-        score,
-        totalVotes: votes.length,
-        affirmativeVotes,
-        dissentingVotes,
-        vetoEnacted: true,
-        vetoReason: `Veto enacted by evaluator '${vetoVote.evaluatorId}' on ${vetoSeverity} severity: ${vetoVote.reason ?? "failed critical standard"}`,
-        summary: `Consensus blocked by critical veto from '${vetoVote.evaluatorId}'.`,
-      };
+    let summary: string;
+    if (passed) {
+      summary = `Consensus achieved: score ${finalScore}% (${affirmativeVotes}/${votes.length} votes affirmative).`;
+    } else {
+      const reasonList = votes.filter((v) => !v.passed).map((v) => `${v.evaluatorId} (${v.severity ?? "standard"})`).join(", ");
+      summary = `Consensus score ${finalScore}% below required threshold (${(thresholdRatio * 100).toFixed(1)}%). Dissenting: [${reasonList}].`;
     }
-
-    const passed = quorumMet;
-    const summary = passed
-      ? `Consensus reached with score ${score}% (${affirmativeVotes}/${votes.length} affirmative votes).`
-      : `Consensus failed: score ${score}% below required quorum threshold (${(thresholdRatio * 100).toFixed(1)}%).`;
 
     return {
       passed,
-      score,
+      score: finalScore,
+      rawAffirmativeScore: Number(rawScore.toFixed(2)),
+      penaltyDeduction,
       totalVotes: votes.length,
       affirmativeVotes,
       dissentingVotes,

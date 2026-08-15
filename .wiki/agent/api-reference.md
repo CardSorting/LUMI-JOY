@@ -284,7 +284,7 @@ Source: [`src/tooling/extensions/policy/roadmap-completion-gate.ts`](../../src/t
 
 Source: [`src/tooling/extensions/policy/roadmap-completion-gate.ts`](../../src/tooling/extensions/policy/roadmap-completion-gate.ts)
 
-- `evaluateConsensus(votes: ConsensusVote[], config?: ConsensusConfig): ConsensusEvaluationResult`: computes multi-judge quorum (`unanimous`, `supermajority_66`, `majority_50`, or custom ratio) and critical severity vetoes.
+- `evaluateConsensus(votes: ConsensusVote[], config?: ConsensusConfig): ConsensusEvaluationResult`: computes deadlock-free quorum scoring (`unanimous`, `supermajority_66`, `majority_50`, or custom ratio) with calibrated soft severity deductions instead of blocking veto deadlocks.
 
 ### `GatePipelineDag`
 

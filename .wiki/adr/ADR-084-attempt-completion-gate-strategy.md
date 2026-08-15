@@ -35,11 +35,11 @@ LUMI adopts an apex / sovereign-tier, industry-standard **Attempt Completion Gat
 7. **Forensic Flight Recording & Blackbox Audit Ledgers**:
    `AttemptFlightRecorder` maintains an immutable chronological event timeline for all evaluator runs, score deltas, duration metrics, and decision boundaries, exporting both machine-readable JSON logs and formatted Markdown postmortem reports (`generateFlightLogMarkdown`).
 
-8. **Multi-Perspective Consensus Arbitration**:
-   `ConsensusArbiter` evaluates consensus quorum (`unanimous`, `supermajority_66`, `majority_50`) across multi-agent evaluation panels with critical severity veto enforcement (`vetoBySeverity: "critical"`).
+8. **Deadlock-Free Consensus Arbitration**:
+   `ConsensusArbiter` evaluates multi-perspective consensus using continuous affirmative scoring and calibrated soft severity deductions rather than hard unrecoverable veto locks, preventing deadlock states while supporting configurable quorum thresholds (`majority_50`, `supermajority_66`, `unanimous`, or custom ratios).
 
-9. **Multi-Branch Candidate Arbitration**:
-   `evaluateAttemptCandidates` scores and ranks parallel candidate branches, selecting winning candidates based on score optimization, minimal critical violations, and regression footprint.
+9. **Flattened Single-Pass Candidate Arbitration**:
+   `evaluateAttemptCandidates` deterministically scores and ranks parallel candidate branches in a single clean pass, sorting by pass rate, score optimization, and minimal critical violations, guaranteeing forward progression and decisive selection.
 
 10. **Hierarchical DAG Gate Pipelines**:
     `GatePipelineDag` organizes gate evaluation into Directed Acyclic Graphs with topological dependency ordering and upstream failure short-circuiting.
