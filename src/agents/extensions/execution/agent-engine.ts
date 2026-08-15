@@ -32,6 +32,7 @@ import {
 import { sanitizeProgressText } from "../../../core/utilities/progress-sanitizer.js";
 
 const CODEX_TURN_TIMEOUT_MS = 10 * 60 * 1000;
+const CODEX_STREAM_INACTIVITY_TIMEOUT_MS = 180_000;
 
 interface PreparedProviderContext {
   messages: SessionMessage[];
@@ -503,11 +504,11 @@ export class AgentEngine extends AbstractAgentEngine {
       if (completionUsage || watchdogAbort.signal.aborted) return;
       const idleMs = Date.now() - lastEventAt;
 
-      // Watchdog: Entire stream frozen for 45s without any events
-      if (idleMs > 45_000) {
+      // Watchdog: Entire stream frozen for 180s without any events
+      if (idleMs > CODEX_STREAM_INACTIVITY_TIMEOUT_MS) {
         watchdogAbort.abort(new Error("inactivity_watchdog_stream_frozen"));
       }
-    }, 500);
+    }, 1000);
     watchdogInterval.unref?.();
 
     try {
